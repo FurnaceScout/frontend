@@ -1,7 +1,5 @@
 # FurnaceScout 🔥
 
-> **⚠️ UNOFFICIAL PROJECT** - This is a community-built tool. Not affiliated with, maintained by, or endorsed by the Foundry team.
-
 > Unofficial frontend block explorer for Foundry's Anvil testnet
 
 A modern, feature-rich block explorer built specifically for Foundry's Anvil, making local Ethereum development easier and more transparent.
