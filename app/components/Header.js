@@ -112,6 +112,12 @@ export default function Header() {
             >
               ⛽ Gas
             </Link>
+            <Link
+              href="/search"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              🔍 Search
+            </Link>
             <FoundryProjectManager />
             <EventStreamManager />
             <ForgeTestRunner />
