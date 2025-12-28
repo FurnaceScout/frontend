@@ -10,6 +10,14 @@ import StateDiffViewer from "@/app/components/StateDiffViewer";
 import TokenTransfers from "@/app/components/TokenTransfers";
 import TransactionNote from "@/app/components/TransactionNote";
 import LabelBadge from "@/app/components/LabelBadge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Separator } from "@/app/components/ui/separator";
 
 export default function TransactionPage({ params }) {
   const { hash } = use(params);
@@ -65,7 +73,7 @@ export default function TransactionPage({ params }) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-500">
+          <h1 className="text-2xl font-bold text-destructive">
             Transaction not found
           </h1>
         </div>
@@ -75,9 +83,7 @@ export default function TransactionPage({ params }) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">
-        Transaction Details
-      </h1>
+      <h1 className="text-3xl font-bold mb-6">Transaction Details</h1>
 
       {/* Transaction Note */}
       <div className="mb-8">
@@ -87,13 +93,9 @@ export default function TransactionPage({ params }) {
       {/* Status Badge & Bookmark */}
       <div className="mb-6 flex items-center gap-4">
         {receipt.status === "success" ? (
-          <span className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
-            ✓ Success
-          </span>
+          <Badge className="bg-green-600 hover:bg-green-700">✓ Success</Badge>
         ) : (
-          <span className="px-3 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-sm font-semibold">
-            ✗ Failed
-          </span>
+          <Badge variant="destructive">✗ Failed</Badge>
         )}
         <BookmarkButton
           hash={hash}
@@ -102,186 +104,196 @@ export default function TransactionPage({ params }) {
       </div>
 
       {/* Transaction Info */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 mb-8">
-        <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-          Overview
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InfoRow label="Transaction Hash" value={tx.hash} mono full />
-          <InfoRow
-            label="Block"
-            value={
-              <Link
-                href={`/block/${receipt.blockNumber}`}
-                className="text-red-500 hover:underline"
-              >
-                {receipt.blockNumber.toString()}
-              </Link>
-            }
-          />
-          <InfoRow
-            label="From"
-            value={
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/address/${tx.from}`}
-                  className="text-red-500 hover:underline font-mono"
-                >
-                  {tx.from}
-                </Link>
-                <LabelBadge address={tx.from} />
-              </div>
-            }
-            full
-          />
-          <InfoRow
-            label="To"
-            value={
-              tx.to ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/address/${tx.to}`}
-                    className="text-red-500 hover:underline font-mono"
-                  >
-                    {tx.to}
-                  </Link>
-                  <LabelBadge address={tx.to} />
-                </div>
-              ) : (
-                <span className="text-purple-600 dark:text-purple-400">
-                  Contract Creation
-                </span>
-              )
-            }
-            full
-          />
-          {receipt.contractAddress && (
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoRow label="Transaction Hash" value={tx.hash} mono full />
             <InfoRow
-              label="Contract Address"
+              label="Block"
+              value={
+                <Link
+                  href={`/block/${receipt.blockNumber}`}
+                  className="text-primary hover:underline"
+                >
+                  {receipt.blockNumber.toString()}
+                </Link>
+              }
+            />
+            <InfoRow
+              label="From"
               value={
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/address/${receipt.contractAddress}`}
-                    className="text-red-500 hover:underline font-mono"
+                    href={`/address/${tx.from}`}
+                    className="text-primary hover:underline font-mono"
                   >
-                    {receipt.contractAddress}
+                    {tx.from}
                   </Link>
-                  <LabelBadge address={receipt.contractAddress} />
+                  <LabelBadge address={tx.from} />
                 </div>
               }
               full
             />
-          )}
-          <InfoRow label="Value" value={`${formatEther(tx.value)} ETH`} />
-          <InfoRow
-            label="Gas Used"
-            value={`${receipt.gasUsed.toString()} (${((Number(receipt.gasUsed) / Number(tx.gas)) * 100).toFixed(2)}%)`}
-          />
-          <InfoRow
-            label="Gas Price"
-            value={`${formatEther(tx.gasPrice)} ETH`}
-          />
-          <InfoRow label="Nonce" value={tx.nonce.toString()} />
-        </div>
-      </div>
+            <InfoRow
+              label="To"
+              value={
+                tx.to ? (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/address/${tx.to}`}
+                      className="text-primary hover:underline font-mono"
+                    >
+                      {tx.to}
+                    </Link>
+                    <LabelBadge address={tx.to} />
+                  </div>
+                ) : (
+                  <Badge variant="secondary">Contract Creation</Badge>
+                )
+              }
+              full
+            />
+            {receipt.contractAddress && (
+              <InfoRow
+                label="Contract Address"
+                value={
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/address/${receipt.contractAddress}`}
+                      className="text-primary hover:underline font-mono"
+                    >
+                      {receipt.contractAddress}
+                    </Link>
+                    <LabelBadge address={receipt.contractAddress} />
+                  </div>
+                }
+                full
+              />
+            )}
+            <InfoRow label="Value" value={`${formatEther(tx.value)} ETH`} />
+            <InfoRow
+              label="Gas Used"
+              value={`${receipt.gasUsed.toString()} (${((Number(receipt.gasUsed) / Number(tx.gas)) * 100).toFixed(2)}%)`}
+            />
+            <InfoRow
+              label="Gas Price"
+              value={`${formatEther(tx.gasPrice)} ETH`}
+            />
+            <InfoRow label="Nonce" value={tx.nonce.toString()} />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Decoded Input */}
       {decodedInput && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-            Decoded Input{" "}
-            {decodedInput.contractName && `(${decodedInput.contractName})`}
-          </h2>
-
-          {decodedInput.error ? (
-            <div className="text-red-500 mb-4">{decodedInput.error}</div>
-          ) : (
-            <div className="mb-4">
-              <div className="text-sm text-zinc-500 mb-1">Function</div>
-              <div className="font-mono text-red-600 dark:text-red-400 font-semibold">
-                {decodedInput.functionName}
-              </div>
-
-              {decodedInput.args && decodedInput.args.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-sm text-zinc-500 mb-2">Arguments</div>
-                  <div className="space-y-2">
-                    {decodedInput.args.map((arg, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded"
-                      >
-                        <div className="font-mono text-sm break-all">
-                          {typeof arg === "bigint"
-                            ? arg.toString()
-                            : JSON.stringify(arg)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>
+              Decoded Input{" "}
+              {decodedInput.contractName && `(${decodedInput.contractName})`}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {decodedInput.error ? (
+              <div className="text-destructive mb-4">{decodedInput.error}</div>
+            ) : (
+              <div className="mb-4">
+                <div className="text-sm text-muted-foreground mb-1">
+                  Function
                 </div>
-              )}
-            </div>
-          )}
+                <div className="font-mono text-primary font-semibold">
+                  {decodedInput.functionName}
+                </div>
 
-          <div className="mt-4">
-            <div className="text-sm text-zinc-500 mb-1">Raw Input</div>
-            <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded font-mono text-xs break-all">
-              {tx.input}
+                {decodedInput.args && decodedInput.args.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-sm text-muted-foreground mb-2">
+                      Arguments
+                    </div>
+                    <div className="space-y-2">
+                      {decodedInput.args.map((arg, idx) => (
+                        <div key={idx} className="bg-muted p-3 rounded">
+                          <div className="font-mono text-sm break-all">
+                            {typeof arg === "bigint"
+                              ? arg.toString()
+                              : JSON.stringify(arg)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Separator className="my-4" />
+
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">
+                Raw Input
+              </div>
+              <div className="bg-muted p-3 rounded font-mono text-xs break-all">
+                {tx.input}
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Logs */}
       {decodedLogs.length > 0 && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-            Logs ({decodedLogs.length})
-          </h2>
-          <div className="space-y-4">
-            {decodedLogs.map((log, idx) => (
-              <div
-                key={idx}
-                className="border border-zinc-200 dark:border-zinc-800 rounded p-4"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-mono text-sm text-zinc-600 dark:text-zinc-400">
-                    Log Index: {log.logIndex}
-                  </div>
-                  <Link
-                    href={`/address/${log.address}`}
-                    className="text-red-500 hover:underline text-sm font-mono"
-                  >
-                    {shortenAddress(log.address)}
-                  </Link>
-                </div>
-
-                {log.decoded ? (
-                  <div>
-                    <div className="font-mono text-red-600 dark:text-red-400 font-semibold mb-2">
-                      {log.decoded.eventName}{" "}
-                      {log.contractName && `(${log.contractName})`}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Logs ({decodedLogs.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {decodedLogs.map((log, idx) => (
+                <Card key={idx}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-mono text-sm text-muted-foreground">
+                        Log Index: {log.logIndex}
+                      </div>
+                      <Link
+                        href={`/address/${log.address}`}
+                        className="text-primary hover:underline text-sm font-mono"
+                      >
+                        {shortenAddress(log.address)}
+                      </Link>
                     </div>
-                    {log.decoded.args && (
-                      <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded font-mono text-xs">
-                        {JSON.stringify(
-                          log.decoded.args,
-                          (_, v) => (typeof v === "bigint" ? v.toString() : v),
-                          2,
+
+                    {log.decoded ? (
+                      <div>
+                        <div className="font-mono text-primary font-semibold mb-2">
+                          {log.decoded.eventName}{" "}
+                          {log.contractName && `(${log.contractName})`}
+                        </div>
+                        {log.decoded.args && (
+                          <div className="bg-muted p-3 rounded font-mono text-xs">
+                            {JSON.stringify(
+                              log.decoded.args,
+                              (_, v) =>
+                                typeof v === "bigint" ? v.toString() : v,
+                              2,
+                            )}
+                          </div>
                         )}
                       </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        {log.error || "Not decoded"}
+                      </div>
                     )}
-                  </div>
-                ) : (
-                  <div className="text-sm text-zinc-500">
-                    {log.error || "Not decoded"}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Token Transfers */}
@@ -292,9 +304,11 @@ export default function TransactionPage({ params }) {
       )}
 
       {/* State Changes */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 mb-8">
-        <StateDiffViewer transactionHash={hash} receipt={receipt} />
-      </div>
+      <Card className="mb-8">
+        <CardContent className="pt-6">
+          <StateDiffViewer transactionHash={hash} receipt={receipt} />
+        </CardContent>
+      </Card>
 
       {/* Transaction Trace */}
       <TransactionTrace hash={hash} />
@@ -305,9 +319,9 @@ export default function TransactionPage({ params }) {
 function InfoRow({ label, value, mono = false, full = false }) {
   return (
     <div>
-      <div className="text-sm text-zinc-500 mb-1">{label}</div>
+      <div className="text-sm text-muted-foreground mb-1">{label}</div>
       <div
-        className={`text-sm text-zinc-900 dark:text-zinc-100 ${mono ? "font-mono" : ""} ${full ? "break-all" : ""}`}
+        className={`text-sm ${mono ? "font-mono" : ""} ${full ? "break-all" : ""}`}
       >
         {value}
       </div>
