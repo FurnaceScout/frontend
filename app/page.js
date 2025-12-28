@@ -276,7 +276,7 @@ export default function Home() {
                   key={block.number.toString()}
                   href={`/block/${block.number}`}
                 >
-                  <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6">
+                  <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6 min-h-40">
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle>Block #{block.number.toString()}</CardTitle>
@@ -344,7 +344,7 @@ export default function Home() {
               ) : (
                 transactions.map((tx) => (
                   <Link key={tx.hash} href={`/tx/${tx.hash}`}>
-                    <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6">
+                    <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6 min-h-40">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <span className="font-mono text-sm font-semibold">

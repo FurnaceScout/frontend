@@ -22,6 +22,26 @@ import {
   saveCallToHistory,
   clearCallHistory,
 } from "@/lib/contract-interaction";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Textarea } from "@/app/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Separator } from "@/app/components/ui/separator";
 
 export default function ContractInteraction({ address, abiData }) {
   const [parsedABI, setParsedABI] = useState({
@@ -387,19 +407,13 @@ export default function ContractInteraction({ address, abiData }) {
     if (fieldType === "checkbox") {
       return (
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={value === "true" || value === true}
-            onChange={(e) =>
-              handleInputChange(
-                functionName,
-                inputName,
-                String(e.target.checked),
-              )
+            onCheckedChange={(checked) =>
+              handleInputChange(functionName, inputName, String(checked))
             }
-            className="w-4 h-4"
           />
-          <span className="text-sm text-gray-400">
+          <span className="text-sm text-muted-foreground">
             {value === "true" || value === true ? "true" : "false"}
           </span>
         </div>
@@ -408,14 +422,14 @@ export default function ContractInteraction({ address, abiData }) {
 
     if (fieldType === "textarea") {
       return (
-        <textarea
+        <Textarea
           value={value}
           onChange={(e) =>
             handleInputChange(functionName, inputName, e.target.value)
           }
           placeholder={`Enter ${input.type} (JSON format)`}
-          className={`w-full px-3 py-2 bg-gray-800 border rounded font-mono text-sm ${
-            errors[errorKey] ? "border-red-500" : "border-gray-700"
+          className={`font-mono text-sm ${
+            errors[errorKey] ? "border-destructive" : ""
           }`}
           rows={3}
         />
@@ -423,15 +437,15 @@ export default function ContractInteraction({ address, abiData }) {
     }
 
     return (
-      <input
+      <Input
         type={fieldType}
         value={value}
         onChange={(e) =>
           handleInputChange(functionName, inputName, e.target.value)
         }
         placeholder={`Enter ${input.type}`}
-        className={`w-full px-3 py-2 bg-gray-800 border rounded font-mono text-sm ${
-          errors[errorKey] ? "border-red-500" : "border-gray-700"
+        className={`font-mono text-sm ${
+          errors[errorKey] ? "border-destructive" : ""
         }`}
       />
     );
@@ -448,34 +462,30 @@ export default function ContractInteraction({ address, abiData }) {
     const showHistoryPanel = showHistory[functionName];
 
     return (
-      <div
-        key={functionName}
-        className="border border-gray-700 rounded-lg bg-gray-800/50"
-      >
+      <Card key={functionName}>
         {/* Function Header */}
         <button
           type="button"
           onClick={() => toggleFunction(functionName)}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800 transition-colors"
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors rounded-t-lg"
         >
           <div className="flex items-center gap-3">
-            <span
-              className={`text-xs px-2 py-1 rounded font-semibold ${
-                isWrite ? "bg-red-600 text-white" : "bg-blue-600 text-white"
-              }`}
-            >
+            <Badge variant={isWrite ? "destructive" : "default"}>
               {isWrite ? "WRITE" : "READ"}
-            </span>
+            </Badge>
             <span className="font-mono font-medium">{functionName}</span>
             {isPayable(func) && (
-              <span className="text-xs px-2 py-1 bg-yellow-600 text-white rounded font-semibold">
+              <Badge
+                variant="outline"
+                className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+              >
                 PAYABLE
-              </span>
+              </Badge>
             )}
           </div>
           <div className="flex items-center gap-2">
             {hasHistory && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 {callHistory[functionName].length} calls
               </span>
             )}
@@ -489,29 +499,29 @@ export default function ContractInteraction({ address, abiData }) {
 
         {/* Function Body */}
         {isExpanded && (
-          <div className="px-4 pb-4 space-y-4">
+          <CardContent className="space-y-4 pt-4">
             {/* Function Signature */}
-            <div className="text-xs text-gray-400 font-mono bg-gray-900 p-2 rounded overflow-x-auto">
+            <div className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded overflow-x-auto">
               {getFunctionSignature(func)}
             </div>
 
             {/* Inputs */}
             {func.inputs && func.inputs.length > 0 && (
               <div className="space-y-3">
-                <div className="text-sm font-semibold text-gray-300">
-                  Parameters
-                </div>
+                <div className="text-sm font-semibold">Parameters</div>
                 {func.inputs.map((input, idx) => (
-                  <div key={idx}>
-                    <label className="block text-sm text-gray-400 mb-1">
+                  <div key={idx} className="space-y-1.5">
+                    <Label className="text-sm">
                       {input.name || `param${idx}`}{" "}
-                      <span className="text-gray-500">({input.type})</span>
-                    </label>
+                      <span className="text-muted-foreground">
+                        ({input.type})
+                      </span>
+                    </Label>
                     {renderInputField(func, input)}
                     {errors[`${functionName}_${input.name}`] && (
-                      <div className="text-xs text-red-400 mt-1">
+                      <p className="text-xs text-destructive">
                         {errors[`${functionName}_${input.name}`]}
-                      </div>
+                      </p>
                     )}
                   </div>
                 ))}
@@ -520,18 +530,19 @@ export default function ContractInteraction({ address, abiData }) {
 
             {/* ETH Value (for payable functions) */}
             {isPayable(func) && (
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">
-                  ETH Value <span className="text-gray-500">(ether)</span>
-                </label>
-                <input
+              <div className="space-y-1.5">
+                <Label>
+                  ETH Value{" "}
+                  <span className="text-muted-foreground">(ether)</span>
+                </Label>
+                <Input
                   type="text"
                   value={getEthValue(functionName)}
                   onChange={(e) =>
                     handleEthValueChange(functionName, e.target.value)
                   }
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded font-mono text-sm"
+                  className="font-mono text-sm"
                 />
               </div>
             )}
@@ -540,220 +551,238 @@ export default function ContractInteraction({ address, abiData }) {
             <div className="flex gap-2 flex-wrap">
               {isWrite ? (
                 <>
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleSimulate(func)}
                     disabled={!isConnected || loading[`${functionName}_sim`]}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded transition-colors text-sm font-semibold"
+                    className="bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
                   >
                     {loading[`${functionName}_sim`]
                       ? "Simulating..."
                       : "Simulate"}
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleEstimateGas(func)}
                     disabled={!isConnected || loading[`${functionName}_gas`]}
-                    className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded transition-colors text-sm font-semibold"
+                    className="bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20"
                   >
                     {loading[`${functionName}_gas`]
                       ? "Estimating..."
                       : "Estimate Gas"}
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => handleWriteFunction(func)}
                     disabled={!isConnected || isLoading}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded transition-colors text-sm font-semibold"
                   >
                     {isLoading ? "Sending..." : "Write"}
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   onClick={() => handleReadFunction(func)}
                   disabled={isLoading}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors text-sm font-semibold"
                 >
                   {isLoading ? "Calling..." : "Query"}
-                </button>
+                </Button>
               )}
 
               {hasHistory && (
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() =>
                     setShowHistory((prev) => ({
                       ...prev,
                       [functionName]: !prev[functionName],
                     }))
                   }
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors text-sm font-semibold"
                 >
                   {showHistoryPanel ? "Hide" : "Show"} History
-                </button>
+                </Button>
               )}
             </div>
 
             {/* Gas Estimate */}
             {gasEstimate && (
-              <div className="p-3 bg-yellow-900/20 border border-yellow-700 rounded">
-                <div className="text-sm font-semibold text-yellow-400">
-                  Gas Estimate
-                </div>
-                <div className="text-sm text-gray-300 font-mono">
-                  {Number(gasEstimate).toLocaleString()} gas
-                </div>
-              </div>
+              <Alert className="bg-yellow-500/10 border-yellow-500/20">
+                <AlertDescription>
+                  <div className="text-sm font-semibold text-yellow-600 dark:text-yellow-500">
+                    Gas Estimate
+                  </div>
+                  <div className="text-sm font-mono mt-1">
+                    {Number(gasEstimate).toLocaleString()} gas
+                  </div>
+                </AlertDescription>
+              </Alert>
             )}
 
             {errors[`${functionName}_gas`] && (
-              <div className="p-3 bg-red-900/20 border border-red-700 rounded text-sm text-red-400">
-                {errors[`${functionName}_gas`]}
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription className="text-sm">
+                  {errors[`${functionName}_gas`]}
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Simulation Result */}
             {results[`${functionName}_sim`] && (
-              <div className="p-3 bg-purple-900/20 border border-purple-700 rounded">
-                <div className="text-sm font-semibold text-purple-400 mb-2">
-                  Simulation Result
-                </div>
-                <div className="text-sm text-gray-300 font-mono break-all">
-                  {formatOutputValue(
-                    results[`${functionName}_sim`].data,
-                    func.outputs?.[0]?.type || "unknown",
-                  )}
-                </div>
-              </div>
+              <Alert className="bg-purple-500/10 border-purple-500/20">
+                <AlertDescription>
+                  <div className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                    Simulation Result
+                  </div>
+                  <div className="text-sm font-mono break-all">
+                    {formatOutputValue(
+                      results[`${functionName}_sim`].data,
+                      func.outputs?.[0]?.type || "unknown",
+                    )}
+                  </div>
+                </AlertDescription>
+              </Alert>
             )}
 
             {errors[`${functionName}_sim`] && (
-              <div className="p-3 bg-red-900/20 border border-red-700 rounded text-sm text-red-400">
-                {errors[`${functionName}_sim`]}
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription className="text-sm">
+                  {errors[`${functionName}_sim`]}
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Result */}
             {result && (
-              <div
-                className={`p-3 border rounded ${
-                  result.success
-                    ? "bg-green-900/20 border-green-700"
-                    : "bg-red-900/20 border-red-700"
-                }`}
+              <Alert
+                variant={result.success ? "default" : "destructive"}
+                className={
+                  result.success ? "bg-green-500/10 border-green-500/20" : ""
+                }
               >
-                <div
-                  className={`text-sm font-semibold mb-2 ${
-                    result.success ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {result.success ? "Success" : "Error"}
-                </div>
+                <AlertDescription>
+                  <div
+                    className={`text-sm font-semibold mb-2 ${
+                      result.success ? "text-green-600 dark:text-green-400" : ""
+                    }`}
+                  >
+                    {result.success ? "Success" : "Error"}
+                  </div>
 
-                {result.success && isWrite ? (
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-400">Transaction Hash:</span>
-                      <a
-                        href={`/tx/${result.hash}`}
-                        className="ml-2 text-blue-400 hover:text-blue-300 font-mono"
-                      >
-                        {result.hash?.slice(0, 10)}...{result.hash?.slice(-8)}
-                      </a>
+                  {result.success && isWrite ? (
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">
+                          Transaction Hash:
+                        </span>
+                        <a
+                          href={`/tx/${result.hash}`}
+                          className="ml-2 text-primary hover:underline font-mono"
+                        >
+                          {result.hash?.slice(0, 10)}...{result.hash?.slice(-8)}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Status:</span>
+                        <span
+                          className={`ml-2 font-semibold ${
+                            result.receipt?.status === "success"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-destructive"
+                          }`}
+                        >
+                          {result.receipt?.status}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Gas Used:</span>
+                        <span className="ml-2 font-mono">
+                          {result.receipt?.gasUsed?.toString()}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-gray-400">Status:</span>
-                      <span
-                        className={`ml-2 font-semibold ${
-                          result.receipt?.status === "success"
-                            ? "text-green-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {result.receipt?.status}
-                      </span>
+                  ) : result.success ? (
+                    <div className="text-sm font-mono break-all">
+                      {formatOutputValue(
+                        result.data,
+                        func.outputs?.[0]?.type || "unknown",
+                      )}
                     </div>
-                    <div>
-                      <span className="text-gray-400">Gas Used:</span>
-                      <span className="ml-2 text-gray-300 font-mono">
-                        {result.receipt?.gasUsed?.toString()}
-                      </span>
-                    </div>
-                  </div>
-                ) : result.success ? (
-                  <div className="text-sm text-gray-300 font-mono break-all">
-                    {formatOutputValue(
-                      result.data,
-                      func.outputs?.[0]?.type || "unknown",
-                    )}
-                  </div>
-                ) : null}
-              </div>
+                  ) : null}
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Error */}
             {error && (
-              <div className="p-3 bg-red-900/20 border border-red-700 rounded text-sm text-red-400">
-                {error}
-              </div>
+              <Alert variant="destructive">
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
             )}
 
             {/* Call History */}
             {showHistoryPanel && hasHistory && (
-              <div className="p-3 bg-gray-900 border border-gray-700 rounded">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-semibold text-gray-300">
-                    Call History
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleClearHistory(functionName)}
-                    className="text-xs text-red-400 hover:text-red-300"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {callHistory[functionName].map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2 bg-gray-800 rounded text-xs border border-gray-700"
+              <Card className="bg-muted/50">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">Call History</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleClearHistory(functionName)}
+                      className="h-auto py-1 px-2 text-xs text-destructive hover:text-destructive"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-400">
-                          {new Date(item.timestamp).toLocaleString()}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleLoadFromHistory(functionName, item)
-                          }
-                          className="text-blue-400 hover:text-blue-300"
-                        >
-                          Load
-                        </button>
-                      </div>
-                      <div className="text-gray-300 font-mono break-all">
-                        Args: {JSON.stringify(item.args)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                      Clear
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {callHistory[functionName].map((item, idx) => (
+                      <Card key={idx} className="bg-background">
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(item.timestamp).toLocaleString()}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                handleLoadFromHistory(functionName, item)
+                              }
+                              className="h-auto py-0.5 px-2 text-xs text-primary hover:text-primary"
+                            >
+                              Load
+                            </Button>
+                          </div>
+                          <div className="text-xs font-mono break-all">
+                            Args: {JSON.stringify(item.args)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
     );
   }
 
   if (!abiData?.abi) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        No ABI available for this contract. Upload an ABI to enable interaction.
-      </div>
+      <Alert>
+        <AlertDescription className="text-center">
+          No ABI available for this contract. Upload an ABI to enable
+          interaction.
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -767,130 +796,108 @@ export default function ContractInteraction({ address, abiData }) {
         <div>
           {isConnected ? (
             <div className="flex items-center gap-2">
-              <div className="px-3 py-1 bg-green-900/20 text-green-400 rounded-full text-sm font-mono border border-green-700">
+              <Badge
+                variant="outline"
+                className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 font-mono"
+              >
                 {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-              </div>
-              <button
-                type="button"
+              </Badge>
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={() => disconnect()}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors text-sm"
               >
                 Disconnect
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="default"
               onClick={() => connect({ connector: injected() })}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors font-semibold"
             >
               Connect Wallet
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {/* Info Banner */}
       {!isConnected && parsedABI.write.length > 0 && (
-        <div className="p-4 bg-yellow-900/20 border border-yellow-700 rounded text-sm text-yellow-400">
-          Connect your wallet to interact with write functions
-        </div>
+        <Alert className="bg-yellow-500/10 border-yellow-500/20">
+          <AlertDescription className="text-sm text-yellow-600 dark:text-yellow-500">
+            Connect your wallet to interact with write functions
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-700">
-        <button
-          type="button"
-          onClick={() => setActiveTab("read")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "read"
-              ? "text-blue-400 border-b-2 border-blue-400"
-              : "text-gray-400 hover:text-gray-300"
-          }`}
-        >
-          Read Functions ({parsedABI.read.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("write")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "write"
-              ? "text-red-400 border-b-2 border-red-400"
-              : "text-gray-400 hover:text-gray-300"
-          }`}
-        >
-          Write Functions ({parsedABI.write.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("events")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "events"
-              ? "text-purple-400 border-b-2 border-purple-400"
-              : "text-gray-400 hover:text-gray-300"
-          }`}
-        >
-          Events ({parsedABI.events.length})
-        </button>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="read">
+            Read Functions ({parsedABI.read.length})
+          </TabsTrigger>
+          <TabsTrigger value="write">
+            Write Functions ({parsedABI.write.length})
+          </TabsTrigger>
+          <TabsTrigger value="events">
+            Events ({parsedABI.events.length})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Read Functions */}
-      {activeTab === "read" && (
-        <div className="space-y-3">
+        {/* Read Functions */}
+        <TabsContent value="read" className="space-y-3 mt-4">
           {parsedABI.read.length > 0 ? (
             parsedABI.read.map((func) => renderFunctionCard(func, false))
           ) : (
-            <div className="p-8 text-center text-gray-400">
+            <div className="p-8 text-center text-muted-foreground">
               No read functions available
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Write Functions */}
-      {activeTab === "write" && (
-        <div className="space-y-3">
+        {/* Write Functions */}
+        <TabsContent value="write" className="space-y-3 mt-4">
           {parsedABI.write.length > 0 ? (
             parsedABI.write.map((func) => renderFunctionCard(func, true))
           ) : (
-            <div className="p-8 text-center text-gray-400">
+            <div className="p-8 text-center text-muted-foreground">
               No write functions available
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Events */}
-      {activeTab === "events" && (
-        <div className="space-y-3">
+        {/* Events */}
+        <TabsContent value="events" className="space-y-3 mt-4">
           {parsedABI.events.length > 0 ? (
             parsedABI.events.map((event, idx) => (
-              <div
-                key={idx}
-                className="border border-gray-700 rounded-lg p-4 bg-gray-800/50"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xs px-2 py-1 bg-purple-600 text-white rounded font-semibold">
-                    EVENT
-                  </span>
-                  <span className="font-mono font-medium">{event.name}</span>
-                </div>
-                <div className="text-xs text-gray-400 font-mono bg-gray-900 p-2 rounded">
-                  {event.name}(
-                  {event.inputs
-                    ?.map((inp) => `${inp.type} ${inp.name}`)
-                    .join(", ")}
-                  )
-                </div>
-              </div>
+              <Card key={idx}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge
+                      variant="outline"
+                      className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                    >
+                      EVENT
+                    </Badge>
+                    <span className="font-mono font-medium">{event.name}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded">
+                    {event.name}(
+                    {event.inputs
+                      ?.map((inp) => `${inp.type} ${inp.name}`)
+                      .join(", ")}
+                    )
+                  </div>
+                </CardContent>
+              </Card>
             ))
           ) : (
-            <div className="p-8 text-center text-gray-400">
+            <div className="p-8 text-center text-muted-foreground">
               No events defined
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

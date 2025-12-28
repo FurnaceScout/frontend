@@ -10,7 +10,7 @@ This document tracks the conversion of FurnaceScout from raw Tailwind CSS to sha
 - Dark mode support
 - Maintainability
 
-**Progress**: ~60% Complete
+**Progress**: ~75-80% Complete
 
 ---
 
@@ -46,34 +46,55 @@ This document tracks the conversion of FurnaceScout from raw Tailwind CSS to sha
 
 ---
 
-## Phase 2: Medium Components (In Progress) 🔄
+## Phase 2: Medium Components ✅ COMPLETE
 
-### Components Remaining
-- [ ] TokenTransfers - Table, Badge, Card
-- [ ] RecentTokenTransfers - Table, Card
-- [ ] TransactionTrace - Accordion, Card, Badge
-- [ ] SourceCodeViewer - Tabs, Card, Badge
-- [ ] StateDiffViewer - Card, Badge, Accordion
-- [ ] ContractGasProfile - Card, Table, Badge
-- [ ] ContractInteraction - Card, Input, Button, Select
+### Components Converted ✅
+- [x] TokenTransfers - Table, Badge, Card, Skeleton
+- [x] RecentTokenTransfers - Table, Card, Skeleton
+- [x] TransactionTrace - Card, Badge, Skeleton, Alert
+- [x] SourceCodeViewer - Tabs, Card, Badge, Alert
+- [x] ContractGasProfile - Card, Table, Badge, Skeleton
+- [x] AnvilStatus - Card, Badge, Button, Alert
 
 ---
 
-## Phase 3: Large/Complex Components 📋
+## Phase 3: Large/Complex Components (In Progress) 🔄
 
-### Anvil/Foundry Tools
-- [ ] AnvilStateManager (~200 lines) - Card, Dialog, Button, Input
-- [ ] AnvilStatus (~100 lines) - Card, Badge, Button
-- [ ] EventStreamManager (~150 lines) - Card, Badge, Sheet
-- [ ] ForgeTestRunner (~300 lines) - Card, Button, Badge, Tabs
-- [ ] FoundryProjectManager (~250 lines) - Card, Dialog, Input, Button
-- [ ] CastCommandBuilder (~200 lines) - Card, Input, Select, Textarea
+### Priority Order (Recommended)
 
-### Deployment Tracker
-- [ ] DeploymentTracker (~500 lines) - **LARGEST COMPONENT**
-  - Will need: Card, Table, Dialog, Badge, Tabs, Input, Button, Alert
-  - Multiple nested views and state management
-  - Should be done last
+#### High Priority - Complex Components
+- [ ] **ContractInteraction** (~400+ lines) - **NEXT RECOMMENDED**
+  - Needs: Input, Button, Select, Card, Dialog, Alert
+  - Replace native alerts with sonner/AlertDialog
+  - High user interaction, critical for contract testing
+
+- [ ] **StateDiffViewer** (~600+ lines) - **LARGE & COMPLEX**
+  - Needs: Card, Tabs, Badge, Button, Skeleton, Alert
+  - Multiple nested views and data structures
+  - Important for transaction analysis
+
+#### Medium Priority - Anvil/Foundry Tools
+- [ ] AnvilStateManager (~200 lines)
+  - Needs: Card, Sheet, Button, Input, Badge, Alert
+  
+- [ ] EventStreamManager (~150 lines)
+  - Needs: Card, Badge, Sheet, Button, Skeleton
+
+- [ ] ForgeTestRunner (~300 lines)
+  - Needs: Card, Button, Badge, Tabs, Alert, Skeleton
+
+- [ ] FoundryProjectManager (~250 lines)
+  - Needs: Card, Dialog, Input, Button, Badge, Alert
+
+- [ ] CastCommandBuilder (~200 lines)
+  - Needs: Card, Input, Select, Textarea, Button
+
+#### Largest Component - Save for Last
+- [ ] **DeploymentTracker** (~500 lines) - **LARGEST COMPONENT**
+  - Needs: Card, Table, Dialog, Badge, Tabs, Input, Button, Alert, Skeleton
+  - Multiple nested views and complex state management
+  - Consider breaking into smaller subcomponents first
+  - Should be done last or split before converting
 
 ---
 
@@ -82,12 +103,13 @@ This document tracks the conversion of FurnaceScout from raw Tailwind CSS to sha
 ### Tasks
 - [ ] Add tooltips where helpful (Tooltip component)
 - [ ] Add command palette for quick navigation (Command component)
-- [ ] Implement consistent loading states (Skeleton)
+- [ ] Implement consistent loading states (Skeleton) - Mostly done
 - [ ] Standardize empty states across all pages
 - [ ] Add more toast notifications for user feedback
 - [ ] Review accessibility (keyboard nav, screen readers)
 - [ ] Visual consistency audit (spacing, typography, colors)
 - [ ] Performance optimization (lazy loading, bundle size)
+- [ ] Add accordion component where collapsible sections would help
 
 ---
 
@@ -111,17 +133,17 @@ This document tracks the conversion of FurnaceScout from raw Tailwind CSS to sha
 - [x] skeleton
 
 ### Not Yet Installed (May Need Later)
-- [ ] tooltip
-- [ ] popover
-- [ ] dropdown-menu
-- [ ] command
-- [ ] scroll-area
-- [ ] progress
-- [ ] accordion
-- [ ] checkbox
-- [ ] radio-group
-- [ ] switch
-- [ ] slider
+- [ ] tooltip - For hover hints and explanations
+- [ ] popover - For contextual menus
+- [ ] dropdown-menu - For action menus
+- [ ] command - For quick navigation/search
+- [ ] scroll-area - For custom scrollbars
+- [ ] progress - For loading bars
+- [ ] accordion - For collapsible sections (useful for StateDiffViewer, TransactionTrace)
+- [ ] checkbox - If needed for multi-select
+- [ ] radio-group - If needed for exclusive options
+- [ ] switch - For toggle settings
+- [ ] slider - For range inputs
 
 ---
 
@@ -187,29 +209,72 @@ if (confirm("Are you sure?")) { ... }
 <p className="text-muted-foreground">
 ```
 
+### 6. Consistent loading states with Skeleton
+```jsx
+// Before
+{loading ? <div className="animate-pulse bg-gray-200 h-20"></div> : <Content />}
+
+// After
+{loading ? <Skeleton className="h-20 w-full" /> : <Content />}
+```
+
 ---
 
-## Commits Made
+## Recent Commits
 
 1. ✅ Converted Upload ABI, Gas, Labels, Stats pages
 2. ✅ Converted UnitConverter, AddressLabel, BookmarksPanel components
 3. ✅ Converted BookmarkButton, TransactionNote, LabelBadge components
 4. ✅ Converted TokenBalances, ThemeToggle, NetworkStatsWidget components
+5. ✅ Converted TokenTransfers, RecentTokenTransfers components
+6. ✅ Converted TransactionTrace, SourceCodeViewer components
+7. ✅ Converted ContractGasProfile, AnvilStatus components
 
 ---
 
-## Notes
+## Remaining Work Estimate
+
+**Phase 3 Components**: 7 large components remaining
+- Estimated: 15-20 hours of work
+- Most complex: ContractInteraction, StateDiffViewer, DeploymentTracker
+
+**Phase 4 Polish**: 
+- Estimated: 5-10 hours
+- Accessibility audit, visual consistency, performance
+
+**Total Remaining**: ~20-30 hours
+
+---
+
+## Testing Checklist
+
+Run manually after each major conversion:
+- [ ] Light mode display
+- [ ] Dark mode display
+- [ ] Mobile responsive layout
+- [ ] Keyboard navigation (Tab, Enter, Escape)
+- [ ] Screen reader compatibility
+- [ ] Error states display correctly
+- [ ] Loading states display correctly
+- [ ] Empty states display correctly
+- [ ] All interactive elements accessible
+- [ ] Forms validate and submit properly
+
+---
+
+## Notes & Best Practices
 
 - **IMPORTANT**: Only update this document when completing an ENTIRE top-level phase
-- Individual component conversions tracked via Git commits
-- Build validation after each conversion batch
-- Testing checklist run manually:
-  - [ ] Light mode
-  - [ ] Dark mode
-  - [ ] Mobile responsive
-  - [ ] Keyboard navigation
-  - [ ] Screen reader compatibility
+- Individual component conversions tracked via detailed Git commits
+- Run `bun run build` after each conversion batch to validate
+- Use small, focused commits with descriptive messages
+- Replace ALL native `alert()` and `confirm()` calls with sonner toasts and AlertDialog
+- Prefer composition over heavy customization of shadcn components
+- Maintain accessibility patterns built into shadcn components
+- Document complex conversions in commit messages
+- Test both light and dark themes after each conversion
 
 ---
 
-Last Updated: $(date)
+**Last Updated**: After Phase 2 completion (Medium components)
+**Next Focus**: Phase 3 - Large/Complex Components (starting with ContractInteraction)
