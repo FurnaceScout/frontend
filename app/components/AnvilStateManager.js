@@ -30,6 +30,30 @@ import {
   getCurrentBlockTimestamp,
 } from "@/lib/anvil-state";
 import { publicClient } from "@/lib/viem";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
 
 export default function AnvilStateManager() {
   const [isOpen, setIsOpen] = useState(false);
@@ -147,7 +171,11 @@ export default function AnvilStateManager() {
   }
 
   function handleDeleteSnapshot(snapshotId) {
-    if (confirm("Delete this snapshot metadata? (Note: The snapshot may still exist in Anvil)")) {
+    if (
+      confirm(
+        "Delete this snapshot metadata? (Note: The snapshot may still exist in Anvil)",
+      )
+    ) {
       deleteSnapshotMetadata(snapshotId);
       loadSnapshots();
       showSuccess("Snapshot metadata deleted");
@@ -206,7 +234,7 @@ export default function AnvilStateManager() {
       showSuccess(
         intervalMining > 0
           ? `Interval mining set to ${intervalMining}s`
-          : "Interval mining disabled"
+          : "Interval mining disabled",
       );
     } catch (err) {
       showError(err.message || "Failed to set interval mining");
@@ -355,12 +383,19 @@ export default function AnvilStateManager() {
     } catch (err) {
       showError(err.message || "Failed to stop impersonating");
     } finally {
-      setLoading((prev) => ({ ...prev, [`stopImpersonate_${address}`]: false }));
+      setLoading((prev) => ({
+        ...prev,
+        [`stopImpersonate_${address}`]: false,
+      }));
     }
   }
 
   function handleClearImpersonations() {
-    if (confirm("Clear all impersonation tracking? (Note: This only clears tracking, accounts remain impersonated in Anvil)")) {
+    if (
+      confirm(
+        "Clear all impersonation tracking? (Note: This only clears tracking, accounts remain impersonated in Anvil)",
+      )
+    ) {
       clearImpersonatedAccounts();
       loadImpersonations();
       showSuccess("Impersonation tracking cleared");
@@ -368,7 +403,9 @@ export default function AnvilStateManager() {
   }
 
   async function handleReset() {
-    if (!confirm("Reset Anvil? This will clear all state and cannot be undone.")) {
+    if (
+      !confirm("Reset Anvil? This will clear all state and cannot be undone.")
+    ) {
       return;
     }
 
@@ -410,473 +447,518 @@ export default function AnvilStateManager() {
 
   if (!isOpen) {
     return (
-      <button
-        type="button"
+      <Button
         onClick={() => setIsOpen(true)}
-        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors font-semibold"
+        variant="default"
+        size="sm"
         title="Anvil State Management"
+        className="bg-orange-600 hover:bg-orange-700"
       >
         ⚙️ Anvil
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-2xl font-bold text-white">Anvil State Management</h2>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className="text-gray-400 hover:text-white text-2xl"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>⚙️ Anvil State Management</DialogTitle>
+        </DialogHeader>
 
         {/* Messages */}
         {success && (
-          <div className="mx-6 mt-4 p-3 bg-green-900/20 border border-green-700 rounded text-green-400 text-sm">
-            {success}
-          </div>
+          <Alert className="bg-green-500/10 border-green-500/20">
+            <AlertDescription className="text-green-600 dark:text-green-400 text-sm">
+              {success}
+            </AlertDescription>
+          </Alert>
         )}
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-900/20 border border-red-700 rounded text-red-400 text-sm">
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 px-6 pt-4 border-b border-gray-700">
-          {["snapshots", "mining", "time", "accounts", "advanced"].map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 font-semibold capitalize transition-colors ${
-                activeTab === tab
-                  ? "text-orange-400 border-b-2 border-orange-400"
-                  : "text-gray-400 hover:text-gray-300"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 overflow-hidden flex flex-col"
+        >
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="snapshots">Snapshots</TabsTrigger>
+            <TabsTrigger value="mining">Mining</TabsTrigger>
+            <TabsTrigger value="time">Time</TabsTrigger>
+            <TabsTrigger value="accounts">Accounts</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+          </TabsList>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Snapshots Tab */}
-          {activeTab === "snapshots" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Create Snapshot</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Name *</label>
-                    <input
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Snapshots Tab */}
+            <TabsContent value="snapshots" className="space-y-6 mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create Snapshot</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label>Name *</Label>
+                    <Input
                       type="text"
                       value={snapshotName}
                       onChange={(e) => setSnapshotName(e.target.value)}
                       placeholder="e.g., Before deployment"
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">Description</label>
-                    <input
+                  <div className="space-y-1.5">
+                    <Label>Description</Label>
+                    <Input
                       type="text"
                       value={snapshotDescription}
                       onChange={(e) => setSnapshotDescription(e.target.value)}
                       placeholder="Optional description"
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
                     />
                   </div>
-                  <button
-                    type="button"
+                  <Button
                     onClick={handleCreateSnapshot}
                     disabled={loading.createSnapshot}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
                   >
                     {loading.createSnapshot ? "Creating..." : "Create Snapshot"}
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </CardContent>
+              </Card>
 
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Saved Snapshots</h3>
-                  {snapshots.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClearSnapshots}
-                      className="text-sm text-red-400 hover:text-red-300"
-                    >
-                      Clear All
-                    </button>
-                  )}
-                </div>
-                {snapshots.length > 0 ? (
-                  <div className="space-y-2">
-                    {snapshots.map((snapshot) => (
-                      <div
-                        key={snapshot.id}
-                        className="p-4 bg-gray-800 border border-gray-700 rounded"
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Saved Snapshots</CardTitle>
+                    {snapshots.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearSnapshots}
+                        className="text-destructive hover:text-destructive"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="font-semibold text-white">{snapshot.name}</div>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleRevertSnapshot(snapshot.id)}
-                              disabled={loading[`revert_${snapshot.id}`]}
-                              className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded"
-                            >
-                              {loading[`revert_${snapshot.id}`] ? "Reverting..." : "Revert"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteSnapshot(snapshot.id)}
-                              className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                        {snapshot.description && (
-                          <div className="text-sm text-gray-400 mb-2">{snapshot.description}</div>
-                        )}
-                        <div className="text-xs text-gray-500">
-                          ID: {snapshot.id} • Created: {new Date(snapshot.timestamp).toLocaleString()}
-                        </div>
-                      </div>
-                    ))}
+                        Clear All
+                      </Button>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-400">
-                    No snapshots saved. Create one to save the current state.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                </CardHeader>
+                <CardContent>
+                  {snapshots.length > 0 ? (
+                    <div className="space-y-2">
+                      {snapshots.map((snapshot) => (
+                        <Card key={snapshot.id}>
+                          <CardContent className="pt-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="font-semibold">
+                                {snapshot.name}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleRevertSnapshot(snapshot.id)
+                                  }
+                                  disabled={loading[`revert_${snapshot.id}`]}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  {loading[`revert_${snapshot.id}`]
+                                    ? "Reverting..."
+                                    : "Revert"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() =>
+                                    handleDeleteSnapshot(snapshot.id)
+                                  }
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                            {snapshot.description && (
+                              <div className="text-sm text-muted-foreground mb-2">
+                                {snapshot.description}
+                              </div>
+                            )}
+                            <div className="text-xs text-muted-foreground">
+                              ID: {snapshot.id} • Created:{" "}
+                              {new Date(snapshot.timestamp).toLocaleString()}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No snapshots saved. Create one to save the current state.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Mining Tab */}
-          {activeTab === "mining" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Mine Blocks</h3>
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="1"
-                    value={blockCount}
-                    onChange={(e) => setBlockCount(parseInt(e.target.value) || 1)}
-                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleMineBlocks}
-                    disabled={loading.mineBlocks}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
-                  >
-                    {loading.mineBlocks ? "Mining..." : "Mine Blocks"}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Automine</h3>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSetAutomine}
-                    disabled={loading.automine}
-                    className={`px-4 py-2 rounded transition-colors font-semibold ${
-                      automineEnabled
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-gray-600 hover:bg-gray-700"
-                    } disabled:bg-gray-600 text-white`}
-                  >
-                    {loading.automine ? "Setting..." : automineEnabled ? "Enabled" : "Disabled"}
-                  </button>
-                  <span className="text-sm text-gray-400">
-                    {automineEnabled ? "Blocks mined on each transaction" : "Manual mining required"}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Interval Mining</h3>
-                <div className="space-y-3">
+            {/* Mining Tab */}
+            <TabsContent value="mining" className="space-y-6 mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Mine Blocks</CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="flex gap-3">
-                    <input
+                    <Input
+                      type="number"
+                      min="1"
+                      value={blockCount}
+                      onChange={(e) =>
+                        setBlockCount(parseInt(e.target.value) || 1)
+                      }
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleMineBlocks}
+                      disabled={loading.mineBlocks}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      {loading.mineBlocks ? "Mining..." : "Mine Blocks"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Automine</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handleSetAutomine}
+                      disabled={loading.automine}
+                      className={
+                        automineEnabled
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-muted hover:bg-muted/80"
+                      }
+                    >
+                      {loading.automine
+                        ? "Setting..."
+                        : automineEnabled
+                          ? "Enabled"
+                          : "Disabled"}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      {automineEnabled
+                        ? "Blocks mined on each transaction"
+                        : "Manual mining required"}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Interval Mining</CardTitle>
+                  <CardDescription>
+                    Mine blocks at regular intervals (0 to disable)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-3">
+                    <Input
                       type="number"
                       min="0"
                       value={intervalMining}
-                      onChange={(e) => setIntervalMining(parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        setIntervalMining(parseInt(e.target.value) || 0)
+                      }
                       placeholder="Seconds (0 to disable)"
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+                      className="flex-1"
                     />
-                    <button
-                      type="button"
+                    <Button
                       onClick={handleSetIntervalMining}
                       disabled={loading.intervalMining}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
+                      className="bg-purple-600 hover:bg-purple-700"
                     >
                       {loading.intervalMining ? "Setting..." : "Set Interval"}
-                    </button>
+                    </Button>
                   </div>
-                  <div className="text-sm text-gray-400">
-                    Mine blocks at regular intervals (0 to disable)
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Time Tab */}
-          {activeTab === "time" && (
-            <div className="space-y-6">
+            {/* Time Tab */}
+            <TabsContent value="time" className="space-y-6 mt-0">
               {currentTimestamp && (
-                <div className="p-4 bg-gray-800 border border-gray-700 rounded">
-                  <div className="text-sm text-gray-400 mb-1">Current Block Timestamp</div>
-                  <div className="text-lg font-mono text-white">{currentTimestamp}</div>
-                  <div className="text-sm text-gray-400">{formatTimestamp(currentTimestamp)}</div>
-                </div>
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Current Block Timestamp
+                    </div>
+                    <div className="text-lg font-mono">{currentTimestamp}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatTimestamp(currentTimestamp)}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Increase Time</h3>
-                <div className="space-y-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Increase Time</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
                   <div className="flex gap-3">
-                    <input
+                    <Input
                       type="number"
                       min="1"
                       value={timeIncrease}
-                      onChange={(e) => setTimeIncrease(parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        setTimeIncrease(parseInt(e.target.value) || 1)
+                      }
                       placeholder="Seconds"
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+                      className="flex-1"
                     />
-                    <button
-                      type="button"
+                    <Button
                       onClick={handleIncreaseTime}
                       disabled={loading.increaseTime}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
                     >
                       {loading.increaseTime ? "Increasing..." : "Increase Time"}
-                    </button>
+                    </Button>
                   </div>
                   <div className="flex gap-2">
                     {[3600, 86400, 604800].map((seconds) => (
-                      <button
+                      <Button
                         key={seconds}
-                        type="button"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => setTimeIncrease(seconds)}
-                        className="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded"
                       >
-                        {seconds === 3600 ? "1 hour" : seconds === 86400 ? "1 day" : "1 week"}
-                      </button>
+                        {seconds === 3600
+                          ? "1 hour"
+                          : seconds === 86400
+                            ? "1 day"
+                            : "1 week"}
+                      </Button>
                     ))}
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Set Next Block Timestamp</h3>
-                <div className="space-y-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Set Next Block Timestamp</CardTitle>
+                  <CardDescription>
+                    Set the exact timestamp for the next mined block
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="flex gap-3">
-                    <input
+                    <Input
                       type="number"
                       value={nextBlockTimestamp}
                       onChange={(e) => setNextBlockTimestamp(e.target.value)}
                       placeholder="Unix timestamp"
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+                      className="flex-1"
                     />
-                    <button
-                      type="button"
+                    <Button
                       onClick={handleSetNextBlockTimestamp}
                       disabled={loading.setTimestamp}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
                     >
                       {loading.setTimestamp ? "Setting..." : "Set Timestamp"}
-                    </button>
+                    </Button>
                   </div>
-                  <div className="text-sm text-gray-400">
-                    Set the exact timestamp for the next mined block
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Accounts Tab */}
-          {activeTab === "accounts" && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Set Balance</h3>
-                <div className="space-y-3">
-                  <input
+            {/* Accounts Tab */}
+            <TabsContent value="accounts" className="space-y-6 mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Set Balance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Input
                     type="text"
                     value={balanceAddress}
                     onChange={(e) => setBalanceAddress(e.target.value)}
                     placeholder="0x..."
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white font-mono"
+                    className="font-mono"
                   />
                   <div className="flex gap-3">
-                    <input
+                    <Input
                       type="text"
                       value={balanceAmount}
                       onChange={(e) => setBalanceAmount(e.target.value)}
                       placeholder="ETH amount"
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+                      className="flex-1"
                     />
-                    <button
-                      type="button"
+                    <Button
                       onClick={handleSetBalance}
                       disabled={loading.setBalance}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
+                      className="bg-green-600 hover:bg-green-700"
                     >
                       {loading.setBalance ? "Setting..." : "Set Balance"}
-                    </button>
+                    </Button>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Set Nonce</h3>
-                <div className="space-y-3">
-                  <input
+              <Card>
+                <CardHeader>
+                  <CardTitle>Set Nonce</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Input
                     type="text"
                     value={nonceAddress}
                     onChange={(e) => setNonceAddress(e.target.value)}
                     placeholder="0x..."
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white font-mono"
+                    className="font-mono"
                   />
                   <div className="flex gap-3">
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       value={nonceValue}
                       onChange={(e) => setNonceValue(e.target.value)}
                       placeholder="Nonce value"
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white"
+                      className="flex-1"
                     />
-                    <button
-                      type="button"
+                    <Button
                       onClick={handleSetNonce}
                       disabled={loading.setNonce}
-                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
+                      className="bg-green-600 hover:bg-green-700"
                     >
                       {loading.setNonce ? "Setting..." : "Set Nonce"}
-                    </button>
+                    </Button>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Impersonate Account</h3>
-                <div className="space-y-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Impersonate Account</CardTitle>
+                  <CardDescription>
+                    Send transactions as any address without needing the private
+                    key
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="flex gap-3">
-                    <input
+                    <Input
                       type="text"
                       value={impersonationAddress}
                       onChange={(e) => setImpersonationAddress(e.target.value)}
                       placeholder="0x..."
-                      className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white font-mono"
+                      className="flex-1 font-mono"
                     />
-                    <button
-                      type="button"
+                    <Button
                       onClick={handleImpersonateAccount}
                       disabled={loading.impersonate}
-                      className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
+                      className="bg-yellow-600 hover:bg-yellow-700"
                     >
                       {loading.impersonate ? "Starting..." : "Impersonate"}
-                    </button>
+                    </Button>
                   </div>
-                  <div className="text-sm text-gray-400">
-                    Send transactions as any address without needing the private key
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {impersonatedAccounts.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-white">Active Impersonations</h3>
-                    <button
-                      type="button"
-                      onClick={handleClearImpersonations}
-                      className="text-sm text-red-400 hover:text-red-300"
-                    >
-                      Clear Tracking
-                    </button>
-                  </div>
-                  <div className="space-y-2">
-                    {impersonatedAccounts.map((address) => (
-                      <div
-                        key={address}
-                        className="flex items-center justify-between p-3 bg-gray-800 border border-gray-700 rounded"
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Active Impersonations</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearImpersonations}
+                        className="text-destructive hover:text-destructive"
                       >
-                        <span className="font-mono text-sm text-white">{address}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleStopImpersonating(address)}
-                          disabled={loading[`stopImpersonate_${address}`]}
-                          className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded"
+                        Clear Tracking
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {impersonatedAccounts.map((address) => (
+                        <div
+                          key={address}
+                          className="flex items-center justify-between p-3 border rounded"
                         >
-                          {loading[`stopImpersonate_${address}`] ? "Stopping..." : "Stop"}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                          <span className="font-mono text-sm">{address}</span>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleStopImpersonating(address)}
+                            disabled={loading[`stopImpersonate_${address}`]}
+                          >
+                            {loading[`stopImpersonate_${address}`]
+                              ? "Stopping..."
+                              : "Stop"}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
-            </div>
-          )}
+            </TabsContent>
 
-          {/* Advanced Tab */}
-          {activeTab === "advanced" && (
-            <div className="space-y-6">
-              <div className="p-4 bg-yellow-900/20 border border-yellow-700 rounded text-yellow-400 text-sm">
-                ⚠️ Warning: These operations are destructive and cannot be undone.
-              </div>
+            {/* Advanced Tab */}
+            <TabsContent value="advanced" className="space-y-6 mt-0">
+              <Alert className="bg-yellow-500/10 border-yellow-500/20">
+                <AlertDescription className="text-yellow-600 dark:text-yellow-500 text-sm">
+                  ⚠️ Warning: These operations are destructive and cannot be
+                  undone.
+                </AlertDescription>
+              </Alert>
 
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Drop Pending Transactions</h3>
-                <button
-                  type="button"
-                  onClick={handleDropAllTransactions}
-                  disabled={loading.dropTxs}
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
-                >
-                  {loading.dropTxs ? "Dropping..." : "Drop All Transactions"}
-                </button>
-                <div className="text-sm text-gray-400 mt-2">
-                  Remove all pending transactions from the mempool
-                </div>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Drop Pending Transactions</CardTitle>
+                  <CardDescription>
+                    Remove all pending transactions from the mempool
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    onClick={handleDropAllTransactions}
+                    disabled={loading.dropTxs}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    {loading.dropTxs ? "Dropping..." : "Drop All Transactions"}
+                  </Button>
+                </CardContent>
+              </Card>
 
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Reset Anvil</h3>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  disabled={loading.reset}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded transition-colors font-semibold"
-                >
-                  {loading.reset ? "Resetting..." : "Reset Anvil"}
-                </button>
-                <div className="text-sm text-gray-400 mt-2">
-                  Reset the blockchain to genesis state. All data will be lost.
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reset Anvil</CardTitle>
+                  <CardDescription>
+                    Reset the blockchain to genesis state. All data will be
+                    lost.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    onClick={handleReset}
+                    disabled={loading.reset}
+                    variant="destructive"
+                  >
+                    {loading.reset ? "Resetting..." : "Reset Anvil"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }
