@@ -10,6 +10,9 @@ import ForgeTestRunner from "./ForgeTestRunner";
 import AnvilStateManager from "./AnvilStateManager";
 import UnitConverter from "./UnitConverter";
 import ThemeToggle from "./ThemeToggle";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { toast } from "sonner";
 
 export default function Header() {
   const [search, setSearch] = useState("");
@@ -41,7 +44,7 @@ export default function Header() {
       return;
     }
 
-    alert(
+    toast.error(
       "Invalid input. Please enter a block number, transaction hash, or address.",
     );
   };
@@ -60,12 +63,12 @@ export default function Header() {
           </Link>
 
           <form onSubmit={handleSearch} className="flex-1 max-w-xl">
-            <input
+            <Input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by Address / Tx Hash / Block"
-              className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full"
             />
           </form>
 
@@ -128,27 +131,24 @@ export default function Header() {
             <EventStreamManager />
             <ForgeTestRunner />
             <AnvilStateManager />
-            <button
+            <Button
               onClick={() => setShowConverter(true)}
-              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors font-semibold"
+              variant="secondary"
               title="Unit Converter"
             >
               🔧 Converter
-            </button>
+            </Button>
             <ThemeToggle />
-            <button
+            <Button
               onClick={() => setShowBookmarks(true)}
-              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors font-semibold"
+              variant="secondary"
               title="View bookmarks"
             >
               📌 Bookmarks
-            </button>
-            <Link
-              href="/upload-abi"
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors font-semibold"
-            >
-              Upload ABI
-            </Link>
+            </Button>
+            <Button asChild variant="destructive">
+              <Link href="/upload-abi">Upload ABI</Link>
+            </Button>
           </nav>
         </div>
       </div>
