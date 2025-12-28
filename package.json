@@ -1,7 +1,12 @@
 {
-  "name": "ironscout",
+  "name": "furnacescout",
   "version": "0.1.0",
   "private": true,
+  "description": "Unofficial frontend block explorer for Anvil",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FurnaceScout/frontend.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,9 +15,13 @@
     "format": "biome format --write"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.59.20",
     "next": "16.1.1",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "shiki": "^3.20.0",
+    "viem": "^2.21.54",
+    "wagmi": "^2.12.32"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",

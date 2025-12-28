@@ -1,65 +1,168 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { formatEther, shortenAddress } from "@/lib/viem";
+import {
+  useLatestBlocks,
+  useLatestTransactions,
+} from "@/app/hooks/useBlockchain";
 
 export default function Home() {
+  const { blocks, loading: blocksLoading } = useLatestBlocks(10);
+  const { transactions, loading: txLoading } = useLatestTransactions(10, 100);
+
+  const loading = blocksLoading || txLoading;
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-zinc-600 dark:text-zinc-400">
+              Loading blockchain data...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Latest Blocks */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Latest Blocks
+            </h2>
+            <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-sm font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              Live
+            </span>
+          </div>
+          <div className="space-y-3">
+            {blocks.map((block) => (
+              <Link
+                key={block.number.toString()}
+                href={`/block/${block.number}`}
+                className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-red-500 dark:hover:border-red-500 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">📦</span>
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                      Block #{block.number.toString()}
+                    </span>
+                  </div>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {new Date(
+                      Number(block.timestamp) * 1000,
+                    ).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Transactions:
+                    </span>
+                    <span className="ml-2 font-semibold text-zinc-900 dark:text-zinc-100">
+                      {Array.isArray(block.transactions)
+                        ? block.transactions.length
+                        : 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      Gas Used:
+                    </span>
+                    <span className="ml-2 font-semibold text-zinc-900 dark:text-zinc-100">
+                      {block.gasUsed.toString()}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Latest Transactions */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Latest Transactions
+            </h2>
+            <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-sm font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              Live
+            </span>
+          </div>
+          <div className="space-y-3">
+            {transactions.length === 0 ? (
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-8 text-center">
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  No transactions yet
+                </p>
+              </div>
+            ) : (
+              transactions.map((tx) => (
+                <Link
+                  key={tx.hash}
+                  href={`/tx/${tx.hash}`}
+                  className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-red-500 dark:hover:border-red-500 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">📝</span>
+                      <span className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                        {shortenAddress(tx.hash)}
+                      </span>
+                    </div>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                      Block #{tx.blockNumber?.toString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        From:
+                      </span>
+                      <span className="ml-2 font-mono text-zinc-900 dark:text-zinc-100">
+                        {shortenAddress(tx.from)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        To:
+                      </span>
+                      <span className="ml-2 font-mono text-zinc-900 dark:text-zinc-100">
+                        {tx.to ? shortenAddress(tx.to) : "Contract Creation"}
+                      </span>
+                    </div>
+                  </div>
+                  {tx.value && tx.value > 0n && (
+                    <div className="mt-2 text-sm">
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        Value:
+                      </span>
+                      <span className="ml-2 font-semibold text-zinc-900 dark:text-zinc-100">
+                        {formatEther(tx.value)} ETH
+                      </span>
+                    </div>
+                  )}
+                </Link>
+              ))
+            )}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
