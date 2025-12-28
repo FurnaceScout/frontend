@@ -16,6 +16,32 @@ import {
 } from "@/lib/labels";
 import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function LabelsPage() {
   const [labels, setLabels] = useState([]);
@@ -23,11 +49,9 @@ export default function LabelsPage() {
   const [stats, setStats] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
-  const [activeTab, setActiveTab] = useState("labels"); // 'labels' | 'notes' | 'stats'
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState("");
   const [importMerge, setImportMerge] = useState(true);
-  const [importStatus, setImportStatus] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -59,30 +83,28 @@ export default function LabelsPage() {
     setLabels(
       Object.entries(labelsData)
         .map(([address, data]) => ({ address, ...data }))
-        .sort((a, b) => b.timestamp - a.timestamp)
+        .sort((a, b) => b.timestamp - a.timestamp),
     );
 
     setNotes(
       Object.entries(notesData)
         .map(([txHash, data]) => ({ txHash, ...data }))
-        .sort((a, b) => b.timestamp - a.timestamp)
+        .sort((a, b) => b.timestamp - a.timestamp),
     );
 
     setStats(statsData);
   }
 
   function handleDeleteLabel(address) {
-    if (confirm("Are you sure you want to delete this label?")) {
-      deleteAddressLabel(address);
-      loadData();
-    }
+    deleteAddressLabel(address);
+    loadData();
+    toast.success("Label deleted");
   }
 
   function handleDeleteNote(txHash) {
-    if (confirm("Are you sure you want to delete this note?")) {
-      deleteTransactionNote(txHash);
-      loadData();
-    }
+    deleteTransactionNote(txHash);
+    loadData();
+    toast.success("Note deleted");
   }
 
   function handleExport() {
@@ -94,20 +116,21 @@ export default function LabelsPage() {
     a.download = `furnacescout-labels-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Labels and notes exported");
   }
 
   function handleImport() {
-    setImportStatus(null);
     const result = importLabelsAndNotes(importText, importMerge);
-    setImportStatus(result);
 
     if (result.success) {
       loadData();
-      setTimeout(() => {
-        setShowImportModal(false);
-        setImportText("");
-        setImportStatus(null);
-      }, 2000);
+      setShowImportModal(false);
+      setImportText("");
+      toast.success(
+        `Successfully imported ${result.labelsCount} labels and ${result.notesCount} notes`,
+      );
+    } else {
+      toast.error(result.error || "Failed to import");
     }
   }
 
@@ -123,16 +146,9 @@ export default function LabelsPage() {
   }
 
   function handleClearAll() {
-    if (
-      confirm(
-        "Are you sure you want to delete ALL labels and notes? This cannot be undone!"
-      )
-    ) {
-      if (confirm("Really sure? This will delete everything!")) {
-        clearAllLabelsAndNotes();
-        loadData();
-      }
-    }
+    clearAllLabelsAndNotes();
+    loadData();
+    toast.success("All labels and notes cleared");
   }
 
   const displayLabels = searchResults ? searchResults.addresses : labels;
@@ -141,10 +157,8 @@ export default function LabelsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
-          Labels & Notes
-        </h1>
-        <p className="text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-3xl font-bold mb-2">Labels & Notes</h1>
+        <p className="text-muted-foreground">
           Manage your address labels and transaction notes
         </p>
       </div>
@@ -152,28 +166,28 @@ export default function LabelsPage() {
       {/* Search Bar */}
       <div className="mb-6">
         <div className="relative">
-          <input
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search labels and notes..."
-            className="w-full px-4 py-3 pl-12 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="pl-10"
           />
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
             🔍
           </div>
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               ✕
             </button>
           )}
         </div>
         {searchResults && (
-          <div className="text-sm text-zinc-500 mt-2">
+          <div className="text-sm text-muted-foreground mt-2">
             Found {searchResults.addresses.length} label(s) and{" "}
             {searchResults.transactions.length} note(s)
           </div>
@@ -182,385 +196,345 @@ export default function LabelsPage() {
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <button
-          type="button"
-          onClick={handleExport}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-        >
+        <Button onClick={handleExport} variant="secondary">
           📥 Export All
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowImportModal(true)}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors"
-        >
+        </Button>
+        <Button onClick={() => setShowImportModal(true)} variant="secondary">
           📤 Import
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
           onClick={handleClearAll}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors ml-auto"
+          variant="destructive"
+          className="ml-auto"
         >
           🗑️ Clear All
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 mb-6">
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("labels")}
-            className={`px-4 py-2 font-semibold border-b-2 transition-colors ${
-              activeTab === "labels"
-                ? "border-red-500 text-red-600 dark:text-red-400"
-                : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            Labels ({displayLabels.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("notes")}
-            className={`px-4 py-2 font-semibold border-b-2 transition-colors ${
-              activeTab === "notes"
-                ? "border-red-500 text-red-600 dark:text-red-400"
-                : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            Notes ({displayNotes.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("stats")}
-            className={`px-4 py-2 font-semibold border-b-2 transition-colors ${
-              activeTab === "stats"
-                ? "border-red-500 text-red-600 dark:text-red-400"
-                : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            Statistics
-          </button>
-        </div>
-      </div>
+      <Tabs defaultValue="labels" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="labels">
+            Labels{" "}
+            <Badge variant="secondary" className="ml-2">
+              {displayLabels.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="notes">
+            Notes{" "}
+            <Badge variant="secondary" className="ml-2">
+              {displayNotes.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="stats">Statistics</TabsTrigger>
+        </TabsList>
 
-      {/* Labels Tab */}
-      {activeTab === "labels" && (
-        <div>
+        {/* Labels Tab */}
+        <TabsContent value="labels">
           {displayLabels.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-3">🏷️</div>
-              <div className="text-zinc-600 dark:text-zinc-400">
-                {searchQuery ? "No labels found" : "No labels yet"}
-              </div>
-              {!searchQuery && (
-                <div className="text-sm text-zinc-500 mt-2">
-                  Add labels to addresses to organize your testnet work
+            <Card>
+              <CardContent className="text-center py-12">
+                <div className="text-4xl mb-3">🏷️</div>
+                <div className="text-muted-foreground">
+                  {searchQuery ? "No labels found" : "No labels yet"}
                 </div>
-              )}
-            </div>
+                {!searchQuery && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Add labels to addresses to organize your testnet work
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-3">
               {displayLabels.map((label) => (
-                <div
-                  key={label.address}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`px-3 py-1 rounded-lg text-sm font-semibold ${getLabelColorClass(
-                            label.color
-                          )}`}
-                        >
-                          {label.label}
-                        </span>
-                      </div>
-                      <Link
-                        href={`/address/${label.address}`}
-                        className="font-mono text-sm text-red-600 dark:text-red-400 hover:underline"
-                      >
-                        {shortenAddress(label.address, 8)}
-                      </Link>
-                      {label.note && (
-                        <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
-                          {label.note}
+                <Card key={label.address}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge
+                            variant="secondary"
+                            className={getLabelColorClass(label.color)}
+                          >
+                            {label.label}
+                          </Badge>
                         </div>
-                      )}
-                      <div className="text-xs text-zinc-400 mt-2">
-                        {new Date(label.timestamp).toLocaleString()}
+                        <Link
+                          href={`/address/${label.address}`}
+                          className="font-mono text-sm text-primary hover:underline"
+                        >
+                          {shortenAddress(label.address, 8)}
+                        </Link>
+                        {label.note && (
+                          <div className="text-sm text-muted-foreground mt-2">
+                            {label.note}
+                          </div>
+                        )}
+                        <div className="text-xs text-muted-foreground mt-2">
+                          {new Date(label.timestamp).toLocaleString()}
+                        </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLabel(label.address)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Delete
+                      </Button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteLabel(label.address)}
-                      className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Notes Tab */}
-      {activeTab === "notes" && (
-        <div>
+        {/* Notes Tab */}
+        <TabsContent value="notes">
           {displayNotes.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-3">📝</div>
-              <div className="text-zinc-600 dark:text-zinc-400">
-                {searchQuery ? "No notes found" : "No notes yet"}
-              </div>
-              {!searchQuery && (
-                <div className="text-sm text-zinc-500 mt-2">
-                  Add notes to transactions to track your testing
+            <Card>
+              <CardContent className="text-center py-12">
+                <div className="text-4xl mb-3">📝</div>
+                <div className="text-muted-foreground">
+                  {searchQuery ? "No notes found" : "No notes yet"}
                 </div>
-              )}
-            </div>
+                {!searchQuery && (
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Add notes to transactions to track important events
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-3">
               {displayNotes.map((note) => (
-                <div
-                  key={note.txHash}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <Link
-                        href={`/tx/${note.txHash}`}
-                        className="font-mono text-sm text-red-600 dark:text-red-400 hover:underline mb-2 block"
+                <Card key={note.txHash}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="mb-2">
+                          <Link
+                            href={`/tx/${note.txHash}`}
+                            className="font-mono text-sm text-primary hover:underline"
+                          >
+                            {shortenAddress(note.txHash, 10)}
+                          </Link>
+                        </div>
+                        {note.note && (
+                          <div className="text-sm text-foreground mb-2">
+                            {note.note}
+                          </div>
+                        )}
+                        {note.category && (
+                          <Badge variant="outline" className="mb-2">
+                            {note.category}
+                          </Badge>
+                        )}
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(note.timestamp).toLocaleString()}
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteNote(note.txHash)}
+                        className="text-destructive hover:text-destructive"
                       >
-                        {shortenAddress(note.txHash, 12)}
-                      </Link>
-                      <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 whitespace-pre-wrap">
-                        {note.note}
-                      </div>
-                      <div className="text-xs text-zinc-400 mt-2">
-                        {new Date(note.timestamp).toLocaleString()}
-                      </div>
+                        Delete
+                      </Button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteNote(note.txHash)}
-                      className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Statistics Tab */}
-      {activeTab === "stats" && stats && (
-        <div className="space-y-6">
-          {/* Overview Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-              <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">
-                {stats.totalLabels}
+        {/* Statistics Tab */}
+        <TabsContent value="stats">
+          {stats && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Total Labels</CardDescription>
+                    <CardTitle className="text-3xl">
+                      {stats.totalLabels}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Total Notes</CardDescription>
+                    <CardTitle className="text-3xl">
+                      {stats.totalNotes}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Most Used Color</CardDescription>
+                    <CardTitle className="text-3xl">
+                      {stats.mostUsedColor || "—"}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardDescription>Categories</CardDescription>
+                    <CardTitle className="text-3xl">
+                      {stats.categories?.length || 0}
+                    </CardTitle>
+                  </CardHeader>
+                </Card>
               </div>
-              <div className="text-zinc-600 dark:text-zinc-400">
-                Total Labels
-              </div>
-            </div>
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-              <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">
-                {stats.totalNotes}
-              </div>
-              <div className="text-zinc-600 dark:text-zinc-400">
-                Total Notes
-              </div>
-            </div>
-          </div>
 
-          {/* Labels by Color */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Labels by Color
-            </h2>
-            <div className="space-y-2">
-              {LABEL_COLORS.map((color) => {
-                const count = stats.labelsByColor[color.id] || 0;
-                const percentage =
-                  stats.totalLabels > 0
-                    ? ((count / stats.totalLabels) * 100).toFixed(1)
-                    : 0;
+              {/* Color Distribution */}
+              {stats.colorDistribution &&
+                Object.keys(stats.colorDistribution).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Label Colors</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {Object.entries(stats.colorDistribution).map(
+                          ([color, count]) => {
+                            const percentage =
+                              stats.totalLabels > 0
+                                ? (count / stats.totalLabels) * 100
+                                : 0;
 
-                return (
-                  <div key={color.id} className="flex items-center gap-3">
-                    <span
-                      className={`px-3 py-1 rounded text-sm font-semibold min-w-[100px] ${getLabelColorClass(
-                        color.id
-                      )}`}
-                    >
-                      {color.name}
-                    </span>
-                    <div className="flex-1 h-8 bg-zinc-100 dark:bg-zinc-800 rounded overflow-hidden">
-                      <div
-                        className={`h-full ${getLabelColorClass(color.id)} opacity-50`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-zinc-600 dark:text-zinc-400 min-w-[80px] text-right">
-                      {count} ({percentage}%)
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                            return (
+                              <div key={color}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className={getLabelColorClass(color)}
+                                  >
+                                    {color}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    {count} ({percentage.toFixed(0)}%)
+                                  </span>
+                                </div>
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary"
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-          {/* Recent Activity */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-                Recent Labels
-              </h2>
-              {stats.recentLabels.length === 0 ? (
-                <div className="text-center py-4 text-zinc-500">
-                  No labels yet
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {stats.recentLabels.map((label) => (
-                    <div key={label.address} className="text-sm">
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-semibold ${getLabelColorClass(
-                          label.color
-                        )}`}
-                      >
-                        {label.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+              {/* Category Distribution */}
+              {stats.categoryDistribution &&
+                Object.keys(stats.categoryDistribution).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Note Categories</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {Object.entries(stats.categoryDistribution).map(
+                          ([category, count]) => {
+                            const percentage =
+                              stats.totalNotes > 0
+                                ? (count / stats.totalNotes) * 100
+                                : 0;
 
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-                Recent Notes
-              </h2>
-              {stats.recentNotes.length === 0 ? (
-                <div className="text-center py-4 text-zinc-500">
-                  No notes yet
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {stats.recentNotes.map((note) => (
-                    <div
-                      key={note.txHash}
-                      className="text-sm text-zinc-600 dark:text-zinc-400 truncate"
-                    >
-                      {note.note}
-                    </div>
-                  ))}
-                </div>
-              )}
+                            return (
+                              <div key={category}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <Badge variant="outline">{category}</Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    {count} ({percentage.toFixed(0)}%)
+                                  </span>
+                                </div>
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary"
+                                    style={{ width: `${percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Import Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Import Labels & Notes
-            </h2>
+      <Dialog open={showImportModal} onOpenChange={setShowImportModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Labels & Notes</DialogTitle>
+            <DialogDescription>
+              Import a previously exported JSON file containing labels and notes
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Import from file
-              </label>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportFile}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-              />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Upload File</Label>
+              <Input type="file" accept=".json" onChange={handleImportFile} />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Or paste JSON
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="import-text">Or Paste JSON</Label>
               <textarea
+                id="import-text"
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
-                placeholder="Paste exported JSON here..."
-                rows={8}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
+                placeholder='{"labels": {...}, "notes": {...}}'
+                className="w-full px-3 py-2 border border-input rounded-md bg-background font-mono text-xs min-h-[150px] resize-y"
               />
             </div>
 
-            <div className="mb-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={importMerge}
-                  onChange={(e) => setImportMerge(e.target.checked)}
-                  className="w-4 h-4 text-red-600 border-zinc-300 rounded focus:ring-red-500"
-                />
-                <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                  Merge with existing data (uncheck to replace)
-                </span>
-              </label>
-            </div>
-
-            {importStatus && (
-              <div
-                className={`mb-4 p-3 rounded-lg ${
-                  importStatus.success
-                    ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                    : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                }`}
-              >
-                {importStatus.success ? (
-                  <div>
-                    ✓ Successfully imported {importStatus.imported.labels}{" "}
-                    label(s) and {importStatus.imported.notes} note(s)
-                  </div>
-                ) : (
-                  <div>✗ Import failed: {importStatus.error}</div>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={handleImport}
-                disabled={!importText.trim()}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Import
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowImportModal(false);
-                  setImportText("");
-                  setImportStatus(null);
-                }}
-                className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-              >
-                Cancel
-              </button>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="import-merge"
+                checked={importMerge}
+                onChange={(e) => setImportMerge(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="import-merge" className="cursor-pointer">
+                Merge with existing data (uncheck to replace)
+              </Label>
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowImportModal(false);
+                setImportText("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleImport} disabled={!importText.trim()}>
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
