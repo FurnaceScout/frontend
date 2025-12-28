@@ -155,26 +155,6 @@ export default function Home() {
               interact with contracts, track deployments, and manage local chain
               state—all in one place.
             </p>
-
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-              <div className="relative">
-                <Input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by Address / Tx Hash / Block Number"
-                  className="w-full px-6 py-4 pr-12 text-lg shadow-xl"
-                />
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  className="absolute right-0 top-1/2 -translate-y-1/2"
-                >
-                  🔍
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       </div>
