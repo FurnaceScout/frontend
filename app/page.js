@@ -128,11 +128,15 @@ export default function Home() {
       <div className="bg-gradient-to-br from-red-600 via-red-700 to-zinc-900 text-white">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-block mb-4 px-4 py-2 bg-red-900/50 border border-red-400/50 rounded-lg text-sm text-red-100">
+              ⚠️ Unofficial Product - Not affiliated with or supported by the
+              Foundry team
+            </div>
             <h1 className="text-5xl md:text-6xl font-bold mb-4">
               FurnaceScout
             </h1>
             <p className="text-xl md:text-2xl text-red-100 mb-8">
-              Foundry-First Block Explorer for Local Development
+              Unofficial Foundry-First Block Explorer for Local Development
             </p>
             <p className="text-lg text-red-200 mb-12 max-w-2xl mx-auto">
               Built for developers using Foundry and Anvil. Explore blocks,
@@ -400,6 +404,10 @@ export default function Home() {
             FurnaceScout is designed to work seamlessly with your Foundry and
             Anvil workflow. No configuration needed—just point it at your local
             RPC and start exploring.
+          </p>
+          <p className="text-zinc-500 text-sm mb-6">
+            ⚠️ This is an unofficial, community-built tool. Not affiliated with
+            or endorsed by the Foundry team.
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link

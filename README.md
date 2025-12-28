@@ -1,5 +1,7 @@
 # FurnaceScout 🔥
 
+> **⚠️ UNOFFICIAL PROJECT** - This is a community-built tool. Not affiliated with, maintained by, or endorsed by the Foundry team.
+
 > Unofficial frontend block explorer for Foundry's Anvil testnet
 
 A modern, feature-rich block explorer built specifically for Foundry's Anvil, making local Ethereum development easier and more transparent.
@@ -7,6 +9,16 @@ A modern, feature-rich block explorer built specifically for Foundry's Anvil, ma
 ![FurnaceScout](https://img.shields.io/badge/Foundry-Anvil-red?style=flat-square)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+![Unofficial](https://img.shields.io/badge/Status-Unofficial-orange?style=flat-square)
+
+## ⚠️ Disclaimer
+
+**FurnaceScout is an unofficial, community-developed tool.** It is not affiliated with, maintained by, endorsed by, or supported by the Foundry team or Paradigm. This is an independent project created to enhance the local development experience with Foundry and Anvil.
+
+For official Foundry tools and documentation, visit:
+- **Foundry Book**: https://book.getfoundry.sh/
+- **Foundry GitHub**: https://github.com/foundry-rs/foundry
+- **Foundry Support**: https://t.me/foundry_rs
 
 ## Features
 
@@ -71,14 +83,14 @@ docker-compose up -d
 ./docker-start.sh
 
 # Or manually
-docker build -t ironscout .
+docker build -t furnacescout .
 docker run -d \
-  --name ironscout \
+  --name furnacescout \
   -p 3000:3000 \
   -e NEXT_PUBLIC_RPC_URL=http://host.docker.internal:8545 \
   -v $(pwd):/foundry-project:ro \
   --add-host=host.docker.internal:host-gateway \
-  ironscout
+  furnacescout
 ```
 
 See [docs/DOCKER.md](docs/DOCKER.md) for comprehensive Docker documentation.

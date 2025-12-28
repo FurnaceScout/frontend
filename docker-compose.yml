@@ -1,12 +1,12 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  # IronScout Block Explorer
-  ironscout:
+  # FurnaceScout Block Explorer
+  furnacescout:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ironscout
+    container_name: furnacescout
     ports:
       - "3000:3000"
     environment:
@@ -16,12 +16,12 @@ services:
       - NEXT_TELEMETRY_DISABLED=1
     volumes:
       # Mount your Foundry project directory (adjust path as needed)
-      # This allows IronScout to scan broadcast/ and out/ directories
+      # This allows FurnaceScout to scan broadcast/ and out/ directories
       - ./:/foundry-project:ro
       # Optional: Mount another project directory
       # - /path/to/your/foundry/project:/foundry-project:ro
     networks:
-      - ironscout-network
+      - furnacescout-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
@@ -42,7 +42,7 @@ services:
   #   ports:
   #     - "8545:8545"
   #   networks:
-  #     - ironscout-network
+  #     - furnacescout-network
   #   restart: unless-stopped
   #   healthcheck:
   #     test: ["CMD", "cast", "chain-id", "--rpc-url", "http://localhost:8545"]
@@ -51,7 +51,7 @@ services:
   #     retries: 5
 
 networks:
-  ironscout-network:
+  furnacescout-network:
     driver: bridge
 
 # To use this docker-compose setup:
@@ -64,6 +64,6 @@ networks:
 #    docker-compose up -d
 #
 # 3. To mount a different Foundry project:
-#    docker-compose run -v /path/to/project:/foundry-project:ro ironscout
+#    docker-compose run -v /path/to/project:/foundry-project:ro furnacescout
 #
-# 4. Access IronScout at: http://localhost:3000
+# 4. Access FurnaceScout at: http://localhost:3000

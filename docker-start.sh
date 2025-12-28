@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 
-# IronScout Docker Quick Start Script
-# This script helps you quickly get IronScout running in Docker
+# FurnaceScout Docker Quick Start Script
+# This script helps you quickly get FurnaceScout running in Docker
 
 set -e
+
+# Detect if we need sudo for Docker
+DOCKER_SUDO=""
+if ! docker info &> /dev/null; then
+    if sudo docker info &> /dev/null; then
+        DOCKER_SUDO="sudo"
+        echo "Note: Using sudo for Docker commands (user not in docker group)"
+    fi
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,7 +24,7 @@ NC='\033[0m' # No Color
 # Default configuration
 DEFAULT_RPC_URL="http://host.docker.internal:8545"
 DEFAULT_PORT=3000
-CONTAINER_NAME="ironscout"
+CONTAINER_NAME="furnacescout"
 
 # Print colored output
 print_info() {
@@ -37,7 +46,7 @@ print_error() {
 print_header() {
     echo ""
     echo -e "${BLUE}================================${NC}"
-    echo -e "${BLUE}   IronScout Docker Launcher${NC}"
+    echo -e "${BLUE}   FurnaceScout Docker Launcher${NC}"
     echo -e "${BLUE}================================${NC}"
     echo ""
 }
@@ -50,11 +59,18 @@ check_docker() {
         exit 1
     fi
     print_success "Docker is installed"
+
+    # Check permissions and suggest fix if needed
+    if [ -n "$DOCKER_SUDO" ]; then
+        print_warning "Docker requires sudo. Consider adding yourself to docker group:"
+        echo "  sudo usermod -aG docker \$USER"
+        echo "  newgrp docker"
+    fi
 }
 
 # Check if Docker is running
 check_docker_running() {
-    if ! docker info &> /dev/null; then
+    if ! $DOCKER_SUDO docker info &> /dev/null; then
         print_error "Docker is not running. Please start Docker first."
         exit 1
     fi
@@ -77,22 +93,29 @@ check_anvil() {
 
 # Stop existing container
 stop_existing() {
-    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+    if $DOCKER_SUDO docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         print_info "Stopping existing ${CONTAINER_NAME} container..."
-        docker stop ${CONTAINER_NAME} &> /dev/null || true
-        docker rm ${CONTAINER_NAME} &> /dev/null || true
+        $DOCKER_SUDO docker stop ${CONTAINER_NAME} &> /dev/null || true
+        $DOCKER_SUDO docker rm ${CONTAINER_NAME} &> /dev/null || true
         print_success "Removed existing container"
     fi
 }
 
 # Build Docker image
 build_image() {
-    print_info "Building IronScout Docker image..."
-    if docker build -t ironscout:latest . > /tmp/ironscout-build.log 2>&1; then
+    local log_file="/tmp/furnacescout-build-$$.log"
+    print_info "Building FurnaceScout Docker image..."
+    if $DOCKER_SUDO docker build -t furnacescout:latest . > "$log_file" 2>&1; then
         print_success "Docker image built successfully"
+        rm -f "$log_file"
     else
         print_error "Failed to build Docker image"
-        echo "Check /tmp/ironscout-build.log for details"
+        if [ -f "$log_file" ]; then
+            echo "Check $log_file for details"
+            echo ""
+            echo "Last 20 lines of build log:"
+            tail -20 "$log_file"
+        fi
         exit 1
     fi
 }
@@ -103,10 +126,10 @@ start_container() {
     local port=$2
     local project_path=$3
 
-    print_info "Starting IronScout container..."
+    print_info "Starting FurnaceScout container..."
 
     # Build docker run command
-    local docker_cmd="docker run -d \
+    local docker_cmd="$DOCKER_SUDO docker run -d \
         --name ${CONTAINER_NAME} \
         -p ${port}:3000 \
         -e NEXT_PUBLIC_RPC_URL=${rpc_url} \
@@ -130,10 +153,10 @@ start_container() {
     docker_cmd="${docker_cmd} --restart unless-stopped"
 
     # Run the container
-    docker_cmd="${docker_cmd} ironscout:latest"
+    docker_cmd="${docker_cmd} furnacescout:latest"
 
     if eval $docker_cmd; then
-        print_success "IronScout container started"
+        print_success "FurnaceScout container started"
         return 0
     else
         print_error "Failed to start container"
@@ -144,14 +167,14 @@ start_container() {
 # Wait for container to be healthy
 wait_for_health() {
     local port=$1
-    print_info "Waiting for IronScout to be ready..."
+    print_info "Waiting for FurnaceScout to be ready..."
 
     local max_attempts=30
     local attempt=0
 
     while [ $attempt -lt $max_attempts ]; do
         if curl -s http://localhost:${port}/ > /dev/null 2>&1; then
-            print_success "IronScout is ready!"
+            print_success "FurnaceScout is ready!"
             return 0
         fi
         attempt=$((attempt + 1))
@@ -258,14 +281,14 @@ main() {
     # Handle stop-only
     if [ "$stop_only" = true ]; then
         stop_existing
-        print_success "IronScout stopped"
+        print_success "FurnaceScout stopped"
         exit 0
     fi
 
     # Handle logs-only
     if [ "$show_logs" = true ]; then
-        print_info "Showing IronScout logs (Ctrl+C to exit)..."
-        docker logs -f ${CONTAINER_NAME}
+        print_info "Showing FurnaceScout logs (Ctrl+C to exit)..."
+        $DOCKER_SUDO docker logs -f ${CONTAINER_NAME}
         exit 0
     fi
 
@@ -291,9 +314,9 @@ main() {
             print_error "docker-compose.yml not found"
             exit 1
         fi
-        docker-compose up -d
+        $DOCKER_SUDO docker-compose up -d
         print_success "Started with docker-compose"
-        docker-compose ps
+        $DOCKER_SUDO docker-compose ps
         exit 0
     fi
 
@@ -301,7 +324,7 @@ main() {
     stop_existing
 
     # Build or rebuild image
-    if [ "$force_build" = true ] || ! docker images | grep -q "ironscout"; then
+    if [ "$force_build" = true ] || ! $DOCKER_SUDO docker images | grep -q "furnacescout"; then
         build_image
     else
         print_info "Using existing Docker image (use --build to rebuild)"
@@ -314,7 +337,7 @@ main() {
         wait_for_health "$port"
 
         echo ""
-        print_success "🚀 IronScout is running!"
+        print_success "🚀 FurnaceScout is running!"
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo -e "${GREEN}  URL:${NC}         http://localhost:${port}"
@@ -328,14 +351,14 @@ main() {
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         echo "Useful commands:"
-        echo "  View logs:       docker logs -f ${CONTAINER_NAME}"
-        echo "  Stop container:  docker stop ${CONTAINER_NAME}"
-        echo "  Restart:         docker restart ${CONTAINER_NAME}"
+        echo "  View logs:       ${DOCKER_SUDO} docker logs -f ${CONTAINER_NAME}"
+        echo "  Stop container:  ${DOCKER_SUDO} docker stop ${CONTAINER_NAME}"
+        echo "  Restart:         ${DOCKER_SUDO} docker restart ${CONTAINER_NAME}"
         echo "  Stop script:     $0 --stop"
         echo "  Show logs:       $0 --logs"
         echo ""
     else
-        print_error "Failed to start IronScout"
+        print_error "Failed to start FurnaceScout"
         echo "Check logs with: docker logs ${CONTAINER_NAME}"
         exit 1
     fi
