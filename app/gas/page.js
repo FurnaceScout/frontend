@@ -9,6 +9,36 @@ import {
 } from "@/lib/gas-profiling";
 import { formatEther, shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import { Badge } from "@/app/components/ui/badge";
 
 export default function GasAnalyticsPage() {
   const [topConsumers, setTopConsumers] = useState([]);
@@ -16,8 +46,7 @@ export default function GasAnalyticsPage() {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [blockRange, setBlockRange] = useState(100);
-  const [activeTab, setActiveTab] = useState("consumers"); // 'consumers' | 'trends' | 'stats'
+  const [blockRange, setBlockRange] = useState("100");
 
   useEffect(() => {
     loadData();
@@ -27,10 +56,11 @@ export default function GasAnalyticsPage() {
     try {
       setLoading(true);
 
+      const blockCount = parseInt(blockRange);
       const [consumersData, trendsData, statsData] = await Promise.all([
-        getTopGasConsumers(blockRange, 10),
-        getGasTrends(blockRange, 20),
-        getGasStatistics(blockRange),
+        getTopGasConsumers(blockCount, 10),
+        getGasTrends(blockCount, 20),
+        getGasStatistics(blockCount),
       ]);
 
       setTopConsumers(consumersData);
@@ -53,7 +83,7 @@ export default function GasAnalyticsPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       </div>
     );
@@ -63,165 +93,131 @@ export default function GasAnalyticsPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-            ⛽ Gas Profiling Dashboard
-          </h1>
+          <h1 className="text-3xl font-bold">⛽ Gas Profiling Dashboard</h1>
           <div className="flex items-center gap-3">
-            <select
-              value={blockRange}
-              onChange={(e) => setBlockRange(Number(e.target.value))}
-              className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              <option value={50}>Last 50 blocks</option>
-              <option value={100}>Last 100 blocks</option>
-              <option value={200}>Last 200 blocks</option>
-              <option value={500}>Last 500 blocks</option>
-            </select>
-            <button
+            <Select value={blockRange} onValueChange={setBlockRange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Block range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="50">Last 50 blocks</SelectItem>
+                <SelectItem value="100">Last 100 blocks</SelectItem>
+                <SelectItem value="200">Last 200 blocks</SelectItem>
+                <SelectItem value="500">Last 500 blocks</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 disabled:opacity-50 transition-colors"
+              variant="default"
             >
               {refreshing ? "Refreshing..." : "🔄 Refresh"}
-            </button>
+            </Button>
           </div>
         </div>
-        <p className="text-zinc-600 dark:text-zinc-400">
-          Analyze gas consumption patterns and identify optimization opportunities
+        <p className="text-muted-foreground">
+          Analyze gas consumption patterns and identify optimization
+          opportunities
         </p>
       </div>
 
       {/* Summary Cards */}
       {statistics && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <div className="text-sm text-zinc-500 mb-1">Total Gas Used</div>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">
-              {formatGas(statistics.totalGasUsed, "M")}M
-            </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">
-              Last {blockRange} blocks
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Gas Used</CardDescription>
+              <CardTitle className="text-2xl text-red-600 dark:text-red-400">
+                {formatGas(statistics.totalGasUsed, "M")}M
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Last {blockRange} blocks
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <div className="text-sm text-zinc-500 mb-1">Avg Gas/Block</div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-              {formatGas(statistics.averageGasUsedPerBlock, "M")}M
-            </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">
-              Per block average
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Avg Gas/Block</CardDescription>
+              <CardTitle className="text-2xl text-blue-600 dark:text-blue-400">
+                {formatGas(statistics.averageGasUsedPerBlock, "M")}M
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">Per block average</p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <div className="text-sm text-zinc-500 mb-1">Avg Gas/Tx</div>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
-              {formatGas(statistics.averageGasPerTransaction, "K")}K
-            </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">
-              Per transaction average
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Avg Gas/Tx</CardDescription>
+              <CardTitle className="text-2xl text-green-600 dark:text-green-400">
+                {formatGas(statistics.averageGasPerTransaction, "K")}K
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Per transaction average
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <div className="text-sm text-zinc-500 mb-1">Gas Utilization</div>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-              {statistics.overallUtilization.toFixed(1)}%
-            </div>
-            <div className="text-xs text-zinc-600 dark:text-zinc-400">
-              Of block gas limit
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Gas Utilization</CardDescription>
+              <CardTitle className="text-2xl text-purple-600 dark:text-purple-400">
+                {statistics.overallUtilization.toFixed(1)}%
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Of block gas limit
+              </p>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 mb-6">
-        <div className="flex gap-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("consumers")}
-            className={`px-4 py-2 font-semibold border-b-2 transition-colors ${
-              activeTab === "consumers"
-                ? "border-red-500 text-red-600 dark:text-red-400"
-                : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            Top Consumers
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("trends")}
-            className={`px-4 py-2 font-semibold border-b-2 transition-colors ${
-              activeTab === "trends"
-                ? "border-red-500 text-red-600 dark:text-red-400"
-                : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            Gas Trends
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("stats")}
-            className={`px-4 py-2 font-semibold border-b-2 transition-colors ${
-              activeTab === "stats"
-                ? "border-red-500 text-red-600 dark:text-red-400"
-                : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-            }`}
-          >
-            Statistics
-          </button>
-        </div>
-      </div>
+      <Tabs defaultValue="consumers" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="consumers">Top Consumers</TabsTrigger>
+          <TabsTrigger value="trends">Gas Trends</TabsTrigger>
+          <TabsTrigger value="stats">Statistics</TabsTrigger>
+        </TabsList>
 
-      {/* Top Gas Consumers Tab */}
-      {activeTab === "consumers" && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-            Top Gas Consuming Contracts
-          </h2>
-
-          {topConsumers.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-3">⛽</div>
-              <div className="text-zinc-600 dark:text-zinc-400">
-                No contract interactions found
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-                      Rank
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-                      Contract
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-                      Total Gas
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-                      Transactions
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-                      Avg Gas/Tx
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-semibold text-zinc-600 dark:text-zinc-400">
-                      Success Rate
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topConsumers.map((consumer, index) => (
-                    <tr
-                      key={consumer.address}
-                      className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
+        {/* Top Gas Consumers Tab */}
+        <TabsContent value="consumers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Gas Consuming Contracts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topConsumers.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-3">⛽</div>
+                  <div className="text-muted-foreground">
+                    No contract interactions found
+                  </div>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Rank</TableHead>
+                      <TableHead>Contract</TableHead>
+                      <TableHead className="text-right">Total Gas</TableHead>
+                      <TableHead className="text-right">Transactions</TableHead>
+                      <TableHead className="text-right">Avg Gas/Tx</TableHead>
+                      <TableHead className="text-right">Success Rate</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topConsumers.map((consumer, index) => (
+                      <TableRow key={consumer.address}>
+                        <TableCell>
                           <span
                             className={`text-lg font-bold ${
                               index === 0
@@ -230,262 +226,325 @@ export default function GasAnalyticsPage() {
                                   ? "text-gray-400"
                                   : index === 2
                                     ? "text-orange-600"
-                                    : "text-zinc-600 dark:text-zinc-400"
+                                    : "text-muted-foreground"
                             }`}
                           >
-                            {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`}
+                            {index === 0
+                              ? "🥇"
+                              : index === 1
+                                ? "🥈"
+                                : index === 2
+                                  ? "🥉"
+                                  : `#${index + 1}`}
                           </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Link
-                          href={`/address/${consumer.address}`}
-                          className="font-mono text-sm text-red-600 dark:text-red-400 hover:underline"
-                        >
-                          {shortenAddress(consumer.address, 6)}
-                        </Link>
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                        {formatGas(consumer.totalGasUsed, "M")}M
-                      </td>
-                      <td className="py-3 px-4 text-right text-sm text-zinc-900 dark:text-zinc-100">
-                        {consumer.transactionCount}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                        {formatGas(consumer.averageGasPerTx, "K")}K
-                      </td>
-                      <td className="py-3 px-4 text-right text-sm">
-                        <span
-                          className={`font-semibold ${
-                            consumer.successRate === 100
-                              ? "text-green-600 dark:text-green-400"
-                              : consumer.successRate >= 50
-                                ? "text-yellow-600 dark:text-yellow-400"
-                                : "text-red-600 dark:text-red-400"
-                          }`}
-                        >
-                          {consumer.successRate.toFixed(1)}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Gas Trends Tab */}
-      {activeTab === "trends" && (
-        <div className="space-y-6">
-          {/* Gas Usage Over Time */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Gas Usage Over Time
-            </h2>
-
-            {trends.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-4xl mb-3">📊</div>
-                <div className="text-zinc-600 dark:text-zinc-400">
-                  No trend data available
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {trends.map((trend, index) => {
-                  const maxGas = Math.max(...trends.map((t) => Number(t.totalGasUsed)));
-                  const width = maxGas > 0 ? (Number(trend.totalGasUsed) / maxGas) * 100 : 0;
-
-                  return (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="text-xs text-zinc-500 w-24 text-right">
-                        Block {trend.blockNumber}
-                      </div>
-                      <div className="flex-1 h-10 bg-zinc-100 dark:bg-zinc-800 rounded overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all flex items-center px-2"
-                          style={{ width: `${width}%` }}
-                        >
-                          {width > 15 && (
-                            <span className="text-xs text-white font-semibold">
-                              {formatGas(trend.totalGasUsed, "M")}M
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-xs text-zinc-600 dark:text-zinc-400 w-20 text-right">
-                        {trend.transactionCount} tx
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Gas Utilization Over Time */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Block Gas Utilization
-            </h2>
-
-            {trends.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-4xl mb-3">📈</div>
-                <div className="text-zinc-600 dark:text-zinc-400">
-                  No utilization data available
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {trends.map((trend, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className="text-xs text-zinc-500 w-24 text-right">
-                      Block {trend.blockNumber}
-                    </div>
-                    <div className="flex-1 h-8 bg-zinc-100 dark:bg-zinc-800 rounded overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${
-                          trend.gasUtilization > 80
-                            ? "bg-red-500"
-                            : trend.gasUtilization > 50
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                        }`}
-                        style={{ width: `${trend.gasUtilization}%` }}
-                      />
-                    </div>
-                    <div className="text-sm text-zinc-900 dark:text-zinc-100 w-20 text-right font-semibold">
-                      {trend.gasUtilization.toFixed(1)}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Statistics Tab */}
-      {activeTab === "stats" && statistics && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Gas Usage Stats */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-                Gas Usage
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Total Gas Used</div>
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    {formatGas(statistics.totalGasUsed, "M")}M
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Total Gas Limit</div>
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    {formatGas(statistics.totalGasLimit, "M")}M
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Average Gas/Block</div>
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    {formatGas(statistics.averageGasUsedPerBlock, "M")}M
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Average Gas/Transaction</div>
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    {formatGas(statistics.averageGasPerTransaction, "K")}K
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Gas Price Stats */}
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-                Gas Prices
-              </h2>
-              <div className="space-y-4">
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Average Gas Price</div>
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    {formatGas(statistics.averageGasPrice, "gwei")} Gwei
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Min Gas Price</div>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {formatGas(statistics.minGasPrice, "gwei")} Gwei
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Max Gas Price</div>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {formatGas(statistics.maxGasPrice, "gwei")} Gwei
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-zinc-500 mb-1">Total Transactions</div>
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                    {statistics.totalTransactions.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Utilization Bar */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">
-              Overall Gas Utilization
-            </h2>
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {formatGas(statistics.totalGasUsed, "M")}M used
-                </span>
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {formatGas(statistics.totalGasLimit, "M")}M limit
-                </span>
-              </div>
-              <div className="h-12 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
-                <div
-                  className={`h-full flex items-center justify-center font-bold text-white transition-all ${
-                    statistics.overallUtilization > 80
-                      ? "bg-red-500"
-                      : statistics.overallUtilization > 50
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                  }`}
-                  style={{ width: `${statistics.overallUtilization}%` }}
-                >
-                  {statistics.overallUtilization.toFixed(2)}%
-                </div>
-              </div>
-            </div>
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">
-              {statistics.overallUtilization > 80 ? (
-                <span className="text-red-600 dark:text-red-400">
-                  ⚠️ High utilization - blocks are nearly full
-                </span>
-              ) : statistics.overallUtilization > 50 ? (
-                <span className="text-yellow-600 dark:text-yellow-400">
-                  ⚡ Moderate utilization - good activity level
-                </span>
-              ) : (
-                <span className="text-green-600 dark:text-green-400">
-                  ✓ Low utilization - plenty of capacity available
-                </span>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/address/${consumer.address}`}
+                            className="font-mono text-sm text-primary hover:underline"
+                          >
+                            {shortenAddress(consumer.address, 6)}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">
+                          {formatGas(consumer.totalGasUsed, "M")}M
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {consumer.transactionCount}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-sm">
+                          {formatGas(consumer.averageGasPerTx, "K")}K
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={
+                              consumer.successRate === 100
+                                ? "default"
+                                : consumer.successRate >= 50
+                                  ? "secondary"
+                                  : "destructive"
+                            }
+                          >
+                            {consumer.successRate.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
-            </div>
-          </div>
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Gas Trends Tab */}
+        <TabsContent value="trends" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gas Usage Over Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {trends.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-3">📊</div>
+                  <div className="text-muted-foreground">
+                    No trend data available
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {trends.map((trend, index) => {
+                    const maxGas = Math.max(
+                      ...trends.map((t) => Number(t.totalGasUsed)),
+                    );
+                    const width =
+                      maxGas > 0
+                        ? (Number(trend.totalGasUsed) / maxGas) * 100
+                        : 0;
+
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-4 py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors"
+                      >
+                        <div className="flex-shrink-0 w-20">
+                          <Link
+                            href={`/block/${trend.blockNumber}`}
+                            className="text-sm font-mono text-primary hover:underline"
+                          >
+                            #{trend.blockNumber}
+                          </Link>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-end px-2"
+                                style={{ width: `${width}%` }}
+                              >
+                                {width > 20 && (
+                                  <span className="text-xs font-semibold text-white">
+                                    {formatGas(trend.totalGasUsed, "M")}M
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {width <= 20 && (
+                              <span className="text-xs font-mono text-muted-foreground">
+                                {formatGas(trend.totalGasUsed, "M")}M
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{trend.transactionCount} txs</span>
+                            <span>•</span>
+                            <span>
+                              {trend.utilization.toFixed(1)}% utilized
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Gas Price Distribution */}
+          {statistics && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Gas Price Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Min Gas Price
+                      </div>
+                      <div className="text-lg font-bold">
+                        {formatEther(statistics.minGasPrice)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">ETH</div>
+                    </div>
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Avg Gas Price
+                      </div>
+                      <div className="text-lg font-bold">
+                        {formatEther(statistics.averageGasPrice)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">ETH</div>
+                    </div>
+                    <div className="text-center p-4 bg-muted rounded-lg">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Max Gas Price
+                      </div>
+                      <div className="text-lg font-bold">
+                        {formatEther(statistics.maxGasPrice)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">ETH</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Statistics Tab */}
+        <TabsContent value="stats">
+          {statistics && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Detailed Statistics</CardTitle>
+                <CardDescription>
+                  Analysis of {blockRange} blocks
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Gas Usage */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Gas Usage</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Total Gas Used
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatGas(statistics.totalGasUsed, "M")}M
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Total Gas Limit
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatGas(statistics.totalGasLimit, "M")}M
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Avg Gas/Block
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatGas(statistics.averageGasUsedPerBlock, "M")}M
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Avg Gas/Tx
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatGas(statistics.averageGasPerTransaction, "K")}K
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Block Utilization */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Block Utilization</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Overall Utilization
+                        </span>
+                        <Badge variant="secondary">
+                          {statistics.overallUtilization.toFixed(1)}%
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Min Utilization
+                        </span>
+                        <span className="font-semibold">
+                          {statistics.minUtilization.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Max Utilization
+                        </span>
+                        <span className="font-semibold">
+                          {statistics.maxUtilization.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Blocks Analyzed
+                        </span>
+                        <span className="font-semibold">
+                          {statistics.blockCount}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction Stats */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Transactions</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Total Transactions
+                        </span>
+                        <span className="font-semibold">
+                          {statistics.totalTransactions.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Avg Txs/Block
+                        </span>
+                        <span className="font-semibold">
+                          {(
+                            statistics.totalTransactions / statistics.blockCount
+                          ).toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gas Prices */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-lg">Gas Prices</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Min Gas Price
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatEther(statistics.minGasPrice)} ETH
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Avg Gas Price
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatEther(statistics.averageGasPrice)} ETH
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Max Gas Price
+                        </span>
+                        <span className="font-mono font-semibold">
+                          {formatEther(statistics.maxGasPrice)} ETH
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
