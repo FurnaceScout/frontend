@@ -46,3 +46,8 @@ bun.lockb
 # OS
 .DS_Store
 Thumbs.db
+
+# MD Files
+*.md
+!README.md
+!**/README.md
