@@ -79,6 +79,12 @@ export default function Header() {
               Dashboard
             </Link>
             <Link
+              href="/deployments"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              Deployments
+            </Link>
+            <Link
               href="/cast-builder"
               className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
             >
