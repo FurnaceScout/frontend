@@ -7,6 +7,20 @@ import {
   isBookmarked,
   getBookmarkByHash,
 } from "@/lib/bookmarks";
+import { Button } from "@/app/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { toast } from "sonner";
 
 export default function BookmarkButton({ hash, defaultLabel = "" }) {
   const [bookmarked, setBookmarked] = useState(false);
@@ -42,16 +56,19 @@ export default function BookmarkButton({ hash, defaultLabel = "" }) {
       setBookmarked(true);
       setShowDialog(false);
       setError("");
+      toast.success("Bookmark saved successfully");
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     }
   };
 
   const handleRemove = () => {
     const existing = getBookmarkByHash(hash);
-    if (existing && confirm("Remove this bookmark?")) {
+    if (existing) {
       removeBookmark(existing.id);
       setBookmarked(false);
+      toast.success("Bookmark removed");
     }
   };
 
@@ -67,82 +84,69 @@ export default function BookmarkButton({ hash, defaultLabel = "" }) {
 
   return (
     <>
-      <button
+      <Button
         onClick={bookmarked ? handleRemove : handleAdd}
-        className={`px-4 py-2 rounded font-semibold transition-colors ${
-          bookmarked
-            ? "bg-red-500 text-white hover:bg-red-600"
-            : "bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-600"
-        }`}
+        variant={bookmarked ? "destructive" : "secondary"}
         title={bookmarked ? "Remove bookmark" : "Bookmark this transaction"}
       >
         {bookmarked ? "★ Bookmarked" : "☆ Bookmark"}
-      </button>
+      </Button>
 
-      {/* Dialog */}
-      {showDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-              📌 Bookmark Transaction
-            </h2>
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>📌 Bookmark Transaction</DialogTitle>
+            <DialogDescription>
+              Add a label and notes to bookmark this transaction for easy
+              reference.
+            </DialogDescription>
+          </DialogHeader>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-400 text-sm">
-                {error}
-              </div>
-            )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Label *
-              </label>
-              <input
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="bookmark-label">
+                Label <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="bookmark-label"
                 type="text"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="e.g., Failed swap attempt"
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
                 autoFocus
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Notes (optional)
-              </label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="bookmark-notes">Notes (optional)</Label>
+              <Textarea
+                id="bookmark-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add any notes about this transaction..."
                 rows={3}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 resize-none"
               />
             </div>
 
-            <div className="mb-4">
-              <div className="text-xs text-zinc-500 break-all">
-                Transaction: {hash}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-red-500 text-white rounded font-semibold hover:bg-red-600 transition-colors"
-              >
-                Save Bookmark
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
-              >
-                Cancel
-              </button>
+            <div className="text-xs text-muted-foreground break-all">
+              Transaction: {hash}
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>Save Bookmark</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

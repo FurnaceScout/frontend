@@ -6,6 +6,28 @@ import {
   saveTransactionNote,
   deleteTransactionNote,
 } from "@/lib/labels";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Label } from "@/app/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export default function TransactionNote({ txHash }) {
   const [note, setNote] = useState(null);
@@ -36,6 +58,7 @@ export default function TransactionNote({ txHash }) {
       saveTransactionNote(txHash, editNote);
       setIsEditing(false);
       loadNote();
+      toast.success("Note saved successfully");
     }
   }
 
@@ -44,112 +67,108 @@ export default function TransactionNote({ txHash }) {
   }
 
   function handleDelete() {
-    if (confirm("Are you sure you want to delete this note?")) {
-      deleteTransactionNote(txHash);
-      setIsEditing(false);
-      loadNote();
-    }
+    deleteTransactionNote(txHash);
+    setIsEditing(false);
+    loadNote();
+    toast.success("Note deleted");
   }
 
   if (isEditing) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-          {note ? "Edit Note" : "Add Note"}
-        </h3>
-
-        {/* Note Input */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-            Transaction Note
-          </label>
-          <textarea
-            value={editNote}
-            onChange={(e) => setEditNote(e.target.value)}
-            placeholder="Add notes about this transaction (e.g., deployment details, test scenario, etc.)"
-            rows={4}
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-            maxLength={1000}
-          />
-          <div className="text-xs text-zinc-500 mt-1">
-            {editNote.length}/1000 characters
+      <Card>
+        <CardHeader>
+          <CardTitle>{note ? "Edit Note" : "Add Note"}</CardTitle>
+          <CardDescription>
+            Add notes about this transaction (e.g., deployment details, test
+            scenario, etc.)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="transaction-note">Transaction Note</Label>
+            <Textarea
+              id="transaction-note"
+              value={editNote}
+              onChange={(e) => setEditNote(e.target.value)}
+              placeholder="Add notes about this transaction..."
+              rows={4}
+              maxLength={1000}
+            />
+            <div className="text-xs text-muted-foreground">
+              {editNote.length}/1000 characters
+            </div>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!editNote.trim()}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Save Note
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-          >
-            Cancel
-          </button>
-          {note && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg font-semibold hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors ml-auto"
-            >
-              Delete Note
-            </button>
-          )}
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
+            <Button onClick={handleSave} disabled={!editNote.trim()}>
+              Save Note
+            </Button>
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            {note && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="ml-auto">
+                    Delete Note
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Note?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this note? This action
+                      cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (note) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                📝 Transaction Note
-              </span>
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-base">📝 Transaction Note</CardTitle>
+              <CardDescription className="mt-2 whitespace-pre-wrap">
+                {note.note}
+              </CardDescription>
+              <div className="text-xs text-muted-foreground mt-2">
+                Added {new Date(note.timestamp).toLocaleDateString()}
+              </div>
             </div>
-            <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-2 whitespace-pre-wrap">
-              {note.note}
-            </div>
-            <div className="text-xs text-zinc-400 mt-2">
-              Added {new Date(note.timestamp).toLocaleDateString()}
-            </div>
+            <Button variant="ghost" size="sm" onClick={handleEdit}>
+              Edit
+            </Button>
           </div>
-          <button
-            type="button"
-            onClick={handleEdit}
-            className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-          >
-            Edit
-          </button>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-          No note for this transaction
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            No note for this transaction
+          </div>
+          <Button onClick={handleEdit}>+ Add Note</Button>
         </div>
-        <button
-          type="button"
-          onClick={handleEdit}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
-        >
-          + Add Note
-        </button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

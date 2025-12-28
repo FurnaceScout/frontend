@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAddressLabel, getLabelColorClass } from "@/lib/labels";
 import Link from "next/link";
+import { Badge } from "@/app/components/ui/badge";
 
 export default function LabelBadge({ address, showLink = false }) {
   const [label, setLabel] = useState(null);
@@ -27,15 +28,21 @@ export default function LabelBadge({ address, showLink = false }) {
 
   if (!label) return null;
 
+  // Map legacy color classes to shadcn badge variants
+  const getVariant = (color) => {
+    // Since shadcn Badge has limited variants (default, secondary, destructive, outline),
+    // we'll use className for custom colors
+    return "secondary";
+  };
+
   const badge = (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${getLabelColorClass(
-        label.color,
-      )}`}
+    <Badge
+      variant={getVariant(label.color)}
+      className={getLabelColorClass(label.color)}
       title={label.note || label.label}
     >
       🏷️ {label.label}
-    </span>
+    </Badge>
   );
 
   if (showLink) {
