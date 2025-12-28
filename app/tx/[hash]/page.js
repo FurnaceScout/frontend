@@ -6,6 +6,7 @@ import { decodeTransactionInput, decodeLogs } from "@/lib/contract-decoder";
 import Link from "next/link";
 import TransactionTrace from "@/app/components/TransactionTrace";
 import BookmarkButton from "@/app/components/BookmarkButton";
+import StateDiffViewer from "@/app/components/StateDiffViewer";
 
 export default function TransactionPage({ params }) {
   const { hash } = use(params);
@@ -265,6 +266,11 @@ export default function TransactionPage({ params }) {
           </div>
         </div>
       )}
+
+      {/* State Changes */}
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 mb-8">
+        <StateDiffViewer transactionHash={hash} receipt={receipt} />
+      </div>
 
       {/* Transaction Trace */}
       <TransactionTrace hash={hash} />
