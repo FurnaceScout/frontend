@@ -3,6 +3,16 @@
 import { useState } from "react";
 import { formatEther, shortenAddress } from "@/lib/viem";
 import { useChainInfo, useWatchBalances } from "@/app/hooks/useBlockchain";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import { toast } from "sonner";
 
 // Anvil's default test accounts
 const ANVIL_ACCOUNTS = [
@@ -70,11 +80,9 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
 
   const copyToClipboard = async (text, label) => {
     try {
-      // Try modern clipboard API first
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback for non-HTTPS or older browsers
         const textArea = document.createElement("textarea");
         textArea.value = text;
         textArea.style.position = "fixed";
@@ -91,98 +99,120 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
         document.body.removeChild(textArea);
       }
       setCopiedItem(label);
+      toast.success("Copied to clipboard!");
       setTimeout(() => setCopiedItem(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
+      toast.error("Failed to copy");
     }
   };
 
   if (loading) {
-    return <div className="text-sm text-zinc-500">Loading Anvil status...</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Anvil Status</CardTitle>
+          <CardDescription>Loading Anvil status...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
   if (!chainInfo) {
     return (
-      <div className="text-sm text-red-500">⚠️ Cannot connect to Anvil</div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Anvil Status</CardTitle>
+          <CardDescription className="text-destructive">
+            ⚠️ Cannot connect to Anvil
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg">
+    <Card>
       {/* Header - Always Visible */}
-      <button
-        onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors rounded-t-lg"
-      >
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </div>
-          <div>
-            <div className="font-semibold text-zinc-900 dark:text-zinc-100 text-left">
-              Anvil Connected
+      <CardHeader>
+        <Button
+          variant="ghost"
+          onClick={onToggle}
+          className="w-full justify-between h-auto p-0 hover:bg-transparent"
+        >
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
             </div>
-            <div className="text-xs text-zinc-500 text-left">
-              Chain ID: {chainInfo.chainId} | Block: {chainInfo.blockNumber}
+            <div className="text-left">
+              <CardTitle className="text-base">Anvil Connected</CardTitle>
+              <CardDescription>
+                Chain ID: {chainInfo.chainId} | Block: {chainInfo.blockNumber}
+              </CardDescription>
             </div>
           </div>
-        </div>
-        <div className="text-zinc-400">{expanded ? "▼" : "▶"}</div>
-      </button>
+          <span className="text-muted-foreground">{expanded ? "▼" : "▶"}</span>
+        </Button>
+      </CardHeader>
 
       {/* Expanded Content */}
       {expanded && (
-        <div className="border-t border-zinc-200 dark:border-zinc-800">
+        <CardContent className="pt-0 space-y-4">
           {/* Chain Info */}
-          <div className="p-4 grid grid-cols-3 gap-4 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
             <div>
-              <div className="text-xs text-zinc-500 mb-1">Chain ID</div>
-              <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <div className="text-xs text-muted-foreground mb-1">Chain ID</div>
+              <div className="font-mono text-sm font-semibold">
                 {chainInfo.chainId}
               </div>
             </div>
             <div>
-              <div className="text-xs text-zinc-500 mb-1">Current Block</div>
-              <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <div className="text-xs text-muted-foreground mb-1">
+                Current Block
+              </div>
+              <div className="font-mono text-sm font-semibold">
                 {chainInfo.blockNumber}
               </div>
             </div>
             <div>
-              <div className="text-xs text-zinc-500 mb-1">Gas Price</div>
-              <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <div className="text-xs text-muted-foreground mb-1">
+                Gas Price
+              </div>
+              <div className="font-mono text-sm font-semibold">
                 {(Number(chainInfo.gasPrice) / 1e9).toFixed(2)} Gwei
               </div>
             </div>
           </div>
 
           {/* Test Accounts */}
-          <div className="p-4">
+          <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                Test Accounts
-              </h3>
-              <div className="text-xs text-zinc-500">
+              <h3 className="font-semibold">Test Accounts</h3>
+              <Badge variant="secondary">
                 {ANVIL_ACCOUNTS.length} accounts
-              </div>
+              </Badge>
             </div>
 
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {ANVIL_ACCOUNTS.map((account, index) => (
                 <div
                   key={account.address}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded border border-zinc-200 dark:border-zinc-700"
+                  className="p-3 bg-muted rounded-lg border"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center text-xs font-bold text-red-600 dark:text-red-400">
+                      <Badge
+                        variant="default"
+                        className="w-6 h-6 rounded-full p-0 flex items-center justify-center"
+                      >
                         {index}
-                      </div>
-                      <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                      </Badge>
+                      <div className="font-mono text-sm">
                         {shortenAddress(account.address, 6)}
                       </div>
                     </div>
-                    <div className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+                    <div className="font-semibold text-sm">
                       {balances[account.address.toLowerCase()]
                         ? `${formatEther(balances[account.address.toLowerCase()], 2)} ETH`
                         : "Loading..."}
@@ -190,26 +220,30 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
                   </div>
 
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={() =>
                         copyToClipboard(account.address, `addr-${index}`)
                       }
-                      className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-colors"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
                     >
                       {copiedItem === `addr-${index}`
                         ? "✓ Copied"
                         : "📋 Address"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() =>
                         copyToClipboard(account.privateKey, `key-${index}`)
                       }
-                      className="flex-1 px-2 py-1 text-xs bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-colors"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
                     >
                       {copiedItem === `key-${index}`
                         ? "✓ Copied"
                         : "🔑 Private Key"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -217,25 +251,29 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
           </div>
 
           {/* Quick Actions */}
-          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
-            <div className="text-xs text-zinc-500 mb-2">Quick Actions</div>
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="text-xs text-muted-foreground mb-2">
+              Quick Actions
+            </div>
             <div className="flex gap-2">
-              <button
+              <Button
                 onClick={() => window.location.reload()}
-                className="px-3 py-1.5 text-xs bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-colors font-semibold"
+                variant="outline"
+                size="sm"
               >
                 🔄 Refresh
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => copyToClipboard("http://127.0.0.1:8545", "rpc")}
-                className="px-3 py-1.5 text-xs bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-colors font-semibold"
+                variant="outline"
+                size="sm"
               >
                 {copiedItem === "rpc" ? "✓ Copied" : "📋 Copy RPC URL"}
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }
