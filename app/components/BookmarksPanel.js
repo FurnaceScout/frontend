@@ -11,6 +11,18 @@ import {
 } from "@/lib/bookmarks";
 import Link from "next/link";
 import { shortenAddress } from "@/lib/viem";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/app/components/ui/sheet";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { toast } from "sonner";
 
 export default function BookmarksPanel({ isOpen, onClose }) {
   const [bookmarks, setBookmarks] = useState([]);
@@ -34,10 +46,9 @@ export default function BookmarksPanel({ isOpen, onClose }) {
   };
 
   const handleRemove = (id) => {
-    if (confirm("Remove this bookmark?")) {
-      removeBookmark(id);
-      loadBookmarks();
-    }
+    removeBookmark(id);
+    loadBookmarks();
+    toast.success("Bookmark removed");
   };
 
   const handleEdit = (bookmark) => {
@@ -54,8 +65,9 @@ export default function BookmarksPanel({ isOpen, onClose }) {
       });
       setEditingId(null);
       loadBookmarks();
+      toast.success("Bookmark updated");
     } catch (error) {
-      alert("Failed to update bookmark: " + error.message);
+      toast.error("Failed to update bookmark: " + error.message);
     }
   };
 
@@ -74,51 +86,32 @@ export default function BookmarksPanel({ isOpen, onClose }) {
     a.download = `furnacescout-bookmarks-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Bookmarks exported");
   };
 
   const handleClearAll = () => {
     clearAllBookmarks();
     loadBookmarks();
+    toast.success("All bookmarks cleared");
   };
 
-  if (!isOpen) return null;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-      ></div>
-
-      {/* Panel */}
-      <div className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-zinc-900 shadow-2xl z-50 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-3">
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             <span className="text-2xl">📌</span>
-            <div>
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                Bookmarks
-              </h2>
-              <p className="text-sm text-zinc-500">
-                {bookmarks.length} saved transaction
-                {bookmarks.length !== 1 ? "s" : ""}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-            title="Close"
-          >
-            ✕
-          </button>
-        </div>
+            <span>Bookmarks</span>
+          </SheetTitle>
+          <SheetDescription>
+            {bookmarks.length} saved transaction
+            {bookmarks.length !== 1 ? "s" : ""}
+          </SheetDescription>
+        </SheetHeader>
 
         {/* Search & Actions */}
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-3">
-          <input
+        <div className="space-y-3 mt-6">
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => {
@@ -126,133 +119,134 @@ export default function BookmarksPanel({ isOpen, onClose }) {
               setTimeout(loadBookmarks, 100);
             }}
             placeholder="Search bookmarks..."
-            className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm"
           />
 
           {bookmarks.length > 0 && (
             <div className="flex gap-2">
-              <button
-                onClick={handleExport}
-                className="px-3 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors font-semibold"
-              >
+              <Button onClick={handleExport} variant="secondary" size="sm">
                 📥 Export
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="px-3 py-1.5 text-xs bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors font-semibold"
-              >
+              </Button>
+              <Button onClick={handleClearAll} variant="destructive" size="sm">
                 🗑️ Clear All
-              </button>
+              </Button>
             </div>
           )}
         </div>
 
         {/* Bookmarks List */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="mt-6">
           {bookmarks.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📌</div>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-2">
-                {searchQuery ? "No bookmarks found" : "No bookmarks yet"}
-              </p>
-              <p className="text-sm text-zinc-400 dark:text-zinc-500">
-                {searchQuery
-                  ? "Try a different search query"
-                  : "Bookmark transactions to save them for later"}
-              </p>
-            </div>
+            <Card>
+              <CardContent className="text-center py-12">
+                <div className="text-6xl mb-4">📌</div>
+                <p className="text-muted-foreground mb-2">
+                  {searchQuery ? "No bookmarks found" : "No bookmarks yet"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {searchQuery
+                    ? "Try a different search query"
+                    : "Bookmark transactions to save them for later"}
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-3">
               {bookmarks.map((bookmark) => (
-                <div
+                <Card
                   key={bookmark.id}
-                  className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:border-red-500 dark:hover:border-red-500 transition-colors"
+                  className="hover:border-primary transition-colors"
                 >
-                  {editingId === bookmark.id ? (
-                    // Edit Mode
-                    <div className="space-y-3">
-                      <input
-                        type="text"
-                        value={editLabel}
-                        onChange={(e) => setEditLabel(e.target.value)}
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-semibold"
-                      />
-                      <textarea
-                        value={editNotes}
-                        onChange={(e) => setEditNotes(e.target.value)}
-                        rows={2}
-                        className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm resize-none"
-                        placeholder="Notes..."
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleSaveEdit(bookmark.id)}
-                          className="px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors font-semibold"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="px-3 py-1.5 text-xs bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors font-semibold"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    // View Mode
-                    <>
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <Link
-                            href={`/tx/${bookmark.hash}`}
-                            onClick={onClose}
-                            className="font-semibold text-zinc-900 dark:text-zinc-100 hover:text-red-500 dark:hover:text-red-400 transition-colors block"
+                  <CardContent className="pt-4">
+                    {editingId === bookmark.id ? (
+                      // Edit Mode
+                      <div className="space-y-3">
+                        <Input
+                          type="text"
+                          value={editLabel}
+                          onChange={(e) => setEditLabel(e.target.value)}
+                          className="font-semibold"
+                        />
+                        <textarea
+                          value={editNotes}
+                          onChange={(e) => setEditNotes(e.target.value)}
+                          rows={2}
+                          className="w-full px-3 py-2 border border-input rounded-md bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                          placeholder="Notes..."
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleSaveEdit(bookmark.id)}
+                            size="sm"
                           >
-                            {bookmark.label}
-                          </Link>
-                          <div className="text-xs text-zinc-500 font-mono mt-1">
-                            {shortenAddress(bookmark.hash, 8)}
+                            Save
+                          </Button>
+                          <Button
+                            onClick={handleCancelEdit}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View Mode
+                      <>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <Link
+                              href={`/tx/${bookmark.hash}`}
+                              onClick={onClose}
+                              className="font-semibold hover:text-primary transition-colors block"
+                            >
+                              {bookmark.label}
+                            </Link>
+                            <div className="text-xs text-muted-foreground font-mono mt-1">
+                              {shortenAddress(bookmark.hash, 8)}
+                            </div>
+                          </div>
+                          <div className="flex gap-1 ml-2">
+                            <Button
+                              onClick={() => handleEdit(bookmark)}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Edit"
+                            >
+                              ✏️
+                            </Button>
+                            <Button
+                              onClick={() => handleRemove(bookmark.id)}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                              title="Remove"
+                            >
+                              🗑️
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex gap-1 ml-2">
-                          <button
-                            onClick={() => handleEdit(bookmark)}
-                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors text-sm"
-                            title="Edit"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleRemove(bookmark.id)}
-                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 transition-colors text-sm"
-                            title="Remove"
-                          >
-                            🗑️
-                          </button>
+
+                        {bookmark.notes && (
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {bookmark.notes}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {new Date(bookmark.createdAt).toLocaleDateString()}
+                          </Badge>
                         </div>
-                      </div>
-
-                      {bookmark.notes && (
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                          {bookmark.notes}
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-2 text-xs text-zinc-400">
-                        <span>📅</span>
-                        <span>
-                          {new Date(bookmark.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }

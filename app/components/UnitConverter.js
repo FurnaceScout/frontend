@@ -1,10 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Card, CardContent } from "@/app/components/ui/card";
 
 export default function UnitConverter({ isOpen, onClose }) {
-  const [activeTab, setActiveTab] = useState("wei"); // 'wei' | 'hex' | 'time'
-
   // Wei/Gwei/ETH converter state
   const [wei, setWei] = useState("");
   const [gwei, setGwei] = useState("");
@@ -153,293 +169,239 @@ export default function UnitConverter({ isOpen, onClose }) {
     setDateValue("");
   }
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            🔧 Unit Converter
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-2xl"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>🔧 Unit Converter</DialogTitle>
+          <DialogDescription>
+            Convert between common blockchain units and formats
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Tabs */}
-        <div className="border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex">
-            <button
-              type="button"
-              onClick={() => setActiveTab("wei")}
-              className={`flex-1 px-4 py-3 font-semibold border-b-2 transition-colors ${
-                activeTab === "wei"
-                  ? "border-red-500 text-red-600 dark:text-red-400"
-                  : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-              }`}
-            >
-              Wei / ETH
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("hex")}
-              className={`flex-1 px-4 py-3 font-semibold border-b-2 transition-colors ${
-                activeTab === "hex"
-                  ? "border-red-500 text-red-600 dark:text-red-400"
-                  : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-              }`}
-            >
-              Hex / Decimal
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("time")}
-              className={`flex-1 px-4 py-3 font-semibold border-b-2 transition-colors ${
-                activeTab === "time"
-                  ? "border-red-500 text-red-600 dark:text-red-400"
-                  : "border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-              }`}
-            >
-              Timestamp
-            </button>
-          </div>
-        </div>
+        <Tabs defaultValue="wei" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="wei">Wei / ETH</TabsTrigger>
+            <TabsTrigger value="hex">Hex / Decimal</TabsTrigger>
+            <TabsTrigger value="time">Timestamp</TabsTrigger>
+          </TabsList>
 
-        {/* Content */}
-        <div className="p-6">
           {/* Wei/Gwei/ETH Tab */}
-          {activeTab === "wei" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Wei
-                </label>
-                <input
-                  type="text"
-                  value={wei}
-                  onChange={(e) => handleWeiChange(e.target.value)}
-                  placeholder="1000000000000000000"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
+          <TabsContent value="wei" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="wei">Wei</Label>
+              <Input
+                id="wei"
+                type="text"
+                value={wei}
+                onChange={(e) => handleWeiChange(e.target.value)}
+                placeholder="1000000000000000000"
+                className="font-mono"
+              />
+            </div>
+
+            <div className="flex items-center justify-center text-muted-foreground">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
                 />
-              </div>
+              </svg>
+            </div>
 
-              <div className="flex items-center justify-center text-zinc-400">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                  />
-                </svg>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="gwei">Gwei</Label>
+              <Input
+                id="gwei"
+                type="text"
+                value={gwei}
+                onChange={(e) => handleGweiChange(e.target.value)}
+                placeholder="1000000000"
+                className="font-mono"
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Gwei
-                </label>
-                <input
-                  type="text"
-                  value={gwei}
-                  onChange={(e) => handleGweiChange(e.target.value)}
-                  placeholder="1000000000"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
+            <div className="flex items-center justify-center text-muted-foreground">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
                 />
-              </div>
+              </svg>
+            </div>
 
-              <div className="flex items-center justify-center text-zinc-400">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                  />
-                </svg>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="eth">ETH</Label>
+              <Input
+                id="eth"
+                type="text"
+                value={eth}
+                onChange={(e) => handleEthChange(e.target.value)}
+                placeholder="1.0"
+                className="font-mono"
+              />
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  ETH
-                </label>
-                <input
-                  type="text"
-                  value={eth}
-                  onChange={(e) => handleEthChange(e.target.value)}
-                  placeholder="1.0"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-700 dark:text-blue-400">
-                <div className="font-semibold mb-1">Conversion Reference:</div>
-                <div className="space-y-1 font-mono text-xs">
+            <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+              <CardContent className="pt-4">
+                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-2">
+                  Conversion Reference:
+                </div>
+                <div className="space-y-1 font-mono text-xs text-blue-600 dark:text-blue-300">
                   <div>1 ETH = 1,000,000,000 Gwei</div>
                   <div>1 ETH = 1,000,000,000,000,000,000 Wei</div>
                   <div>1 Gwei = 1,000,000,000 Wei</div>
                 </div>
-              </div>
-            </div>
-          )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Hex/Decimal Tab */}
-          {activeTab === "hex" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Hexadecimal
-                </label>
-                <input
-                  type="text"
-                  value={hexValue}
-                  onChange={(e) => handleHexChange(e.target.value)}
-                  placeholder="0x1a4"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
+          <TabsContent value="hex" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="hex">Hexadecimal</Label>
+              <Input
+                id="hex"
+                type="text"
+                value={hexValue}
+                onChange={(e) => handleHexChange(e.target.value)}
+                placeholder="0x1a4"
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Can start with or without '0x' prefix
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center text-muted-foreground">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
                 />
-                <div className="text-xs text-zinc-500 mt-1">
-                  Can start with or without '0x' prefix
+              </svg>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="decimal">Decimal</Label>
+              <Input
+                id="decimal"
+                type="text"
+                value={decValue}
+                onChange={(e) => handleDecChange(e.target.value)}
+                placeholder="420"
+                className="font-mono"
+              />
+            </div>
+
+            <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900">
+              <CardContent className="pt-4">
+                <div className="font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                  Common Use Cases:
                 </div>
-              </div>
-
-              <div className="flex items-center justify-center text-zinc-400">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Decimal
-                </label>
-                <input
-                  type="text"
-                  value={decValue}
-                  onChange={(e) => handleDecChange(e.target.value)}
-                  placeholder="420"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 text-sm text-purple-700 dark:text-purple-400">
-                <div className="font-semibold mb-1">Common Use Cases:</div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1 text-xs text-purple-600 dark:text-purple-300">
                   <div>• Block numbers (decimal to hex for JSON-RPC)</div>
                   <div>• Token amounts in contract calls</div>
                   <div>• Gas limits and prices</div>
                   <div>• Method IDs and function selectors</div>
                 </div>
-              </div>
-            </div>
-          )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Timestamp Tab */}
-          {activeTab === "time" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Unix Timestamp (seconds)
-                </label>
-                <input
-                  type="text"
-                  value={unixTimestamp}
-                  onChange={(e) => handleUnixChange(e.target.value)}
-                  placeholder="1704067200"
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
+          <TabsContent value="time" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="unix">Unix Timestamp (seconds)</Label>
+              <Input
+                id="unix"
+                type="text"
+                value={unixTimestamp}
+                onChange={(e) => handleUnixChange(e.target.value)}
+                placeholder="1704067200"
+                className="font-mono"
+              />
+            </div>
 
-              <div className="flex items-center justify-center text-zinc-400">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                  />
-                </svg>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={dateValue}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="w-full px-4 py-3 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSetNow}
-                className="w-full px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition-colors"
+            <div className="flex items-center justify-center text-muted-foreground">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                📅 Set to Current Time
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                />
+              </svg>
+            </div>
 
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-sm text-green-700 dark:text-green-400">
-                <div className="font-semibold mb-1">Block Timestamps:</div>
-                <div className="space-y-1 text-xs">
-                  <div>• Block timestamps are in Unix time (seconds since 1970)</div>
+            <div className="space-y-2">
+              <Label htmlFor="datetime">Date & Time</Label>
+              <Input
+                id="datetime"
+                type="datetime-local"
+                value={dateValue}
+                onChange={(e) => handleDateChange(e.target.value)}
+              />
+            </div>
+
+            <Button
+              onClick={handleSetNow}
+              variant="secondary"
+              className="w-full"
+            >
+              📅 Set to Current Time
+            </Button>
+
+            <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+              <CardContent className="pt-4">
+                <div className="font-semibold text-green-700 dark:text-green-400 mb-2">
+                  Block Timestamps:
+                </div>
+                <div className="space-y-1 text-xs text-green-600 dark:text-green-300">
+                  <div>
+                    • Block timestamps are in Unix time (seconds since 1970)
+                  </div>
                   <div>• Useful for testing time-based contract logic</div>
                   <div>• Anvil can manipulate block timestamps</div>
                 </div>
-              </div>
-            </div>
-          )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={clearAll}
-              className="flex-1 px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-lg font-semibold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
-            >
-              Clear All
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+        <DialogFooter className="gap-2">
+          <Button onClick={clearAll} variant="outline">
+            Clear All
+          </Button>
+          <Button onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
