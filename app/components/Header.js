@@ -100,6 +100,12 @@ export default function Header() {
             >
               🏷️ Labels
             </Link>
+            <Link
+              href="/stats"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              📊 Stats
+            </Link>
             <FoundryProjectManager />
             <EventStreamManager />
             <ForgeTestRunner />

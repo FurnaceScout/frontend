@@ -8,6 +8,7 @@ import {
 } from "@/app/hooks/useBlockchain";
 import { useState, useEffect } from "react";
 import { usePublicClient } from "wagmi";
+import NetworkStatsWidget from "@/app/components/NetworkStatsWidget";
 
 export default function Home() {
   const { blocks, loading: blocksLoading } = useLatestBlocks(5);
@@ -379,6 +380,11 @@ export default function Home() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Network Stats Widget */}
+        <div className="max-w-7xl mx-auto mt-12">
+          <NetworkStatsWidget />
         </div>
       </div>
 
