@@ -83,7 +83,7 @@ export function useLatestBlocks(count = 10) {
             publicClient.getBlock({
               blockNumber: blockNumber - BigInt(i),
               includeTransactions: true,
-            })
+            }),
           );
         }
 
@@ -201,7 +201,9 @@ export function useWatchBalances(addresses) {
     const fetchBalances = async () => {
       try {
         const balancePromises = addresses.map((address) =>
-          publicClient.getBalance({ address }).then((bal) => ({ address, balance: bal }))
+          publicClient
+            .getBalance({ address })
+            .then((bal) => ({ address, balance: bal })),
         );
 
         const results = await Promise.all(balancePromises);
@@ -292,4 +294,225 @@ export function useWatchBlock(blockNumberOrTag) {
   }, [blockNumberOrTag, latestBlock]);
 
   return { block, loading };
+}
+
+/**
+ * Hook for watching contract events in real-time
+ */
+export function useWatchEvents(options = {}) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const unwatchRef = useRef(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const startWatching = async () => {
+      try {
+        const watchParams = {
+          onLogs: (logs) => {
+            if (mounted) {
+              setEvents((prev) => [...logs, ...prev].slice(0, 100));
+              setLoading(false);
+            }
+          },
+          onError: (err) => {
+            console.error("Error watching events:", err);
+            if (mounted) {
+              setError(err);
+            }
+          },
+          pollingInterval: 1000,
+        };
+
+        // Add filters
+        if (options.address) {
+          watchParams.address = options.address;
+        }
+
+        if (options.event) {
+          watchParams.event = options.event;
+        }
+
+        if (options.args) {
+          watchParams.args = options.args;
+        }
+
+        // Start watching
+        const unwatch = publicClient.watchEvent(watchParams);
+        unwatchRef.current = unwatch;
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to start watching events:", err);
+        if (mounted) {
+          setError(err);
+          setLoading(false);
+        }
+      }
+    };
+
+    startWatching();
+
+    return () => {
+      mounted = false;
+      if (unwatchRef.current) {
+        unwatchRef.current();
+      }
+    };
+  }, [options.address, options.event]);
+
+  return { events, loading, error };
+}
+
+/**
+ * Hook for event streaming with persistence
+ */
+export function useEventStream(subscriptionId) {
+  const [events, setEvents] = useState([]);
+  const [subscription, setSubscription] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !subscriptionId) return;
+
+    // Import dynamically to avoid SSR issues
+    import("@/lib/event-streaming").then((module) => {
+      const manager = module.getSubscriptionManager();
+      if (!manager) return;
+
+      // Get subscription
+      const sub = manager.getSubscription(subscriptionId);
+      setSubscription(sub);
+
+      // Get stored events for this subscription
+      const storedEvents = module.getStoredEvents({ subscriptionId });
+      setEvents(storedEvents);
+      setLoading(false);
+
+      // Listen for new events
+      const unregister = manager.on((event) => {
+        if (
+          event.subscriptionId === subscriptionId &&
+          event.type === "events"
+        ) {
+          setEvents((prev) => [...event.events, ...prev].slice(0, 100));
+          setSubscription({
+            ...sub,
+            eventCount: sub.eventCount + event.events.length,
+          });
+        }
+      });
+
+      return () => {
+        unregister();
+      };
+    });
+  }, [subscriptionId]);
+
+  return { events, subscription, loading };
+}
+
+/**
+ * Hook for managing event subscriptions
+ */
+export function useEventSubscriptions() {
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadSubscriptions = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    import("@/lib/event-streaming").then((module) => {
+      const manager = module.getSubscriptionManager();
+      if (manager) {
+        setSubscriptions(manager.getAllSubscriptions());
+        setLoading(false);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    loadSubscriptions();
+  }, [loadSubscriptions]);
+
+  const createSubscription = useCallback(
+    async (options) => {
+      if (typeof window === "undefined") return null;
+
+      const module = await import("@/lib/event-streaming");
+      const manager = module.getSubscriptionManager();
+      if (!manager) return null;
+
+      const sub = await manager.subscribe(options);
+      loadSubscriptions();
+      return sub;
+    },
+    [loadSubscriptions],
+  );
+
+  const updateSubscription = useCallback(
+    (id, updates) => {
+      if (typeof window === "undefined") return null;
+
+      import("@/lib/event-streaming").then((module) => {
+        const manager = module.getSubscriptionManager();
+        if (manager) {
+          manager.updateSubscription(id, updates);
+          loadSubscriptions();
+        }
+      });
+    },
+    [loadSubscriptions],
+  );
+
+  const deleteSubscription = useCallback(
+    (id) => {
+      if (typeof window === "undefined") return;
+
+      import("@/lib/event-streaming").then((module) => {
+        const manager = module.getSubscriptionManager();
+        if (manager) {
+          manager.deleteSubscription(id);
+          loadSubscriptions();
+        }
+      });
+    },
+    [loadSubscriptions],
+  );
+
+  const startAll = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    import("@/lib/event-streaming").then((module) => {
+      const manager = module.getSubscriptionManager();
+      if (manager) {
+        manager.startAll();
+        loadSubscriptions();
+      }
+    });
+  }, [loadSubscriptions]);
+
+  const stopAll = useCallback(() => {
+    if (typeof window === "undefined") return;
+
+    import("@/lib/event-streaming").then((module) => {
+      const manager = module.getSubscriptionManager();
+      if (manager) {
+        manager.stopAll();
+        loadSubscriptions();
+      }
+    });
+  }, [loadSubscriptions]);
+
+  return {
+    subscriptions,
+    loading,
+    createSubscription,
+    updateSubscription,
+    deleteSubscription,
+    startAll,
+    stopAll,
+    refresh: loadSubscriptions,
+  };
 }
