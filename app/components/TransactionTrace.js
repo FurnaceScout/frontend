@@ -14,7 +14,7 @@ export default function TransactionTrace({ hash }) {
   const [opcodeTrace, setOpcodeTrace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("callTree"); // callTree, opcodes, storage
+  const [viewMode, setViewMode] = useState("callTree"); // callTree, opcodes, storage, memory
   const [expandedCalls, setExpandedCalls] = useState(new Set(["root"]));
   const [selectedStep, setSelectedStep] = useState(null);
 
@@ -139,6 +139,16 @@ export default function TransactionTrace({ hash }) {
           >
             💾 Storage ({storageChanges.length})
           </button>
+          <button
+            onClick={() => setViewMode("memory")}
+            className={`px-4 py-2 rounded text-sm font-semibold transition-colors ${
+              viewMode === "memory"
+                ? "bg-red-500 text-white"
+                : "bg-white dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-600"
+            }`}
+          >
+            🧠 Memory
+          </button>
         </div>
       </div>
 
@@ -160,8 +170,14 @@ export default function TransactionTrace({ hash }) {
           />
         )}
 
-        {viewMode === "storage" && (
-          <StorageView changes={storageChanges} />
+        {viewMode === "storage" && <StorageView changes={storageChanges} />}
+
+        {viewMode === "memory" && opcodeTrace && (
+          <MemoryView
+            structLogs={opcodeTrace.structLogs}
+            selectedStep={selectedStep}
+            setSelectedStep={setSelectedStep}
+          />
         )}
       </div>
     </div>
@@ -202,12 +218,12 @@ function CallTreeView({ trace, expandedCalls, toggleCall }) {
                   call.type === "CALL"
                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                     : call.type === "DELEGATECALL"
-                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-                    : call.type === "STATICCALL"
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                    : call.type === "CREATE" || call.type === "CREATE2"
-                    ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                      : call.type === "STATICCALL"
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                        : call.type === "CREATE" || call.type === "CREATE2"
+                          ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
                 }`}
               >
                 {call.type}
@@ -261,7 +277,7 @@ function CallTreeView({ trace, expandedCalls, toggleCall }) {
         {isExpanded && hasChildren && (
           <div>
             {call.calls.map((subCall, idx) =>
-              renderCall(subCall, depth + 1, `${id}-${idx}`)
+              renderCall(subCall, depth + 1, `${id}-${idx}`),
             )}
           </div>
         )}
@@ -426,7 +442,10 @@ function OpcodesView({ structLogs, selectedStep, setSelectedStep }) {
                       .slice()
                       .reverse()
                       .map((item, idx) => (
-                        <div key={idx} className="text-zinc-700 dark:text-zinc-300">
+                        <div
+                          key={idx}
+                          className="text-zinc-700 dark:text-zinc-300"
+                        >
                           [{idx}] {item}
                         </div>
                       ))}
@@ -491,6 +510,238 @@ function StorageView({ changes }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// Memory View Component
+function MemoryView({ structLogs, selectedStep, setSelectedStep }) {
+  const [memoryOffset, setMemoryOffset] = useState(0);
+  const bytesPerRow = 32;
+
+  // Get memory from selected step or first step with memory
+  const currentStep = selectedStep !== null ? selectedStep : 0;
+  const stepData = structLogs[currentStep];
+  const memory = stepData?.memory || [];
+
+  // Parse hex memory strings into bytes
+  const parseMemory = (memArray) => {
+    if (!memArray || memArray.length === 0) return [];
+
+    // Memory comes as array of hex strings (32 bytes each)
+    const allBytes = [];
+    memArray.forEach((chunk) => {
+      // Remove 0x prefix if present
+      const hex = chunk.startsWith("0x") ? chunk.slice(2) : chunk;
+      // Each pair of hex chars is one byte
+      for (let i = 0; i < hex.length; i += 2) {
+        allBytes.push(hex.slice(i, i + 2));
+      }
+    });
+    return allBytes;
+  };
+
+  const memoryBytes = parseMemory(memory);
+  const totalBytes = memoryBytes.length;
+  const maxOffset = Math.max(
+    0,
+    Math.floor(totalBytes / bytesPerRow) * bytesPerRow,
+  );
+
+  // Get visible rows
+  const startByte = memoryOffset;
+  const endByte = Math.min(startByte + bytesPerRow * 16, totalBytes);
+  const visibleBytes = memoryBytes.slice(startByte, endByte);
+
+  // Format bytes into rows
+  const rows = [];
+  for (let i = 0; i < visibleBytes.length; i += bytesPerRow) {
+    const rowBytes = visibleBytes.slice(i, i + bytesPerRow);
+    const offset = startByte + i;
+    rows.push({ offset, bytes: rowBytes });
+  }
+
+  // Convert bytes to ASCII (printable chars only)
+  const bytesToAscii = (bytes) => {
+    return bytes
+      .map((b) => {
+        const code = parseInt(b, 16);
+        return code >= 32 && code <= 126 ? String.fromCharCode(code) : ".";
+      })
+      .join("");
+  };
+
+  // Copy memory to clipboard
+  const copyMemory = () => {
+    const hex = memoryBytes.join("");
+    navigator.clipboard.writeText("0x" + hex);
+  };
+
+  // Navigate steps
+  const goToPrevStep = () => {
+    if (currentStep > 0) setSelectedStep(currentStep - 1);
+  };
+
+  const goToNextStep = () => {
+    if (currentStep < structLogs.length - 1) setSelectedStep(currentStep + 1);
+  };
+
+  // Find steps with memory changes
+  const stepsWithMemory = structLogs
+    .map((log, idx) => ({
+      idx,
+      hasMemory: log.memory && log.memory.length > 0,
+    }))
+    .filter((s) => s.hasMemory)
+    .map((s) => s.idx);
+
+  return (
+    <div>
+      {/* Controls */}
+      <div className="mb-4 space-y-3">
+        {/* Step Navigation */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToPrevStep}
+              disabled={currentStep === 0}
+              className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-200 dark:hover:bg-zinc-600"
+            >
+              ← Prev
+            </button>
+            <div className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded text-sm font-mono">
+              Step{" "}
+              <span className="font-bold text-red-600 dark:text-red-400">
+                {currentStep}
+              </span>{" "}
+              / {structLogs.length - 1}
+            </div>
+            <button
+              onClick={goToNextStep}
+              disabled={currentStep === structLogs.length - 1}
+              className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-200 dark:hover:bg-zinc-600"
+            >
+              Next →
+            </button>
+          </div>
+
+          <div className="flex-1"></div>
+
+          <div className="text-sm">
+            <span className="text-zinc-500">Opcode:</span>{" "}
+            <span className="font-mono font-semibold text-red-600 dark:text-red-400">
+              {stepData?.op || "N/A"}
+            </span>
+          </div>
+
+          <button
+            onClick={copyMemory}
+            disabled={totalBytes === 0}
+            className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-sm font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            📋 Copy All
+          </button>
+        </div>
+
+        {/* Memory offset navigation */}
+        {totalBytes > bytesPerRow * 16 && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() =>
+                setMemoryOffset(Math.max(0, memoryOffset - bytesPerRow * 16))
+              }
+              disabled={memoryOffset === 0}
+              className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ⬆️ Page Up
+            </button>
+            <div className="text-sm text-zinc-500">
+              Offset: 0x{memoryOffset.toString(16).padStart(4, "0")} - 0x
+              {endByte.toString(16).padStart(4, "0")}
+            </div>
+            <button
+              onClick={() =>
+                setMemoryOffset(
+                  Math.min(maxOffset, memoryOffset + bytesPerRow * 16),
+                )
+              }
+              disabled={endByte >= totalBytes}
+              className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              ⬇️ Page Down
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Memory Display */}
+      {totalBytes === 0 ? (
+        <div className="text-center py-12 text-zinc-500">
+          No memory allocated at step {currentStep}
+        </div>
+      ) : (
+        <div className="border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
+          {/* Header */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 p-2 grid grid-cols-[100px_1fr_200px] gap-4 text-xs font-semibold text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
+            <div>Offset</div>
+            <div>Hex Dump</div>
+            <div>ASCII</div>
+          </div>
+
+          {/* Memory Rows */}
+          <div className="bg-white dark:bg-zinc-900 max-h-[600px] overflow-y-auto">
+            {rows.map((row, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-[100px_1fr_200px] gap-4 p-2 font-mono text-xs border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/30"
+              >
+                {/* Offset */}
+                <div className="text-zinc-500">
+                  0x{row.offset.toString(16).padStart(4, "0")}
+                </div>
+
+                {/* Hex bytes */}
+                <div className="text-zinc-700 dark:text-zinc-300 font-mono">
+                  {row.bytes.map((byte, i) => (
+                    <span key={i} className="mr-1">
+                      {byte}
+                      {(i + 1) % 8 === 0 && i < row.bytes.length - 1 && (
+                        <span className="mr-2"></span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+
+                {/* ASCII */}
+                <div className="text-zinc-500">{bytesToAscii(row.bytes)}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 p-2 text-xs text-zinc-500 border-t border-zinc-200 dark:border-zinc-800">
+            Total Memory: {totalBytes} bytes (0x{totalBytes.toString(16)})
+            {stepsWithMemory.length > 0 && (
+              <span className="ml-4">
+                • {stepsWithMemory.length} steps with memory data
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Info */}
+      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm">
+        <div className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+          💡 Memory View Tips
+        </div>
+        <ul className="text-blue-800 dark:text-blue-200 text-xs space-y-1 list-disc list-inside">
+          <li>Navigate steps to see how memory changes during execution</li>
+          <li>Each row shows 32 bytes in hexadecimal format</li>
+          <li>ASCII column shows printable characters (. for non-printable)</li>
+          <li>Use Page Up/Down to navigate large memory regions</li>
+        </ul>
+      </div>
     </div>
   );
 }

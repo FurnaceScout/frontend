@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2024
 
+#### Memory View for Transaction Traces
+- **Step-by-step memory inspection**: View EVM memory state at each execution step
+- **Hex dump format**: Standard 32 bytes per row with memory offsets
+- **ASCII preview**: See readable text representation of memory contents
+- **Step navigation**: Move forward/backward through execution steps with Prev/Next buttons
+- **Memory pagination**: Page Up/Down navigation for large memory regions (512+ bytes)
+- **Copy functionality**: Export entire memory dump to clipboard
+- **Current opcode display**: See which opcode is executing at each step
+- **Memory statistics**: Total memory size and step counter
+- **Interactive UI**: Click-to-navigate through execution timeline
+- **Performance optimized**: Efficient rendering of large memory dumps
+- **Integration**: New "🧠 Memory" tab in Transaction Trace Viewer
+- **Documentation**: Comprehensive guide in `/docs/TRANSACTION_TRACE.md`
+- **Use cases**:
+  - Debug MSTORE/MLOAD operations
+  - Understand ABI encoding/decoding
+  - Track memory layout during execution
+  - Analyze string and bytes handling
+  - Learn how calldata is processed
+
 #### Cast Command Builder
 - **Generate cast commands from UI**: User-friendly interface for building Foundry cast commands
 - **Multiple command types**:

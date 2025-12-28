@@ -13,6 +13,7 @@ The Transaction Trace Viewer provides deep insight into transaction execution at
 - 📊 **Call Tree** - Visual hierarchy of all contract calls
 - ⚙️ **Opcode Execution** - Step-by-step instruction execution
 - 💾 **Storage Changes** - All SLOAD/SSTORE operations
+- 🧠 **Memory View** - Step-by-step memory state inspection
 - 💰 **Value Transfers** - ETH transfers between contracts
 - ⛽ **Gas Usage** - Gas costs per operation
 - ❌ **Revert Reasons** - Why transactions failed
@@ -119,6 +120,60 @@ Storage Change #1
 
 ---
 
+### 4. Memory View
+
+Shows the EVM memory state at each step of execution.
+
+**What it shows:**
+- Complete memory dump in hexadecimal format
+- Memory offsets (addresses)
+- ASCII representation of memory contents
+- Step-by-step navigation through execution
+- Current opcode being executed
+
+**Features:**
+- **Step Navigation** - Move forward/backward through execution steps
+- **Memory Pagination** - Navigate large memory regions (Page Up/Down)
+- **Copy Memory** - Export entire memory contents to clipboard
+- **Hex Dump Format** - Standard 32 bytes per row display
+- **ASCII Preview** - See readable text in memory
+
+**Layout:**
+```
+Offset   | Hex Dump (32 bytes)                          | ASCII
+---------|----------------------------------------------|--------
+0x0000   | 00 00 00 00 00 00 00 00 ... 00 00 00 00     | ................
+0x0020   | 48 65 6c 6c 6f 20 57 6f ... 00 00 00 00     | Hello World.....
+0x0040   | ff ff ff ff ff ff ff ff ... 00 00 00 00     | ................
+```
+
+**Useful for:**
+- Understanding memory layout during execution
+- Debugging memory-related issues
+- Tracking MSTORE/MLOAD operations
+- Verifying ABI encoding/decoding
+- Analyzing string and bytes handling
+- Learning how calldata is processed
+
+**Navigation:**
+- Use **Prev/Next** buttons to move through execution steps
+- Use **Page Up/Down** for large memory regions (512+ bytes)
+- Click **Copy All** to export full memory dump
+- See current step number and opcode in the header
+
+**Example Memory at Step 156:**
+```
+Opcode: MSTORE
+Memory Size: 256 bytes
+
+0x0000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ...
+0x0020: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 20 ... 
+0x0040: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 05 ...
+0x0060: 48 65 6c 6c 6f 00 00 00 00 00 00 00 00 00 00 00 Hello...........
+```
+
+---
+
 ## Usage
 
 ### Accessing the Trace Viewer
@@ -129,6 +184,7 @@ Storage Change #1
    - 📊 Call Tree
    - ⚙️ Opcodes
    - 💾 Storage
+   - 🧠 Memory
 
 ### Understanding Call Types
 
@@ -188,7 +244,27 @@ Solution: Batch updates or use memory
 3. Understand delegation patterns
 4. Verify proxy implementations
 
-### 4. Storage Layout Verification
+### 4. Understanding Memory Operations
+
+**Problem**: Complex memory manipulation in inline assembly.
+
+**Solution**: Use memory view to:
+1. Navigate to steps with MSTORE/MLOAD operations
+2. See memory state before and after each operation
+3. Verify correct offsets and values
+4. Understand ABI encoding in memory
+
+**Example Finding:**
+```
+Step 42: MSTORE at offset 0x40
+Before: 0x00...
+After:  0x00...05 (stored value: 5)
+
+Step 43: MLOAD from offset 0x40
+Memory: 0x00...05 (loaded correctly)
+```
+
+### 5. Storage Layout Verification
 
 **Problem**: Need to verify storage slots match expectations.
 
@@ -264,6 +340,16 @@ The viewer automatically:
 - Tracks old vs new values
 - Links changes to specific program counters
 - Shows changes in call depth context
+
+### Memory State Navigation
+
+The memory viewer:
+- Shows memory at any execution step
+- Formats as standard hex dump (32 bytes per row)
+- Provides ASCII preview for readability
+- Allows navigation through execution timeline
+- Displays current opcode being executed
+- Paginates large memory regions for performance
 
 ### Call Expansion
 
@@ -473,7 +559,8 @@ const formatted = formatGas(12345); // "12,345"
 - [ ] Search within call tree
 - [ ] Export trace as JSON
 - [ ] Compare two traces side-by-side
-- [ ] Memory view panel
+- [x] Memory view panel ✅
+- [ ] Memory diff between steps
 - [ ] Jump to specific PC
 - [ ] Bookmark important steps
 - [ ] Keyboard shortcuts
@@ -542,7 +629,15 @@ Want a feature? Open an issue on GitHub!
 
 ### Q: Can I use this with mainnet transactions?
 
-**A:** No, traces are only available on Anvil. For mainnet, use Etherscan or Tenderly.
+**A:** No, traces are only available on Anvil (local testnet). For mainnet, use Etherscan or Tenderly.
+
+### Q: What does the Memory view show?
+
+**A:** It shows the EVM memory state at each step of execution. Memory is temporary storage used during transaction execution, different from persistent storage. Use it to debug MSTORE/MLOAD operations and understand memory layout.
+
+### Q: When should I use Memory view vs Storage view?
+
+**A:** Use **Memory view** for temporary data during execution (function parameters, local variables, encoding). Use **Storage view** for permanent state changes that persist after the transaction (state variables, mappings).
 
 ### Q: Why is my trace empty?
 
