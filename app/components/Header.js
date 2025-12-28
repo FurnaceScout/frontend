@@ -62,18 +62,24 @@ export default function Header() {
             />
           </form>
 
-          <nav className="flex gap-4">
+          <nav className="flex items-center gap-4">
             <Link
-              href="/"
+              href="/events"
               className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
             >
-              Home
+              Events
             </Link>
             <Link
               href="/dashboard"
               className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
             >
               Dashboard
+            </Link>
+            <Link
+              href="/cast-builder"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              Cast Builder
             </Link>
             <button
               onClick={() => setShowBookmarks(true)}

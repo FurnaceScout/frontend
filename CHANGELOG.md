@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2024
 
+#### Cast Command Builder
+- **Generate cast commands from UI**: User-friendly interface for building Foundry cast commands
+- **Multiple command types**:
+  - Contract interactions (call, send, estimate)
+  - Transaction queries (receipt, tx)
+  - Utility commands (balance, code, storage, block, sig)
+- **Smart argument handling**: Automatic formatting for different parameter types
+- **Anvil account integration**: Built-in test accounts with private keys
+- **Real-time command preview**: See generated command as you configure options
+- **Copy to clipboard**: One-click copy of generated commands
+- **Dedicated page**: `/cast-builder` route with examples and quick reference
+- **Components**:
+  - `CastCommandBuilder` - Main command builder component
+- **Utilities** (`/lib/cast-commands.js`):
+  - `generateCastCall()` - Generate read commands
+  - `generateCastSend()` - Generate write commands
+  - `generateCastBalance()` - Balance check commands
+  - `generateCastReceipt()` - Transaction receipt commands
+  - `generateCastEstimate()` - Gas estimation commands
+  - 15+ command generation functions
+  - `getAnvilAccounts()` - Access Anvil test accounts
+
 #### Transaction Bookmarks
 - **Save transactions** with custom labels and notes for quick access
 - **Bookmarks panel**: Slide-in panel accessible from header
@@ -203,10 +225,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Memory view panel
 - [ ] Keyboard shortcuts for trace navigation
 - [x] Transaction bookmarks ✅ **COMPLETED**
+- [x] Cast command builder ✅ **COMPLETED**
 - [ ] Bookmark import functionality
 - [ ] Bookmark categories/folders
 - [ ] Bookmark tags
 - [ ] Cloud sync for bookmarks (optional)
+- [ ] Cast command templates/presets
+- [ ] Cast command history
 
 ### Potential Improvements
 - [ ] Add unit tests for hooks
