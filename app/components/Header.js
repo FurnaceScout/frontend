@@ -9,6 +9,7 @@ import EventStreamManager from "./EventStreamManager";
 import ForgeTestRunner from "./ForgeTestRunner";
 import AnvilStateManager from "./AnvilStateManager";
 import UnitConverter from "./UnitConverter";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   const [search, setSearch] = useState("");
@@ -110,6 +111,7 @@ export default function Header() {
             >
               🔧 Converter
             </button>
+            <ThemeToggle />
             <button
               onClick={() => setShowBookmarks(true)}
               className="px-4 py-2 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors font-semibold"
