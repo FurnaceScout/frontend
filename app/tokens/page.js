@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { publicClient } from "@/lib/viem";
-import { parseTokenTransfers, detectTokenType, formatTokenAmount } from "@/lib/tokens";
+import {
+  parseTokenTransfers,
+  detectTokenType,
+  formatTokenAmount,
+} from "@/lib/tokens";
 import {
   filterTransfers,
   sortTransfers,
@@ -15,6 +19,23 @@ import {
 import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
 import LabelBadge from "@/app/components/LabelBadge";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 
 export default function TokenTransfersPage() {
   const [transfers, setTransfers] = useState([]);
@@ -70,7 +91,8 @@ export default function TokenTransfersPage() {
               .getTransactionReceipt({ hash: tx.hash })
               .catch(() => null);
 
-            if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
+            if (!receipt || !receipt.logs || receipt.logs.length === 0)
+              continue;
 
             const txTransfers = parseTokenTransfers(receipt.logs);
 
@@ -111,9 +133,12 @@ export default function TokenTransfersPage() {
                 };
               }
             } catch (error) {
-              console.error(`Error fetching metadata for ${tokenAddress}:`, error);
+              console.error(
+                `Error fetching metadata for ${tokenAddress}:`,
+                error,
+              );
             }
-          })
+          }),
         );
 
         setTokenMetadata(metadata);
@@ -183,7 +208,11 @@ export default function TokenTransfersPage() {
   };
 
   // Paginate results
-  const paginatedData = paginateTransfers(filteredTransfers, currentPage, pageSize);
+  const paginatedData = paginateTransfers(
+    filteredTransfers,
+    currentPage,
+    pageSize,
+  );
 
   if (loading) {
     return (
@@ -206,7 +235,8 @@ export default function TokenTransfersPage() {
           Token Transfers
         </h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Browse and filter token transfers across all standards (ERC20, ERC721, ERC1155)
+          Browse and filter token transfers across all standards (ERC20, ERC721,
+          ERC1155)
         </p>
       </div>
 
@@ -220,19 +250,25 @@ export default function TokenTransfersPage() {
             </div>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">ERC20</div>
+            <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+              ERC20
+            </div>
             <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
               {stats.byType.ERC20}
             </div>
           </div>
           <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">ERC721</div>
+            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
+              ERC721
+            </div>
             <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
               {stats.byType.ERC721}
             </div>
           </div>
           <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div className="text-sm text-green-600 dark:text-green-400 mb-1">ERC1155</div>
+            <div className="text-sm text-green-600 dark:text-green-400 mb-1">
+              ERC1155
+            </div>
             <div className="text-2xl font-bold text-green-700 dark:text-green-300">
               {stats.byType.ERC1155}
             </div>
@@ -247,302 +283,325 @@ export default function TokenTransfersPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            Filters
-          </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleClearFilters}
-              className="px-3 py-1 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-            >
-              Clear All
-            </button>
-            <button
-              onClick={handleExport}
-              disabled={filteredTransfers.length === 0}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-            >
-              Export CSV ({filteredTransfers.length})
-            </button>
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Filters</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+                Clear All
+              </Button>
+              <Button
+                onClick={handleExport}
+                disabled={filteredTransfers.length === 0}
+                variant="destructive"
+                size="sm"
+              >
+                Export CSV ({filteredTransfers.length})
+              </Button>
+            </div>
           </div>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Search */}
+            <div className="space-y-2">
+              <Label htmlFor="search">Search</Label>
+              <Input
+                id="search"
+                type="text"
+                value={filters.searchQuery}
+                onChange={(e) =>
+                  handleFilterChange("searchQuery", e.target.value)
+                }
+                placeholder="Address, token, tx hash..."
+              />
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Search
-            </label>
-            <input
-              type="text"
-              value={filters.searchQuery}
-              onChange={(e) => handleFilterChange("searchQuery", e.target.value)}
-              placeholder="Address, token, tx hash..."
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 outline-none"
-            />
-          </div>
+            {/* Token Type */}
+            <div className="space-y-2">
+              <Label htmlFor="token-type">Token Type</Label>
+              <Select
+                value={filters.tokenType}
+                onValueChange={(value) =>
+                  handleFilterChange("tokenType", value)
+                }
+              >
+                <SelectTrigger id="token-type">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="ERC20">ERC20</SelectItem>
+                  <SelectItem value="ERC721">ERC721</SelectItem>
+                  <SelectItem value="ERC1155">ERC1155</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Token Type */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Token Type
-            </label>
-            <select
-              value={filters.tokenType}
-              onChange={(e) => handleFilterChange("tokenType", e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 outline-none"
-            >
-              <option value="">All Types</option>
-              <option value="ERC20">ERC20</option>
-              <option value="ERC721">ERC721</option>
-              <option value="ERC1155">ERC1155</option>
-            </select>
-          </div>
-
-          {/* Direction */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Direction
-            </label>
-            <select
-              value={filters.direction}
-              onChange={(e) => handleFilterChange("direction", e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 outline-none"
-            >
-              <option value="all">All Directions</option>
-              <option value="in">Incoming</option>
-              <option value="out">Outgoing</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Token Address */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Token Address
-            </label>
-            <input
-              type="text"
-              value={filters.tokenAddress}
-              onChange={(e) => handleFilterChange("tokenAddress", e.target.value)}
-              placeholder="0x..."
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 outline-none font-mono text-sm"
-            />
+            {/* Direction */}
+            <div className="space-y-2">
+              <Label htmlFor="direction">Direction</Label>
+              <Select
+                value={filters.direction}
+                onValueChange={(value) =>
+                  handleFilterChange("direction", value)
+                }
+              >
+                <SelectTrigger id="direction">
+                  <SelectValue placeholder="All Directions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Directions</SelectItem>
+                  <SelectItem value="in">Incoming</SelectItem>
+                  <SelectItem value="out">Outgoing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Address Filter */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-              Address (From/To)
-            </label>
-            <input
-              type="text"
-              value={filters.address}
-              onChange={(e) => handleFilterChange("address", e.target.value)}
-              placeholder="0x..."
-              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-red-500 outline-none font-mono text-sm"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Token Address */}
+            <div className="space-y-2">
+              <Label htmlFor="token-address">Token Address</Label>
+              <Input
+                id="token-address"
+                type="text"
+                value={filters.tokenAddress}
+                onChange={(e) =>
+                  handleFilterChange("tokenAddress", e.target.value)
+                }
+                placeholder="0x..."
+                className="font-mono text-sm"
+              />
+            </div>
+
+            {/* Address Filter */}
+            <div className="space-y-2">
+              <Label htmlFor="address-filter">Address (From/To)</Label>
+              <Input
+                id="address-filter"
+                type="text"
+                value={filters.address}
+                onChange={(e) => handleFilterChange("address", e.target.value)}
+                placeholder="0x..."
+                className="font-mono text-sm"
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Sort and View Controls */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-zinc-600 dark:text-zinc-400">Sort by:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-1 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm"
-            >
-              <option value="timestamp">Time</option>
-              <option value="blockNumber">Block</option>
-              <option value="value">Value</option>
-              <option value="tokenType">Type</option>
-            </select>
+            <Label htmlFor="sort-by" className="text-sm">
+              Sort by:
+            </Label>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger id="sort-by" className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="timestamp">Time</SelectItem>
+                <SelectItem value="blockNumber">Block</SelectItem>
+                <SelectItem value="value">Value</SelectItem>
+                <SelectItem value="tokenType">Type</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-            className="px-3 py-1 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm transition-colors"
           >
             {sortOrder === "asc" ? "↑ Asc" : "↓ Desc"}
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-              viewMode === "list"
-                ? "bg-red-600 text-white"
-                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-            }`}
           >
             List View
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={viewMode === "grouped" ? "default" : "outline"}
+            size="sm"
             onClick={() => setViewMode("grouped")}
-            className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-              viewMode === "grouped"
-                ? "bg-red-600 text-white"
-                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-            }`}
           >
             Grouped by Token
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Results */}
       {filteredTransfers.length === 0 ? (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-12 text-center">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-            No transfers found
-          </h3>
-          <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-            Try adjusting your filters or search query
-          </p>
-          <button
-            onClick={handleClearFilters}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Clear Filters
-          </button>
-        </div>
+        <Card className="p-12 text-center">
+          <CardContent>
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-semibold mb-2">No transfers found</h3>
+            <p className="text-muted-foreground mb-4">
+              Try adjusting your filters or search query
+            </p>
+            <Button onClick={handleClearFilters} variant="destructive">
+              Clear Filters
+            </Button>
+          </CardContent>
+        </Card>
       ) : viewMode === "list" ? (
         <>
           {/* List View */}
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {paginatedData.items.map((transfer, index) => {
-                const metadata = tokenMetadata[transfer.token.toLowerCase()] || {};
-                const decimals = metadata.decimals || 18;
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                {paginatedData.items.map((transfer, index) => {
+                  const metadata =
+                    tokenMetadata[transfer.token.toLowerCase()] || {};
+                  const decimals = metadata.decimals || 18;
 
-                return (
-                  <div key={`${transfer.txHash}-${index}`} className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Left: Transfer Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          {/* Type Badge */}
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                              transfer.type.startsWith("ERC20")
-                                ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                                : transfer.type.startsWith("ERC721")
-                                  ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
-                                  : "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                            }`}
-                          >
-                            {transfer.type}
-                          </span>
+                  return (
+                    <div
+                      key={`${transfer.txHash}-${index}`}
+                      className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left: Transfer Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            {/* Type Badge */}
+                            <Badge
+                              variant={
+                                transfer.type.startsWith("ERC20")
+                                  ? "default"
+                                  : transfer.type.startsWith("ERC721")
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                            >
+                              {transfer.type}
+                            </Badge>
 
-                          {/* Token Name */}
-                          {metadata.name && (
-                            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                              {metadata.name}
-                            </span>
-                          )}
-                          {metadata.symbol && (
-                            <span className="text-sm text-zinc-500">({metadata.symbol})</span>
-                          )}
+                            {/* Token Name */}
+                            {metadata.name && (
+                              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                {metadata.name}
+                              </span>
+                            )}
+                            {metadata.symbol && (
+                              <span className="text-sm text-zinc-500">
+                                ({metadata.symbol})
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Addresses */}
+                          <div className="flex items-center gap-2 text-sm mb-2">
+                            <Link
+                              href={`/address/${transfer.from}`}
+                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            >
+                              <LabelBadge
+                                address={transfer.from}
+                                fallback={shortenAddress(transfer.from, 6)}
+                              />
+                            </Link>
+                            <span className="text-zinc-400">→</span>
+                            <Link
+                              href={`/address/${transfer.to}`}
+                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                            >
+                              <LabelBadge
+                                address={transfer.to}
+                                fallback={shortenAddress(transfer.to, 6)}
+                              />
+                            </Link>
+                          </div>
+
+                          {/* Token Address & TX */}
+                          <div className="flex items-center gap-4 text-xs text-zinc-500">
+                            <Link
+                              href={`/address/${transfer.token}`}
+                              className="hover:text-red-600 dark:hover:text-red-400 font-mono"
+                            >
+                              Token: {shortenAddress(transfer.token, 4)}
+                            </Link>
+                            <Link
+                              href={`/tx/${transfer.txHash}`}
+                              className="hover:text-red-600 dark:hover:text-red-400 font-mono"
+                            >
+                              TX: {shortenAddress(transfer.txHash, 4)}
+                            </Link>
+                            <span>Block #{transfer.blockNumber}</span>
+                            {transfer.timestamp && (
+                              <span>
+                                {new Date(
+                                  Number(transfer.timestamp) * 1000,
+                                ).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Addresses */}
-                        <div className="flex items-center gap-2 text-sm mb-2">
-                          <Link
-                            href={`/address/${transfer.from}`}
-                            className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                          >
-                            <LabelBadge address={transfer.from} fallback={shortenAddress(transfer.from, 6)} />
-                          </Link>
-                          <span className="text-zinc-400">→</span>
-                          <Link
-                            href={`/address/${transfer.to}`}
-                            className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                          >
-                            <LabelBadge address={transfer.to} fallback={shortenAddress(transfer.to, 6)} />
-                          </Link>
+                        {/* Right: Amount */}
+                        <div className="text-right">
+                          {transfer.type.startsWith("ERC20") &&
+                          transfer.value ? (
+                            <div className="font-bold text-zinc-900 dark:text-zinc-100">
+                              {formatTokenAmount(
+                                BigInt(transfer.value),
+                                decimals,
+                              )}
+                            </div>
+                          ) : transfer.type.startsWith("ERC721") &&
+                            transfer.tokenId ? (
+                            <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                              NFT #{transfer.tokenId}
+                            </div>
+                          ) : transfer.type === "ERC1155" ? (
+                            <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                              ID #{transfer.tokenId}
+                              <br />× {transfer.value}
+                            </div>
+                          ) : null}
                         </div>
-
-                        {/* Token Address & TX */}
-                        <div className="flex items-center gap-4 text-xs text-zinc-500">
-                          <Link
-                            href={`/address/${transfer.token}`}
-                            className="hover:text-red-600 dark:hover:text-red-400 font-mono"
-                          >
-                            Token: {shortenAddress(transfer.token, 4)}
-                          </Link>
-                          <Link
-                            href={`/tx/${transfer.txHash}`}
-                            className="hover:text-red-600 dark:hover:text-red-400 font-mono"
-                          >
-                            TX: {shortenAddress(transfer.txHash, 4)}
-                          </Link>
-                          <span>Block #{transfer.blockNumber}</span>
-                          {transfer.timestamp && (
-                            <span>
-                              {new Date(Number(transfer.timestamp) * 1000).toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right: Amount */}
-                      <div className="text-right">
-                        {transfer.type.startsWith("ERC20") && transfer.value ? (
-                          <div className="font-bold text-zinc-900 dark:text-zinc-100">
-                            {formatTokenAmount(BigInt(transfer.value), decimals)}
-                          </div>
-                        ) : transfer.type.startsWith("ERC721") && transfer.tokenId ? (
-                          <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                            NFT #{transfer.tokenId}
-                          </div>
-                        ) : transfer.type === "ERC1155" ? (
-                          <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                            ID #{transfer.tokenId}
-                            <br />× {transfer.value}
-                          </div>
-                        ) : null}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Pagination */}
           {paginatedData.totalPages > 1 && (
             <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                Showing {((currentPage - 1) * pageSize) + 1} to{" "}
+              <div className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * pageSize + 1} to{" "}
                 {Math.min(currentPage * pageSize, filteredTransfers.length)} of{" "}
                 {filteredTransfers.length} transfers
               </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={!paginatedData.hasPrev}
-                  className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-900 dark:text-zinc-100 transition-colors"
                 >
                   Previous
-                </button>
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                </Button>
+                <span className="text-sm text-muted-foreground">
                   Page {currentPage} of {paginatedData.totalPages}
                 </span>
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setCurrentPage((p) => p + 1)}
                   disabled={!paginatedData.hasNext}
-                  className="px-4 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-900 dark:text-zinc-100 transition-colors"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -555,70 +614,67 @@ export default function TokenTransfersPage() {
               const metadata = tokenMetadata[tokenAddress] || {};
 
               return (
-                <div
-                  key={tokenAddress}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                        {metadata.name || "Unknown Token"}
-                      </h3>
-                      <Link
-                        href={`/address/${group.token}`}
-                        className="font-mono text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
-                      >
-                        {group.token}
-                      </Link>
-                    </div>
-                    <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {group.count} transfers
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    {group.transfers.map((transfer, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between py-2 border-t border-zinc-200 dark:border-zinc-800"
-                      >
-                        <div className="flex items-center gap-2 text-sm">
-                          <Link
-                            href={`/address/${transfer.from}`}
-                            className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
-                          >
-                            {shortenAddress(transfer.from, 4)}
-                          </Link>
-                          <span className="text-zinc-400">→</span>
-                          <Link
-                            href={`/address/${transfer.to}`}
-                            className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
-                          >
-                            {shortenAddress(transfer.to, 4)}
-                          </Link>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-zinc-500">
-                          {transfer.value && (
-                            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                              {formatTokenAmount(
-                                BigInt(transfer.value),
-                                metadata.decimals || 18
-                              )}
-                            </span>
-                          )}
-                          <Link
-                            href={`/tx/${transfer.txHash}`}
-                            className="font-mono hover:text-red-600 dark:hover:text-red-400"
-                          >
-                            {shortenAddress(transfer.txHash, 4)}
-                          </Link>
-                        </div>
+                <Card key={tokenAddress}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                          {metadata.name || "Unknown Token"}
+                        </h3>
+                        <Link
+                          href={`/address/${group.token}`}
+                          className="font-mono text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
+                        >
+                          {group.token}
+                        </Link>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <Badge variant="secondary">{group.count} transfers</Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      {group.transfers.map((transfer, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between py-2 border-t border-zinc-200 dark:border-zinc-800"
+                        >
+                          <div className="flex items-center gap-2 text-sm">
+                            <Link
+                              href={`/address/${transfer.from}`}
+                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
+                            >
+                              {shortenAddress(transfer.from, 4)}
+                            </Link>
+                            <span className="text-zinc-400">→</span>
+                            <Link
+                              href={`/address/${transfer.to}`}
+                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
+                            >
+                              {shortenAddress(transfer.to, 4)}
+                            </Link>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-zinc-500">
+                            {transfer.value && (
+                              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                {formatTokenAmount(
+                                  BigInt(transfer.value),
+                                  metadata.decimals || 18,
+                                )}
+                              </span>
+                            )}
+                            <Link
+                              href={`/tx/${transfer.txHash}`}
+                              className="font-mono hover:text-red-600 dark:hover:text-red-400"
+                            >
+                              {shortenAddress(transfer.txHash, 4)}
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               );
-            }
+            },
           )}
         </div>
       )}
