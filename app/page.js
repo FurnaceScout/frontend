@@ -252,16 +252,10 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {/* Latest Blocks */}
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>📦</span> Latest Blocks
               </h3>
-              <Link
-                href="/block/latest"
-                className="text-red-600 dark:text-red-400 hover:underline text-sm font-medium"
-              >
-                View all →
-              </Link>
             </div>
             <div className="space-y-3">
               {blocks.map((block) => (
@@ -315,16 +309,10 @@ export default function Home() {
 
           {/* Latest Transactions */}
           <div>
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>📝</span> Latest Transactions
               </h3>
-              <Link
-                href="/tx/latest"
-                className="text-red-600 dark:text-red-400 hover:underline text-sm font-medium"
-              >
-                View all →
-              </Link>
             </div>
             <div className="space-y-3">
               {transactions.length === 0 ? (
@@ -405,10 +393,7 @@ export default function Home() {
             Anvil workflow. No configuration needed—just point it at your local
             RPC and start exploring.
           </p>
-          <p className="text-zinc-500 text-sm mb-6">
-            ⚠️ This is an unofficial, community-built tool. Not affiliated with
-            or endorsed by the Foundry team.
-          </p>
+
           <div className="flex items-center justify-center gap-4">
             <Link
               href="/deployments"

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { use, useEffect, useState } from 'react';
-import { publicClient, formatEther, shortenAddress } from '@/lib/viem';
-import Link from 'next/link';
+import { use, useEffect, useState } from "react";
+import { publicClient, formatEther, shortenAddress } from "@/lib/viem";
+import Link from "next/link";
 
 export default function BlockPage({ params }) {
   const { number } = use(params);
@@ -12,13 +12,23 @@ export default function BlockPage({ params }) {
   useEffect(() => {
     async function fetchBlock() {
       try {
-        const blockData = await publicClient.getBlock({
-          blockNumber: BigInt(number),
-          includeTransactions: true,
-        });
+        let blockData;
+
+        // Handle "latest" keyword
+        if (number === "latest") {
+          blockData = await publicClient.getBlock({
+            includeTransactions: true,
+          });
+        } else {
+          blockData = await publicClient.getBlock({
+            blockNumber: BigInt(number),
+            includeTransactions: true,
+          });
+        }
+
         setBlock(blockData);
       } catch (error) {
-        console.error('Error fetching block:', error);
+        console.error("Error fetching block:", error);
       } finally {
         setLoading(false);
       }
@@ -62,11 +72,16 @@ export default function BlockPage({ params }) {
           />
           <InfoRow
             label="Transactions"
-            value={Array.isArray(block.transactions) ? block.transactions.length : 0}
+            value={
+              Array.isArray(block.transactions) ? block.transactions.length : 0
+            }
           />
           <InfoRow label="Gas Used" value={block.gasUsed.toString()} />
           <InfoRow label="Gas Limit" value={block.gasLimit.toString()} />
-          <InfoRow label="Base Fee" value={`${formatEther(block.baseFeePerGas)} ETH`} />
+          <InfoRow
+            label="Base Fee"
+            value={`${formatEther(block.baseFeePerGas)} ETH`}
+          />
           <InfoRow label="Hash" value={block.hash} mono full />
           <InfoRow label="Parent Hash" value={block.parentHash} mono full />
           <InfoRow label="Miner" value={block.miner} mono full />
@@ -75,7 +90,8 @@ export default function BlockPage({ params }) {
       </div>
 
       <h2 className="text-2xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-        Transactions ({Array.isArray(block.transactions) ? block.transactions.length : 0})
+        Transactions (
+        {Array.isArray(block.transactions) ? block.transactions.length : 0})
       </h2>
 
       <div className="space-y-3">
@@ -95,14 +111,24 @@ export default function BlockPage({ params }) {
                 </div>
               </div>
               <div className="flex items-center justify-between mt-2 text-xs text-zinc-600 dark:text-zinc-400">
-                <div>From: <span className="font-mono">{shortenAddress(tx.from)}</span></div>
+                <div>
+                  From:{" "}
+                  <span className="font-mono">{shortenAddress(tx.from)}</span>
+                </div>
                 <div>→</div>
-                <div>To: <span className="font-mono">{tx.to ? shortenAddress(tx.to) : 'Contract Creation'}</span></div>
+                <div>
+                  To:{" "}
+                  <span className="font-mono">
+                    {tx.to ? shortenAddress(tx.to) : "Contract Creation"}
+                  </span>
+                </div>
               </div>
             </Link>
           ))
         ) : (
-          <div className="text-center py-8 text-zinc-500">No transactions in this block</div>
+          <div className="text-center py-8 text-zinc-500">
+            No transactions in this block
+          </div>
         )}
       </div>
     </div>
@@ -113,7 +139,9 @@ function InfoRow({ label, value, mono = false, full = false }) {
   return (
     <div>
       <div className="text-sm text-zinc-500 mb-1">{label}</div>
-      <div className={`text-sm text-zinc-900 dark:text-zinc-100 ${mono ? 'font-mono' : ''} ${full ? 'break-all' : ''}`}>
+      <div
+        className={`text-sm text-zinc-900 dark:text-zinc-100 ${mono ? "font-mono" : ""} ${full ? "break-all" : ""}`}
+      >
         {value}
       </div>
     </div>
