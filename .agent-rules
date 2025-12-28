@@ -1,0 +1,39 @@
+# Agent Rules for FurnaceScout Development
+
+## Testing
+- Always test upon each phase completion
+- Run `bun run build` to verify no build errors
+- Test critical user flows manually (homepage, block viewing, transaction viewing)
+- Document any test results or issues discovered
+
+## Git Workflow
+- Always pause between each completed task for git commit/push
+- Use descriptive commit messages following format: "feat: [description]" or "fix: [description]"
+- Wait for explicit user confirmation before proceeding to next task after commit
+
+## Documentation
+- Always update the checklist (FEATURE_ROADMAP.md) when an item is completed
+- Mark completed items with [x] and add completion notes if relevant
+- Do not update the README until each phase is completed to cut down on wasted token usage
+- Update CHANGELOG.md only at phase completion, not after individual tasks
+
+## Development Workflow
+1. Complete a task/feature
+2. Test the implementation
+3. Update FEATURE_ROADMAP.md checklist
+4. Pause for user to commit/push
+5. Wait for user confirmation to proceed
+6. Move to next task
+
+## Phase Completion
+When a full phase is completed:
+1. Run comprehensive tests
+2. Update README.md with new features/capabilities
+3. Update CHANGELOG.md with phase summary
+4. Create detailed commit message summarizing phase work
+5. Pause for final review and commit/push
+
+## Communication
+- Be explicit about what was completed
+- Clearly state when pausing for git operations
+- Ask for confirmation before moving to next task or phase

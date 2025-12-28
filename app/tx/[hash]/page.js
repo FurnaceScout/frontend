@@ -7,6 +7,7 @@ import Link from "next/link";
 import TransactionTrace from "@/app/components/TransactionTrace";
 import BookmarkButton from "@/app/components/BookmarkButton";
 import StateDiffViewer from "@/app/components/StateDiffViewer";
+import TokenTransfers from "@/app/components/TokenTransfers";
 
 export default function TransactionPage({ params }) {
   const { hash } = use(params);
@@ -264,6 +265,13 @@ export default function TransactionPage({ params }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Token Transfers */}
+      {receipt.logs && receipt.logs.length > 0 && (
+        <div className="mb-8">
+          <TokenTransfers logs={receipt.logs} />
         </div>
       )}
 

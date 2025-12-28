@@ -6,6 +6,7 @@ import { getABI, getSourceCode, saveSourceCode } from "@/lib/abi-store";
 import Link from "next/link";
 import ContractInteraction from "@/app/components/ContractInteraction";
 import SourceCodeViewer from "@/app/components/SourceCodeViewer";
+import TokenBalances from "@/app/components/TokenBalances";
 
 export default function AddressPage({ params }) {
   const { address } = use(params);
@@ -71,13 +72,34 @@ export default function AddressPage({ params }) {
                 tx.to?.toLowerCase() === address.toLowerCase(),
             );
 
-            recentTxs.push(
-              ...filtered.map((tx) => ({
-                ...tx,
-                blockNumber: block.number,
-                timestamp: block.timestamp,
-              })),
+            // Fetch receipts to get logs for token detection
+            const txsWithReceipts = await Promise.all(
+              filtered.map(async (tx) => {
+                try {
+                  const receipt = await publicClient.getTransactionReceipt({
+                    hash: tx.hash,
+                  });
+                  return {
+                    ...tx,
+                    blockNumber: block.number,
+                    timestamp: block.timestamp,
+                    logs: receipt.logs,
+                  };
+                } catch (error) {
+                  console.error(
+                    `Error fetching receipt for ${tx.hash}:`,
+                    error,
+                  );
+                  return {
+                    ...tx,
+                    blockNumber: block.number,
+                    timestamp: block.timestamp,
+                  };
+                }
+              }),
             );
+
+            recentTxs.push(...txsWithReceipts);
           }
 
           if (recentTxs.length >= 20) break;
@@ -196,6 +218,11 @@ export default function AddressPage({ params }) {
           <ContractInteraction address={address} abiData={abiData} />
         </div>
       )}
+
+      {/* Token Balances */}
+      <div className="mb-8">
+        <TokenBalances address={address} transactions={transactions} />
+      </div>
 
       {/* Source Code */}
       {isContract && (
