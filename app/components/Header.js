@@ -28,6 +28,7 @@ export default function Header() {
   const [search, setSearch] = useState("");
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showConverter, setShowConverter] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e) => {
@@ -141,15 +142,102 @@ export default function Header() {
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
+
+                {/* Foundry Tools Group */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Foundry</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                      <li>
+                        <button
+                          onClick={() => {
+                            const projectBtn = document.querySelector(
+                              "[data-foundry-project]",
+                            );
+                            if (projectBtn) projectBtn.click();
+                          }}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        >
+                          <div className="text-sm font-medium leading-none">
+                            🏗️ Project Manager
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Scan and manage your Foundry project contracts
+                          </p>
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={() => {
+                            const testBtn =
+                              document.querySelector("[data-forge-test]");
+                            if (testBtn) testBtn.click();
+                          }}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        >
+                          <div className="text-sm font-medium leading-none">
+                            🧪 Test Runner
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Run and manage Forge tests with detailed results
+                          </p>
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={() => {
+                            const eventsBtn = document.querySelector(
+                              "[data-event-stream]",
+                            );
+                            if (eventsBtn) eventsBtn.click();
+                          }}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        >
+                          <div className="text-sm font-medium leading-none">
+                            📡 Event Stream
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Subscribe to and monitor contract events live
+                          </p>
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={() => {
+                            const anvilBtn =
+                              document.querySelector("[data-anvil-state]");
+                            if (anvilBtn) anvilBtn.click();
+                          }}
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        >
+                          <div className="text-sm font-medium leading-none">
+                            ⚙️ Anvil State
+                          </div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Manage snapshots, mining, and blockchain state
+                          </p>
+                        </button>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
 
-            {/* Foundry Tools */}
-            <div className="flex items-center gap-1">
-              <FoundryProjectManager />
-              <EventStreamManager />
-              <ForgeTestRunner />
-              <AnvilStateManager />
+            {/* Hidden trigger buttons for Foundry tools */}
+            <div className="hidden">
+              <div data-foundry-project="true">
+                <FoundryProjectManager />
+              </div>
+              <div data-forge-test="true">
+                <ForgeTestRunner />
+              </div>
+              <div data-event-stream="true">
+                <EventStreamManager />
+              </div>
+              <div data-anvil-state="true">
+                <AnvilStateManager />
+              </div>
             </div>
 
             {/* Utility Actions */}
@@ -162,7 +250,14 @@ export default function Header() {
               >
                 🔧
               </Button>
-              <ThemeToggle />
+              <Button
+                onClick={() => setShowThemeSelector(true)}
+                variant="ghost"
+                size="sm"
+                title="Change theme"
+              >
+                🎨
+              </Button>
               <Button
                 onClick={() => setShowBookmarks(true)}
                 variant="ghost"
@@ -191,6 +286,12 @@ export default function Header() {
       <UnitConverter
         isOpen={showConverter}
         onClose={() => setShowConverter(false)}
+      />
+
+      {/* Theme Selector */}
+      <ThemeToggle
+        isOpen={showThemeSelector}
+        onClose={() => setShowThemeSelector(false)}
       />
 
       {/* Bookmarks Panel */}
