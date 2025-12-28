@@ -12,7 +12,17 @@ import UnitConverter from "./UnitConverter";
 import ThemeToggle from "./ThemeToggle";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/app/components/ui/navigation-menu";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function Header() {
   const [search, setSearch] = useState("");
@@ -72,83 +82,96 @@ export default function Header() {
             />
           </form>
 
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/events"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              Events
-            </Link>
-            <Link
-              href="/dashboard"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/deployments"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              Deployments
-            </Link>
-            <Link
-              href="/cast-builder"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              Cast Builder
-            </Link>
-            <Link
-              href="/labels"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              🏷️ Labels
-            </Link>
-            <Link
-              href="/stats"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              📊 Stats
-            </Link>
-            <Link
-              href="/gas"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              ⛽ Gas
-            </Link>
-            <Link
-              href="/search"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              🔍 Search
-            </Link>
-            <Link
-              href="/tokens"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
-            >
-              🪙 Tokens
-            </Link>
-            <FoundryProjectManager />
-            <EventStreamManager />
-            <ForgeTestRunner />
-            <AnvilStateManager />
-            <Button
-              onClick={() => setShowConverter(true)}
-              variant="secondary"
-              title="Unit Converter"
-            >
-              🔧 Converter
-            </Button>
-            <ThemeToggle />
-            <Button
-              onClick={() => setShowBookmarks(true)}
-              variant="secondary"
-              title="View bookmarks"
-            >
-              📌 Bookmarks
-            </Button>
-            <Button asChild variant="destructive">
-              <Link href="/upload-abi">Upload ABI</Link>
-            </Button>
+          <nav className="flex items-center gap-2">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {/* Explore Group */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Explore</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                      <ListItem href="/search" title="🔍 Search">
+                        Search and filter blockchain data by multiple criteria
+                      </ListItem>
+                      <ListItem href="/dashboard" title="Dashboard">
+                        Overview of recent blocks, transactions, and activity
+                      </ListItem>
+                      <ListItem href="/tokens" title="🪙 Tokens">
+                        Browse all ERC20, ERC721, and ERC1155 tokens
+                      </ListItem>
+                      <ListItem href="/events" title="Events">
+                        Monitor and decode contract events in real-time
+                      </ListItem>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                {/* Analytics Group */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Analytics</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                      <ListItem href="/stats" title="📊 Stats">
+                        Network statistics, charts, and historical data
+                      </ListItem>
+                      <ListItem href="/gas" title="⛽ Gas">
+                        Gas price analytics and transaction cost insights
+                      </ListItem>
+                      <ListItem href="/labels" title="🏷️ Labels">
+                        Manage custom address labels and tags
+                      </ListItem>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                {/* Developer Tools Group */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Dev Tools</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px]">
+                      <ListItem href="/cast-builder" title="Cast Builder">
+                        Build and execute cast commands with a visual interface
+                      </ListItem>
+                      <ListItem href="/upload-abi" title="Upload ABI">
+                        Upload contract ABIs to enable interaction and decoding
+                      </ListItem>
+                      <ListItem href="/deployments" title="Deployments">
+                        Track and manage your contract deployments
+                      </ListItem>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
+
+            {/* Foundry Tools */}
+            <div className="flex items-center gap-1">
+              <FoundryProjectManager />
+              <EventStreamManager />
+              <ForgeTestRunner />
+              <AnvilStateManager />
+            </div>
+
+            {/* Utility Actions */}
+            <div className="flex items-center gap-2 ml-2">
+              <Button
+                onClick={() => setShowConverter(true)}
+                variant="ghost"
+                size="sm"
+                title="Unit Converter"
+              >
+                🔧
+              </Button>
+              <ThemeToggle />
+              <Button
+                onClick={() => setShowBookmarks(true)}
+                variant="ghost"
+                size="sm"
+                title="View bookmarks"
+              >
+                📌
+              </Button>
+            </div>
           </nav>
         </div>
       </div>
@@ -178,3 +201,26 @@ export default function Header() {
     </header>
   );
 }
+
+// ListItem component for navigation menu items
+const ListItem = ({ className, title, children, href, ...props }) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <Link
+          href={href}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className,
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </Link>
+      </NavigationMenuLink>
+    </li>
+  );
+};
