@@ -10,6 +10,16 @@ import { useState, useEffect } from "react";
 import { usePublicClient } from "wagmi";
 import NetworkStatsWidget from "@/app/components/NetworkStatsWidget";
 import RecentTokenTransfers from "@/app/components/RecentTokenTransfers";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
 
 export default function Home() {
   const { blocks, loading: blocksLoading } = useLatestBlocks(5);
@@ -149,19 +159,20 @@ export default function Home() {
             {/* Search Bar */}
             <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
               <div className="relative">
-                <input
+                <Input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by Address / Tx Hash / Block Number"
-                  className="w-full px-6 py-4 pr-12 rounded-lg text-zinc-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 border-2 border-transparent focus:border-red-400 focus:outline-none shadow-xl text-lg"
+                  className="w-full px-6 py-4 pr-12 text-lg shadow-xl"
                 />
-                <button
+                <Button
                   type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-md transition-colors"
+                  variant="destructive"
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
                 >
                   🔍
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -224,22 +235,22 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <Link
-                key={index}
-                href={feature.href}
-                className="group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div
-                  className={`w-12 h-12 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}
-                >
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-2 text-zinc-900 dark:text-zinc-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
-                  {feature.title}
-                </h3>
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  {feature.description}
-                </p>
+              <Link key={index} href={feature.href}>
+                <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <CardHeader>
+                    <div
+                      className={`w-12 h-12 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform`}
+                    >
+                      {feature.icon}
+                    </div>
+                    <CardTitle className="group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                      {feature.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription>{feature.description}</CardDescription>
+                  </CardContent>
+                </Card>
               </Link>
             ))}
           </div>
@@ -264,46 +275,49 @@ export default function Home() {
                 <Link
                   key={block.number.toString()}
                   href={`/block/${block.number}`}
-                  className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all"
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
-                      Block #{block.number.toString()}
-                    </span>
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {new Date(
-                        Number(block.timestamp) * 1000,
-                      ).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <div className="text-zinc-500 dark:text-zinc-400 mb-1">
-                        Transactions
+                  <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>Block #{block.number.toString()}</CardTitle>
+                        <Badge variant="outline">
+                          {new Date(
+                            Number(block.timestamp) * 1000,
+                          ).toLocaleTimeString()}
+                        </Badge>
                       </div>
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        {Array.isArray(block.transactions)
-                          ? block.transactions.length
-                          : 0}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground mb-1">
+                            Transactions
+                          </div>
+                          <div className="font-semibold">
+                            {Array.isArray(block.transactions)
+                              ? block.transactions.length
+                              : 0}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground mb-1">
+                            Gas Used
+                          </div>
+                          <div className="font-semibold">
+                            {(Number(block.gasUsed) / 1e6).toFixed(2)}M
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground mb-1">
+                            Gas Limit
+                          </div>
+                          <div className="font-semibold">
+                            {(Number(block.gasLimit) / 1e6).toFixed(2)}M
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-zinc-500 dark:text-zinc-400 mb-1">
-                        Gas Used
-                      </div>
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        {(Number(block.gasUsed) / 1e6).toFixed(2)}M
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-zinc-500 dark:text-zinc-400 mb-1">
-                        Gas Limit
-                      </div>
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        {(Number(block.gasLimit) / 1e6).toFixed(2)}M
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               ))}
             </div>
@@ -318,64 +332,64 @@ export default function Home() {
             </div>
             <div className="space-y-3">
               {transactions.length === 0 ? (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-12 text-center">
-                  <div className="text-4xl mb-4">⏳</div>
-                  <p className="text-zinc-500 dark:text-zinc-400">
-                    No transactions yet
-                  </p>
-                  <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-2">
-                    Transactions will appear here as they occur
-                  </p>
-                </div>
+                <Card className="p-12 text-center">
+                  <CardContent className="pt-6">
+                    <div className="text-4xl mb-4">⏳</div>
+                    <p className="text-muted-foreground">No transactions yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Transactions will appear here as they occur
+                    </p>
+                  </CardContent>
+                </Card>
               ) : (
                 transactions.map((tx) => (
-                  <Link
-                    key={tx.hash}
-                    href={`/tx/${tx.hash}`}
-                    className="block bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-mono text-sm text-zinc-900 dark:text-zinc-100 font-semibold">
-                        {shortenAddress(tx.hash)}
-                      </span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
-                        Block #{tx.blockNumber?.toString()}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm mb-2">
-                      <div>
-                        <div className="text-zinc-500 dark:text-zinc-400 mb-1">
-                          From
+                  <Link key={tx.hash} href={`/tx/${tx.hash}`}>
+                    <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-sm font-semibold">
+                            {shortenAddress(tx.hash)}
+                          </span>
+                          <Badge variant="outline">
+                            Block #{tx.blockNumber?.toString()}
+                          </Badge>
                         </div>
-                        <div className="font-mono text-zinc-900 dark:text-zinc-100">
-                          {shortenAddress(tx.from)}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-2">
+                          <div>
+                            <div className="text-muted-foreground mb-1">
+                              From
+                            </div>
+                            <div className="font-mono">
+                              {shortenAddress(tx.from)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground mb-1">To</div>
+                            <div className="font-mono">
+                              {tx.to ? (
+                                shortenAddress(tx.to)
+                              ) : (
+                                <Badge variant="secondary">
+                                  Contract Deploy
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <div className="text-zinc-500 dark:text-zinc-400 mb-1">
-                          To
-                        </div>
-                        <div className="font-mono text-zinc-900 dark:text-zinc-100">
-                          {tx.to ? (
-                            shortenAddress(tx.to)
-                          ) : (
-                            <span className="text-purple-600 dark:text-purple-400">
-                              Contract Deploy
+                        {tx.value && tx.value > 0n && (
+                          <div className="text-sm pt-2 border-t">
+                            <span className="text-muted-foreground">
+                              Value:
                             </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {tx.value && tx.value > 0n && (
-                      <div className="text-sm pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                        <span className="text-zinc-500 dark:text-zinc-400">
-                          Value:
-                        </span>
-                        <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
-                          {formatEther(tx.value)} ETH
-                        </span>
-                      </div>
-                    )}
+                            <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
+                              {formatEther(tx.value)} ETH
+                            </span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </Link>
                 ))
               )}
