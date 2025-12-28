@@ -8,6 +8,8 @@ import TransactionTrace from "@/app/components/TransactionTrace";
 import BookmarkButton from "@/app/components/BookmarkButton";
 import StateDiffViewer from "@/app/components/StateDiffViewer";
 import TokenTransfers from "@/app/components/TokenTransfers";
+import TransactionNote from "@/app/components/TransactionNote";
+import LabelBadge from "@/app/components/LabelBadge";
 
 export default function TransactionPage({ params }) {
   const { hash } = use(params);
@@ -77,6 +79,11 @@ export default function TransactionPage({ params }) {
         Transaction Details
       </h1>
 
+      {/* Transaction Note */}
+      <div className="mb-8">
+        <TransactionNote txHash={hash} />
+      </div>
+
       {/* Status Badge & Bookmark */}
       <div className="mb-6 flex items-center gap-4">
         {receipt.status === "success" ? (
@@ -115,12 +122,15 @@ export default function TransactionPage({ params }) {
           <InfoRow
             label="From"
             value={
-              <Link
-                href={`/address/${tx.from}`}
-                className="text-red-500 hover:underline font-mono"
-              >
-                {tx.from}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/address/${tx.from}`}
+                  className="text-red-500 hover:underline font-mono"
+                >
+                  {tx.from}
+                </Link>
+                <LabelBadge address={tx.from} />
+              </div>
             }
             full
           />
@@ -128,12 +138,15 @@ export default function TransactionPage({ params }) {
             label="To"
             value={
               tx.to ? (
-                <Link
-                  href={`/address/${tx.to}`}
-                  className="text-red-500 hover:underline font-mono"
-                >
-                  {tx.to}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/address/${tx.to}`}
+                    className="text-red-500 hover:underline font-mono"
+                  >
+                    {tx.to}
+                  </Link>
+                  <LabelBadge address={tx.to} />
+                </div>
               ) : (
                 <span className="text-purple-600 dark:text-purple-400">
                   Contract Creation
@@ -146,12 +159,15 @@ export default function TransactionPage({ params }) {
             <InfoRow
               label="Contract Address"
               value={
-                <Link
-                  href={`/address/${receipt.contractAddress}`}
-                  className="text-red-500 hover:underline font-mono"
-                >
-                  {receipt.contractAddress}
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/address/${receipt.contractAddress}`}
+                    className="text-red-500 hover:underline font-mono"
+                  >
+                    {receipt.contractAddress}
+                  </Link>
+                  <LabelBadge address={receipt.contractAddress} />
+                </div>
               }
               full
             />

@@ -91,6 +91,12 @@ export default function Header() {
             >
               Cast Builder
             </Link>
+            <Link
+              href="/labels"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              🏷️ Labels
+            </Link>
             <FoundryProjectManager />
             <EventStreamManager />
             <ForgeTestRunner />

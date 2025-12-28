@@ -7,6 +7,8 @@ import Link from "next/link";
 import ContractInteraction from "@/app/components/ContractInteraction";
 import SourceCodeViewer from "@/app/components/SourceCodeViewer";
 import TokenBalances from "@/app/components/TokenBalances";
+import AddressLabel from "@/app/components/AddressLabel";
+import LabelBadge from "@/app/components/LabelBadge";
 
 export default function AddressPage({ params }) {
   const { address } = use(params);
@@ -212,6 +214,11 @@ export default function AddressPage({ params }) {
         </div>
       </div>
 
+      {/* Address Label */}
+      <div className="mb-8">
+        <AddressLabel address={address} />
+      </div>
+
       {/* Contract Interaction */}
       {isContract && abiData && (
         <div className="mb-8">
@@ -320,7 +327,7 @@ export default function AddressPage({ params }) {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-                    <div>
+                    <div className="flex items-center gap-2">
                       {isFrom ? (
                         <>
                           To:{" "}
@@ -329,6 +336,7 @@ export default function AddressPage({ params }) {
                               ? shortenAddress(tx.to)
                               : "Contract Creation"}
                           </span>
+                          {tx.to && <LabelBadge address={tx.to} />}
                         </>
                       ) : (
                         <>
@@ -336,6 +344,7 @@ export default function AddressPage({ params }) {
                           <span className="font-mono">
                             {shortenAddress(tx.from)}
                           </span>
+                          <LabelBadge address={tx.from} />
                         </>
                       )}
                     </div>
