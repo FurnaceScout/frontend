@@ -15,6 +15,22 @@ import {
   detectERC20Transfers,
   detectERC721Transfers,
 } from "@/lib/state-diff";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 export default function StateDiffViewer({ transactionHash, receipt }) {
   const [loading, setLoading] = useState(false);
@@ -99,18 +115,21 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
 
   if (loading && !stateDiff) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        Loading state changes...
+      <div className="space-y-3">
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
 
   if (error && !stateDiff) {
     return (
-      <div className="p-4 bg-red-900/20 border border-red-700 rounded text-red-400">
-        <div className="font-semibold mb-2">Error Loading State Changes</div>
-        <div className="text-sm">{error}</div>
-      </div>
+      <Alert variant="destructive">
+        <AlertDescription>
+          <div className="font-semibold mb-2">Error Loading State Changes</div>
+          <div className="text-sm">{error}</div>
+        </AlertDescription>
+      </Alert>
     );
   }
 
@@ -127,104 +146,83 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
         <h3 className="text-xl font-bold">State Changes</h3>
         <div className="flex gap-2">
           {!showDetailedStorage && (
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={loadDetailedStorage}
               disabled={loading}
-              className="px-3 py-1 text-sm bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded transition-colors"
+              className="bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
             >
               {loading ? "Loading..." : "Load Detailed Storage"}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            onClick={handleExport}
-            className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-          >
+          <Button variant="default" size="sm" onClick={handleExport}>
             Export JSON
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="p-3 bg-gray-800 border border-gray-700 rounded">
-          <div className="text-xs text-gray-400">Addresses</div>
-          <div className="text-2xl font-bold">{summary.totalAddresses}</div>
-        </div>
-        <div className="p-3 bg-gray-800 border border-gray-700 rounded">
-          <div className="text-xs text-gray-400">Balance Changes</div>
-          <div className="text-2xl font-bold">{summary.totalBalanceChanges}</div>
-        </div>
-        <div className="p-3 bg-gray-800 border border-gray-700 rounded">
-          <div className="text-xs text-gray-400">Nonce Changes</div>
-          <div className="text-2xl font-bold">{summary.totalNonceChanges}</div>
-        </div>
-        <div className="p-3 bg-gray-800 border border-gray-700 rounded">
-          <div className="text-xs text-gray-400">Code Changes</div>
-          <div className="text-2xl font-bold">{summary.totalCodeChanges}</div>
-        </div>
-        <div className="p-3 bg-gray-800 border border-gray-700 rounded">
-          <div className="text-xs text-gray-400">Storage Ops</div>
-          <div className="text-2xl font-bold">{summary.totalStorageChanges}</div>
-        </div>
+        <Card>
+          <CardContent className="pt-3">
+            <div className="text-xs text-muted-foreground">Addresses</div>
+            <div className="text-2xl font-bold">{summary.totalAddresses}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-3">
+            <div className="text-xs text-muted-foreground">Balance Changes</div>
+            <div className="text-2xl font-bold">
+              {summary.totalBalanceChanges}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-3">
+            <div className="text-xs text-muted-foreground">Nonce Changes</div>
+            <div className="text-2xl font-bold">
+              {summary.totalNonceChanges}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-3">
+            <div className="text-xs text-muted-foreground">Code Changes</div>
+            <div className="text-2xl font-bold">{summary.totalCodeChanges}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-3">
+            <div className="text-xs text-muted-foreground">Storage Ops</div>
+            <div className="text-2xl font-bold">
+              {summary.totalStorageChanges}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-700">
-        <button
-          type="button"
-          onClick={() => setActiveTab("overview")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "overview"
-              ? "text-blue-400 border-b-2 border-blue-400"
-              : "text-gray-400 hover:text-gray-300"
-          }`}
-        >
-          Overview
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("balances")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "balances"
-              ? "text-green-400 border-b-2 border-green-400"
-              : "text-gray-400 hover:text-gray-300"
-          }`}
-        >
-          Balances ({summary.totalBalanceChanges})
-        </button>
-        {(erc20Transfers.length > 0 || erc721Transfers.length > 0) && (
-          <button
-            type="button"
-            onClick={() => setActiveTab("tokens")}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === "tokens"
-                ? "text-yellow-400 border-b-2 border-yellow-400"
-                : "text-gray-400 hover:text-gray-300"
-            }`}
-          >
-            Tokens ({erc20Transfers.length + erc721Transfers.length})
-          </button>
-        )}
-        {showDetailedStorage && detailedStorage && (
-          <button
-            type="button"
-            onClick={() => setActiveTab("storage")}
-            className={`px-4 py-2 font-semibold transition-colors ${
-              activeTab === "storage"
-                ? "text-purple-400 border-b-2 border-purple-400"
-                : "text-gray-400 hover:text-gray-300"
-            }`}
-          >
-            Storage Ops ({detailedStorage.length})
-          </button>
-        )}
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="balances">
+            Balances ({summary.totalBalanceChanges})
+          </TabsTrigger>
+          {(erc20Transfers.length > 0 || erc721Transfers.length > 0) && (
+            <TabsTrigger value="tokens">
+              Tokens ({erc20Transfers.length + erc721Transfers.length})
+            </TabsTrigger>
+          )}
+          {showDetailedStorage && detailedStorage && (
+            <TabsTrigger value="storage">
+              Storage Ops ({detailedStorage.length})
+            </TabsTrigger>
+          )}
+        </TabsList>
 
-      {/* Overview Tab */}
-      {activeTab === "overview" && (
-        <div className="space-y-4">
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4 mt-4">
           {stateDiff.addresses.map((addressChange, idx) => {
             const hasChanges =
               addressChange.balanceChange ||
@@ -236,48 +234,58 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
             const isExpanded = expandedAddresses[addressChange.address];
 
             return (
-              <div
-                key={idx}
-                className="border border-gray-700 rounded bg-gray-800/50"
-              >
+              <Card key={idx}>
                 {/* Address Header */}
                 <button
                   type="button"
                   onClick={() => toggleAddress(addressChange.address)}
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-accent transition-colors rounded-t-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className="text-xs px-2 py-1 rounded font-semibold bg-gray-700 text-gray-300"
-                    >
-                      {categorizeAddress(addressChange.address, addressChange.codeChange?.after)}
-                    </span>
+                    <Badge variant="secondary">
+                      {categorizeAddress(
+                        addressChange.address,
+                        addressChange.codeChange?.after,
+                      )}
+                    </Badge>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopyAddress(addressChange.address);
                       }}
-                      className="font-mono text-sm text-blue-400 hover:text-blue-300"
+                      className="font-mono text-sm text-primary hover:underline"
                       title="Click to copy"
                     >
-                      {addressChange.address.slice(0, 10)}...{addressChange.address.slice(-8)}
+                      {addressChange.address.slice(0, 10)}...
+                      {addressChange.address.slice(-8)}
                     </button>
                     <div className="flex gap-2">
                       {addressChange.balanceChange && (
-                        <span className="text-xs px-2 py-1 bg-green-900/30 text-green-400 rounded">
+                        <Badge
+                          variant="outline"
+                          className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+                        >
                           Balance
-                        </span>
+                        </Badge>
                       )}
                       {addressChange.nonceChange && (
-                        <span className="text-xs px-2 py-1 bg-blue-900/30 text-blue-400 rounded">
+                        <Badge
+                          variant="outline"
+                          className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                        >
                           Nonce
-                        </span>
+                        </Badge>
                       )}
                       {addressChange.codeChange && (
-                        <span className="text-xs px-2 py-1 bg-purple-900/30 text-purple-400 rounded">
-                          {addressChange.codeChange.isDeployment ? "Deployed" : "Code Changed"}
-                        </span>
+                        <Badge
+                          variant="outline"
+                          className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        >
+                          {addressChange.codeChange.isDeployment
+                            ? "Deployed"
+                            : "Code Changed"}
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -290,213 +298,284 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
 
                 {/* Address Details */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 space-y-3">
+                  <CardContent className="space-y-3">
                     {/* Balance Change */}
                     {addressChange.balanceChange && (
-                      <div className="p-3 bg-gray-900 rounded border border-gray-700">
-                        <div className="text-sm font-semibold text-green-400 mb-2">
-                          Balance Change
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <div className="text-gray-400">Before</div>
-                            <div className="font-mono">
-                              {(Number(addressChange.balanceChange.before) / 1e18).toFixed(6)} ETH
+                      <Alert className="bg-green-500/10 border-green-500/20">
+                        <AlertDescription>
+                          <div className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
+                            Balance Change
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <div className="text-muted-foreground">
+                                Before
+                              </div>
+                              <div className="font-mono">
+                                {(
+                                  Number(addressChange.balanceChange.before) /
+                                  1e18
+                                ).toFixed(6)}{" "}
+                                ETH
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">After</div>
+                              <div className="font-mono">
+                                {(
+                                  Number(addressChange.balanceChange.after) /
+                                  1e18
+                                ).toFixed(6)}{" "}
+                                ETH
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">
+                                Difference
+                              </div>
+                              <div
+                                className={`font-mono font-semibold ${
+                                  BigInt(addressChange.balanceChange.diff) > 0n
+                                    ? "text-green-600 dark:text-green-400"
+                                    : "text-destructive"
+                                }`}
+                              >
+                                {
+                                  formatBalanceChange(
+                                    addressChange.balanceChange.diff,
+                                  ).sign
+                                }
+                                {
+                                  formatBalanceChange(
+                                    addressChange.balanceChange.diff,
+                                  ).eth
+                                }{" "}
+                                ETH
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <div className="text-gray-400">After</div>
-                            <div className="font-mono">
-                              {(Number(addressChange.balanceChange.after) / 1e18).toFixed(6)} ETH
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-gray-400">Difference</div>
-                            <div className={`font-mono font-semibold ${
-                              BigInt(addressChange.balanceChange.diff) > 0n
-                                ? "text-green-400"
-                                : "text-red-400"
-                            }`}>
-                              {formatBalanceChange(addressChange.balanceChange.diff).sign}
-                              {formatBalanceChange(addressChange.balanceChange.diff).eth} ETH
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                        </AlertDescription>
+                      </Alert>
                     )}
 
                     {/* Nonce Change */}
                     {addressChange.nonceChange && (
-                      <div className="p-3 bg-gray-900 rounded border border-gray-700">
-                        <div className="text-sm font-semibold text-blue-400 mb-2">
-                          Nonce Change
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <div className="text-gray-400">Before</div>
-                            <div className="font-mono">{addressChange.nonceChange.before}</div>
+                      <Alert className="bg-blue-500/10 border-blue-500/20">
+                        <AlertDescription>
+                          <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                            Nonce Change
                           </div>
-                          <div>
-                            <div className="text-gray-400">After</div>
-                            <div className="font-mono">{addressChange.nonceChange.after}</div>
-                          </div>
-                          <div>
-                            <div className="text-gray-400">Difference</div>
-                            <div className="font-mono text-blue-400">
-                              +{addressChange.nonceChange.diff}
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <div className="text-muted-foreground">
+                                Before
+                              </div>
+                              <div className="font-mono">
+                                {addressChange.nonceChange.before}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">After</div>
+                              <div className="font-mono">
+                                {addressChange.nonceChange.after}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground">
+                                Difference
+                              </div>
+                              <div className="font-mono text-blue-600 dark:text-blue-400">
+                                +{addressChange.nonceChange.diff}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </AlertDescription>
+                      </Alert>
                     )}
 
                     {/* Code Change */}
                     {addressChange.codeChange && (
-                      <div className="p-3 bg-gray-900 rounded border border-gray-700">
-                        <div className="text-sm font-semibold text-purple-400 mb-2">
-                          Code Change
-                        </div>
-                        {addressChange.codeChange.isDeployment && (
-                          <div className="text-sm text-green-400">
-                            ✓ Contract Deployed ({addressChange.codeChange.after?.length || 0} bytes)
+                      <Alert className="bg-purple-500/10 border-purple-500/20">
+                        <AlertDescription>
+                          <div className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                            Code Change
                           </div>
-                        )}
-                        {addressChange.codeChange.isDestruction && (
-                          <div className="text-sm text-red-400">
-                            ✗ Contract Destroyed
-                          </div>
-                        )}
-                        {!addressChange.codeChange.isDeployment && !addressChange.codeChange.isDestruction && (
-                          <div className="text-sm text-yellow-400">
-                            ⚠ Code Modified (rare - possible proxy upgrade)
-                          </div>
-                        )}
-                      </div>
+                          {addressChange.codeChange.isDeployment && (
+                            <div className="text-sm text-green-600 dark:text-green-400">
+                              ✓ Contract Deployed (
+                              {addressChange.codeChange.after?.length || 0}{" "}
+                              bytes)
+                            </div>
+                          )}
+                          {addressChange.codeChange.isDestruction && (
+                            <div className="text-sm text-destructive">
+                              ✗ Contract Destroyed
+                            </div>
+                          )}
+                          {!addressChange.codeChange.isDeployment &&
+                            !addressChange.codeChange.isDestruction && (
+                              <div className="text-sm text-yellow-600 dark:text-yellow-500">
+                                ⚠ Code Modified (rare - possible proxy upgrade)
+                              </div>
+                            )}
+                        </AlertDescription>
+                      </Alert>
                     )}
-                  </div>
+                  </CardContent>
                 )}
-              </div>
+              </Card>
             );
           })}
 
-          {stateDiff.addresses.filter(a => a.balanceChange || a.nonceChange || a.codeChange).length === 0 && (
-            <div className="p-8 text-center text-gray-400">
+          {stateDiff.addresses.filter(
+            (a) => a.balanceChange || a.nonceChange || a.codeChange,
+          ).length === 0 && (
+            <div className="p-8 text-center text-muted-foreground">
               No state changes detected in this transaction
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Balances Tab */}
-      {activeTab === "balances" && (
-        <div className="space-y-2">
+        {/* Balances Tab */}
+        <TabsContent value="balances" className="space-y-2 mt-4">
           {stateDiff.addresses
             .filter((a) => a.balanceChange)
             .map((addressChange, idx) => (
-              <div
-                key={idx}
-                className="p-4 bg-gray-800 border border-gray-700 rounded"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyAddress(addressChange.address)}
-                    className="font-mono text-sm text-blue-400 hover:text-blue-300"
-                    title="Click to copy"
-                  >
-                    {addressChange.address}
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <div className="text-gray-400 mb-1">Before</div>
-                    <div className="font-mono">
-                      {(Number(addressChange.balanceChange.before) / 1e18).toFixed(6)} ETH
+              <Card key={idx}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyAddress(addressChange.address)}
+                      className="font-mono text-sm text-primary hover:underline"
+                      title="Click to copy"
+                    >
+                      {addressChange.address}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <div className="text-muted-foreground mb-1">Before</div>
+                      <div className="font-mono">
+                        {(
+                          Number(addressChange.balanceChange.before) / 1e18
+                        ).toFixed(6)}{" "}
+                        ETH
+                      </div>
+                      <div className="text-xs text-muted-foreground/70 font-mono">
+                        {addressChange.balanceChange.before} wei
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500 font-mono">
-                      {addressChange.balanceChange.before} wei
+                    <div>
+                      <div className="text-muted-foreground mb-1">After</div>
+                      <div className="font-mono">
+                        {(
+                          Number(addressChange.balanceChange.after) / 1e18
+                        ).toFixed(6)}{" "}
+                        ETH
+                      </div>
+                      <div className="text-xs text-muted-foreground/70 font-mono">
+                        {addressChange.balanceChange.after} wei
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground mb-1">Change</div>
+                      <div
+                        className={`font-mono font-semibold ${
+                          BigInt(addressChange.balanceChange.diff) > 0n
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-destructive"
+                        }`}
+                      >
+                        {
+                          formatBalanceChange(addressChange.balanceChange.diff)
+                            .sign
+                        }
+                        {
+                          formatBalanceChange(addressChange.balanceChange.diff)
+                            .eth
+                        }{" "}
+                        ETH
+                      </div>
+                      <div className="text-xs text-muted-foreground/70 font-mono">
+                        {
+                          formatBalanceChange(addressChange.balanceChange.diff)
+                            .sign
+                        }
+                        {
+                          formatBalanceChange(addressChange.balanceChange.diff)
+                            .wei
+                        }{" "}
+                        wei
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-gray-400 mb-1">After</div>
-                    <div className="font-mono">
-                      {(Number(addressChange.balanceChange.after) / 1e18).toFixed(6)} ETH
-                    </div>
-                    <div className="text-xs text-gray-500 font-mono">
-                      {addressChange.balanceChange.after} wei
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-gray-400 mb-1">Change</div>
-                    <div className={`font-mono font-semibold ${
-                      BigInt(addressChange.balanceChange.diff) > 0n
-                        ? "text-green-400"
-                        : "text-red-400"
-                    }`}>
-                      {formatBalanceChange(addressChange.balanceChange.diff).sign}
-                      {formatBalanceChange(addressChange.balanceChange.diff).eth} ETH
-                    </div>
-                    <div className="text-xs text-gray-500 font-mono">
-                      {formatBalanceChange(addressChange.balanceChange.diff).sign}
-                      {formatBalanceChange(addressChange.balanceChange.diff).wei} wei
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
 
           {stateDiff.addresses.filter((a) => a.balanceChange).length === 0 && (
-            <div className="p-8 text-center text-gray-400">
+            <div className="p-8 text-center text-muted-foreground">
               No balance changes in this transaction
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Tokens Tab */}
-      {activeTab === "tokens" && (
-        <div className="space-y-4">
+        {/* Tokens Tab */}
+        <TabsContent value="tokens" className="space-y-4 mt-4">
           {/* ERC20 Transfers */}
           {erc20Transfers.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold mb-3 text-yellow-400">
+              <h4 className="text-lg font-semibold mb-3 text-yellow-600 dark:text-yellow-400">
                 ERC20 Transfers ({erc20Transfers.length})
               </h4>
               <div className="space-y-2">
                 {erc20Transfers.map((transfer, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 bg-gray-800 border border-gray-700 rounded"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded font-semibold">
-                        ERC20
-                      </span>
-                      <span className="text-sm text-gray-400">Token:</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyAddress(transfer.token)}
-                        className="font-mono text-sm text-blue-400 hover:text-blue-300"
-                      >
-                        {transfer.token.slice(0, 10)}...{transfer.token.slice(-8)}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div>
-                        <div className="text-gray-400">From</div>
-                        <div className="font-mono text-xs">{transfer.from.slice(0, 10)}...{transfer.from.slice(-6)}</div>
+                  <Card key={idx}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge
+                          variant="outline"
+                          className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20"
+                        >
+                          ERC20
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          Token:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyAddress(transfer.token)}
+                          className="font-mono text-sm text-primary hover:underline"
+                        >
+                          {transfer.token.slice(0, 10)}...
+                          {transfer.token.slice(-8)}
+                        </button>
                       </div>
-                      <div className="text-gray-400">→</div>
-                      <div>
-                        <div className="text-gray-400">To</div>
-                        <div className="font-mono text-xs">{transfer.to.slice(0, 10)}...{transfer.to.slice(-6)}</div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">From</div>
+                          <div className="font-mono text-xs">
+                            {transfer.from.slice(0, 10)}...
+                            {transfer.from.slice(-6)}
+                          </div>
+                        </div>
+                        <div className="text-muted-foreground">→</div>
+                        <div>
+                          <div className="text-muted-foreground">To</div>
+                          <div className="font-mono text-xs">
+                            {transfer.to.slice(0, 10)}...{transfer.to.slice(-6)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Amount</div>
+                          <div className="font-mono">
+                            {BigInt(transfer.value).toString()}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-gray-400">Amount</div>
-                        <div className="font-mono">{BigInt(transfer.value).toString()}</div>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
@@ -505,121 +584,141 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
           {/* ERC721 Transfers */}
           {erc721Transfers.length > 0 && (
             <div>
-              <h4 className="text-lg font-semibold mb-3 text-purple-400">
+              <h4 className="text-lg font-semibold mb-3 text-purple-600 dark:text-purple-400">
                 ERC721 Transfers ({erc721Transfers.length})
               </h4>
               <div className="space-y-2">
                 {erc721Transfers.map((transfer, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 bg-gray-800 border border-gray-700 rounded"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs px-2 py-1 bg-purple-900/30 text-purple-400 rounded font-semibold">
-                        ERC721
-                      </span>
-                      <span className="text-sm text-gray-400">Token:</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyAddress(transfer.token)}
-                        className="font-mono text-sm text-blue-400 hover:text-blue-300"
-                      >
-                        {transfer.token.slice(0, 10)}...{transfer.token.slice(-8)}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm">
-                      <div>
-                        <div className="text-gray-400">From</div>
-                        <div className="font-mono text-xs">{transfer.from.slice(0, 10)}...{transfer.from.slice(-6)}</div>
+                  <Card key={idx}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge
+                          variant="outline"
+                          className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        >
+                          ERC721
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          Token:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyAddress(transfer.token)}
+                          className="font-mono text-sm text-primary hover:underline"
+                        >
+                          {transfer.token.slice(0, 10)}...
+                          {transfer.token.slice(-8)}
+                        </button>
                       </div>
-                      <div className="text-gray-400">→</div>
-                      <div>
-                        <div className="text-gray-400">To</div>
-                        <div className="font-mono text-xs">{transfer.to.slice(0, 10)}...{transfer.to.slice(-6)}</div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">From</div>
+                          <div className="font-mono text-xs">
+                            {transfer.from.slice(0, 10)}...
+                            {transfer.from.slice(-6)}
+                          </div>
+                        </div>
+                        <div className="text-muted-foreground">→</div>
+                        <div>
+                          <div className="text-muted-foreground">To</div>
+                          <div className="font-mono text-xs">
+                            {transfer.to.slice(0, 10)}...{transfer.to.slice(-6)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Token ID</div>
+                          <div className="font-mono">{transfer.tokenId}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-gray-400">Token ID</div>
-                        <div className="font-mono">{transfer.tokenId}</div>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
           )}
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Storage Tab */}
-      {activeTab === "storage" && showDetailedStorage && detailedStorage && (
-        <div className="space-y-2">
-          <div className="text-sm text-gray-400 mb-4">
-            Showing all SSTORE and SLOAD operations from transaction trace
-          </div>
-          {detailedStorage.map((op, idx) => (
-            <div
-              key={idx}
-              className="p-3 bg-gray-800 border border-gray-700 rounded text-sm"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`text-xs px-2 py-1 rounded font-semibold ${
-                      op.op === "SSTORE"
-                        ? "bg-orange-900/30 text-orange-400"
-                        : "bg-blue-900/30 text-blue-400"
-                    }`}
-                  >
-                    {op.op}
-                  </span>
-                  <span className="text-gray-400">PC: {op.pc}</span>
-                  <span className="text-gray-400">Depth: {op.depth}</span>
-                </div>
-                <div className="text-gray-400">
-                  Gas: {op.gas} (-{op.gasCost})
-                </div>
+        {/* Storage Tab */}
+        <TabsContent value="storage" className="space-y-2 mt-4">
+          {showDetailedStorage && detailedStorage && (
+            <>
+              <div className="text-sm text-muted-foreground mb-4">
+                Showing all SSTORE and SLOAD operations from transaction trace
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-gray-400">Key</div>
-                  <div className="font-mono text-xs break-all">
-                    {formatStorageKey(op.key)}
-                  </div>
-                </div>
-                {op.op === "SSTORE" ? (
-                  <>
-                    <div>
-                      <div className="text-gray-400">Old Value</div>
-                      <div className="font-mono text-xs break-all">
-                        {formatStorageValue(op.oldValue)}
+              {detailedStorage.map((op, idx) => (
+                <Card key={idx}>
+                  <CardContent className="pt-3 text-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <Badge
+                          variant="outline"
+                          className={
+                            op.op === "SSTORE"
+                              ? "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20"
+                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                          }
+                        >
+                          {op.op}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          PC: {op.pc}
+                        </span>
+                        <span className="text-muted-foreground">
+                          Depth: {op.depth}
+                        </span>
+                      </div>
+                      <div className="text-muted-foreground">
+                        Gas: {op.gas} (-{op.gasCost})
                       </div>
                     </div>
-                    <div className="col-span-2">
-                      <div className="text-gray-400">New Value</div>
-                      <div className="font-mono text-xs break-all">
-                        {formatStorageValue(op.newValue)}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-muted-foreground">Key</div>
+                        <div className="font-mono text-xs break-all">
+                          {formatStorageKey(op.key)}
+                        </div>
                       </div>
+                      {op.op === "SSTORE" ? (
+                        <>
+                          <div>
+                            <div className="text-muted-foreground">
+                              Old Value
+                            </div>
+                            <div className="font-mono text-xs break-all">
+                              {formatStorageValue(op.oldValue)}
+                            </div>
+                          </div>
+                          <div className="col-span-2">
+                            <div className="text-muted-foreground">
+                              New Value
+                            </div>
+                            <div className="font-mono text-xs break-all">
+                              {formatStorageValue(op.newValue)}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div>
+                          <div className="text-muted-foreground">Value</div>
+                          <div className="font-mono text-xs break-all">
+                            {formatStorageValue(op.value)}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </>
-                ) : (
-                  <div>
-                    <div className="text-gray-400">Value</div>
-                    <div className="font-mono text-xs break-all">
-                      {formatStorageValue(op.value)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+                  </CardContent>
+                </Card>
+              ))}
 
-          {detailedStorage.length === 0 && (
-            <div className="p-8 text-center text-gray-400">
-              No storage operations in this transaction
-            </div>
+              {detailedStorage.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground">
+                  No storage operations in this transaction
+                </div>
+              )}
+            </>
           )}
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
