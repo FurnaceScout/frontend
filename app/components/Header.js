@@ -118,6 +118,12 @@ export default function Header() {
             >
               🔍 Search
             </Link>
+            <Link
+              href="/tokens"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              🪙 Tokens
+            </Link>
             <FoundryProjectManager />
             <EventStreamManager />
             <ForgeTestRunner />

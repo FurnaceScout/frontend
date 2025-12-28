@@ -9,6 +9,7 @@ import {
 import { useState, useEffect } from "react";
 import { usePublicClient } from "wagmi";
 import NetworkStatsWidget from "@/app/components/NetworkStatsWidget";
+import RecentTokenTransfers from "@/app/components/RecentTokenTransfers";
 
 export default function Home() {
   const { blocks, loading: blocksLoading } = useLatestBlocks(5);
@@ -385,6 +386,11 @@ export default function Home() {
         {/* Network Stats Widget */}
         <div className="max-w-7xl mx-auto mt-12">
           <NetworkStatsWidget />
+        </div>
+
+        {/* Recent Token Transfers Widget */}
+        <div className="max-w-7xl mx-auto mt-8">
+          <RecentTokenTransfers />
         </div>
       </div>
 
