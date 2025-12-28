@@ -355,6 +355,13 @@ export default function TokenBalances({ address, transactions }) {
 - Document complex logic
 - Add TODOs with context
 
+### Progress Tracking
+- **IMPORTANT**: Only update progress documentation (e.g., `SHADCN_CONVERSION_PROGRESS.md`) when completing an ENTIRE top-level phase
+- Do NOT update progress files after individual component conversions
+- Example: Update only after completing all of "Phase 1: Core Components", not after each button conversion
+- Keep detailed commit messages for individual changes
+- Progress files are for major milestone tracking only
+
 ## Testing
 
 ### Manual Testing Checklist
