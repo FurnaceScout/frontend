@@ -39,7 +39,7 @@ echo ""
 
 # Ask user which method they prefer
 echo "Choose integration method:"
-echo "1) Push from current directory (recommended if you're in ironscout/)"
+echo "1) Push from current directory (recommended if you're in FurnaceScout/)"
 echo "2) Clone repository and copy files"
 echo ""
 read -p "Enter choice (1 or 2): " choice

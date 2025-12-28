@@ -1,7 +1,7 @@
 import DeploymentTracker from "@/app/components/DeploymentTracker";
 
 export const metadata = {
-  title: "Foundry Deployments - IronScout",
+  title: "Foundry Deployments - FurnaceScout",
   description: "Track and manage Foundry contract deployments",
 };
 
