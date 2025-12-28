@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import BookmarksPanel from "./BookmarksPanel";
 
 export default function Header() {
   const [search, setSearch] = useState("");
+  const [showBookmarks, setShowBookmarks] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e) => {
@@ -73,9 +75,16 @@ export default function Header() {
             >
               Dashboard
             </Link>
+            <button
+              onClick={() => setShowBookmarks(true)}
+              className="px-4 py-2 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors font-semibold"
+              title="View bookmarks"
+            >
+              📌 Bookmarks
+            </button>
             <Link
               href="/upload-abi"
-              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors font-semibold"
             >
               Upload ABI
             </Link>
@@ -93,6 +102,12 @@ export default function Header() {
           </div>
         </div>
       </div>
+
+      {/* Bookmarks Panel */}
+      <BookmarksPanel
+        isOpen={showBookmarks}
+        onClose={() => setShowBookmarks(false)}
+      />
     </header>
   );
 }

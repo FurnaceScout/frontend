@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2024
 
+#### Transaction Bookmarks
+- **Save transactions** with custom labels and notes for quick access
+- **Bookmarks panel**: Slide-in panel accessible from header
+- **Search functionality**: Filter bookmarks by label, notes, or hash
+- **Edit bookmarks**: Update labels and notes anytime
+- **Export/Import**: Backup bookmarks as JSON file
+- **localStorage persistence**: Bookmarks saved in browser
+- **Quick access**: Bookmark button on every transaction page
+- **Visual indicators**: ★ for bookmarked, ☆ for unbookmarked
+- **Timestamp tracking**: Automatic creation and update timestamps
+- **Delete functionality**: Remove individual or all bookmarks
+- **Components**:
+  - `BookmarkButton` - Add/remove bookmark from transaction pages
+  - `BookmarksPanel` - View and manage all bookmarks
+- **Utilities** (`/lib/bookmarks.js`):
+  - `addBookmark()` - Create new bookmark
+  - `removeBookmark()` - Delete bookmark
+  - `updateBookmark()` - Edit bookmark
+  - `getBookmarks()` - Retrieve all bookmarks
+  - `searchBookmarks()` - Search by query
+  - `exportBookmarks()` - Export as JSON
+  - `isBookmarked()` - Check if transaction saved
+
 #### Transaction Trace Viewer
 - **Deep transaction debugging**: Opcode-level insight into transaction execution
 - **Three viewing modes**:
@@ -179,6 +202,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Side-by-side trace comparison
 - [ ] Memory view panel
 - [ ] Keyboard shortcuts for trace navigation
+- [x] Transaction bookmarks ✅ **COMPLETED**
+- [ ] Bookmark import functionality
+- [ ] Bookmark categories/folders
+- [ ] Bookmark tags
+- [ ] Cloud sync for bookmarks (optional)
 
 ### Potential Improvements
 - [ ] Add unit tests for hooks

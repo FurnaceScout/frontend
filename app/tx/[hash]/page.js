@@ -5,6 +5,7 @@ import { publicClient, formatEther, shortenAddress } from "@/lib/viem";
 import { decodeTransactionInput, decodeLogs } from "@/lib/contract-decoder";
 import Link from "next/link";
 import TransactionTrace from "@/app/components/TransactionTrace";
+import BookmarkButton from "@/app/components/BookmarkButton";
 
 export default function TransactionPage({ params }) {
   const { hash } = use(params);
@@ -74,8 +75,8 @@ export default function TransactionPage({ params }) {
         Transaction Details
       </h1>
 
-      {/* Status Badge */}
-      <div className="mb-6">
+      {/* Status Badge & Bookmark */}
+      <div className="mb-6 flex items-center gap-4">
         {receipt.status === "success" ? (
           <span className="px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
             ✓ Success
@@ -85,6 +86,10 @@ export default function TransactionPage({ params }) {
             ✗ Failed
           </span>
         )}
+        <BookmarkButton
+          hash={hash}
+          defaultLabel={`Transaction ${receipt.status === "success" ? "Success" : "Failed"}`}
+        />
       </div>
 
       {/* Transaction Info */}
