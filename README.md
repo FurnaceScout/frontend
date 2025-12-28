@@ -59,6 +59,30 @@ bun dev
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+### Docker Installation (Alternative)
+
+If you prefer using Docker:
+
+```bash
+# Quick start with docker-compose
+docker-compose up -d
+
+# Or use the provided script
+./docker-start.sh
+
+# Or manually
+docker build -t ironscout .
+docker run -d \
+  --name ironscout \
+  -p 3000:3000 \
+  -e NEXT_PUBLIC_RPC_URL=http://host.docker.internal:8545 \
+  -v $(pwd):/foundry-project:ro \
+  --add-host=host.docker.internal:host-gateway \
+  ironscout
+```
+
+See [docs/DOCKER.md](docs/DOCKER.md) for comprehensive Docker documentation.
+
 ## Usage Guide
 
 ### Deploying a Contract to Anvil

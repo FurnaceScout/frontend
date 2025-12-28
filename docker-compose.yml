@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # IronScout Block Explorer
+  ironscout:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ironscout
+    ports:
+      - "3000:3000"
+    environment:
+      # RPC endpoint - connects to Anvil on host machine
+      - NEXT_PUBLIC_RPC_URL=http://host.docker.internal:8545
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      # Mount your Foundry project directory (adjust path as needed)
+      # This allows IronScout to scan broadcast/ and out/ directories
+      - ./:/foundry-project:ro
+      # Optional: Mount another project directory
+      # - /path/to/your/foundry/project:/foundry-project:ro
+    networks:
+      - ironscout-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    extra_hosts:
+      # Allow container to access host machine (for Anvil running on host)
+      - "host.docker.internal:host-gateway"
+
+  # Optional: Anvil instance running in Docker
+  # Uncomment this section if you want Anvil in the same Docker network
+  # anvil:
+  #   image: ghcr.io/foundry-rs/foundry:latest
+  #   container_name: anvil
+  #   command: anvil --host 0.0.0.0 --chain-id 31337
+  #   ports:
+  #     - "8545:8545"
+  #   networks:
+  #     - ironscout-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "cast", "chain-id", "--rpc-url", "http://localhost:8545"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  ironscout-network:
+    driver: bridge
+
+# To use this docker-compose setup:
+#
+# 1. If Anvil is running on your host machine (recommended):
+#    docker-compose up -d
+#
+# 2. If you want Anvil in Docker (uncomment anvil service above):
+#    Update NEXT_PUBLIC_RPC_URL to: http://anvil:8545
+#    docker-compose up -d
+#
+# 3. To mount a different Foundry project:
+#    docker-compose run -v /path/to/project:/foundry-project:ro ironscout
+#
+# 4. Access IronScout at: http://localhost:3000
