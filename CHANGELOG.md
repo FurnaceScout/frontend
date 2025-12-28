@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - 2024
 
+#### Foundry Project Auto-detection
+- **Automatic project detection**: Scans for `foundry.toml` and detects Foundry projects
+- **Batch ABI loading**: Load all compiled contract ABIs with one click from `out/` directory
+- **Contract linking**: Connect loaded contracts to deployed addresses
+- **Project statistics**: Real-time stats (contracts, functions, events)
+- **Configuration parsing**: Reads and parses `foundry.toml` settings
+- **Smart organization**: Separates contracts with addresses vs. needing addresses
+- **Persistent storage**: All loaded contracts persist in browser localStorage
+- **Clear/reset functionality**: Remove all Foundry contracts or individual ones
+- **API integration**: RESTful API route `/api/foundry/scan` for project scanning
+- **Header integration**: Accessible via "🔨 Foundry" button in navigation
+- **Components**:
+  - `FoundryProjectManager` - Main project management modal
+- **API Routes**:
+  - `/api/foundry/scan` - Scan for Foundry project and load artifacts
+- **Utilities** (`/lib/foundry-project.js`):
+  - `scanFoundryProject()` - Detect and scan Foundry project
+  - `loadFoundryABIs()` - Load ABIs into localStorage
+  - `getFoundryContracts()` - Retrieve loaded contracts
+  - `linkFoundryContract()` - Link contract to deployed address
+  - `clearFoundryData()` - Remove all Foundry data
+  - `getFoundryStats()` - Get project statistics
+  - `saveFoundryConfig()` - Store project configuration
+  - `getFoundryConfig()` - Retrieve stored configuration
+- **Documentation**: Comprehensive guide at `/docs/FOUNDRY_PROJECT.md` (800+ lines)
+- **Use cases**:
+  - Seamless development workflow integration
+  - Quick project setup and testing
+  - Multi-contract project management
+  - Version comparison and A/B testing
+- **Features**:
+  - Auto-extracts ABIs from Foundry JSON output
+  - Displays contract metadata (functions, events, bytecode)
+  - Batch operations (load all, clear all)
+  - Integration with existing ABI features
+  - Security: read-only file system access within project directory
+
 #### Memory View for Transaction Traces
 - **Step-by-step memory inspection**: View EVM memory state at each execution step
 - **Hex dump format**: Standard 32 bytes per row with memory offsets
