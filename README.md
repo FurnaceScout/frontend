@@ -1,7 +1,5 @@
 # FurnaceScout 🔥
 
-> Unofficial frontend block explorer for Foundry's Anvil testnet
-
 A modern, feature-rich block explorer built specifically for Foundry's Anvil, making local Ethereum development easier and more transparent.
 
 ![FurnaceScout](https://img.shields.io/badge/Foundry-Anvil-red?style=flat-square)
