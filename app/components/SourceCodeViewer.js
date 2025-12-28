@@ -2,6 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { codeToHtml } from "shiki";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 export default function SourceCodeViewer({ sourceCode, fileName }) {
   const [showLineNumbers, setShowLineNumbers] = useState(true);
@@ -114,106 +123,111 @@ export default function SourceCodeViewer({ sourceCode, fileName }) {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">📄</span>
-          <div>
-            <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-              {fileName || "Source Code"}
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📄</span>
+            <div>
+              <CardTitle>{fileName || "Source Code"}</CardTitle>
+              <Badge variant="secondary" className="mt-1">
+                {lines.length} lines
+              </Badge>
             </div>
-            <div className="text-xs text-zinc-500">{lines.length} lines</div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowLineNumbers(!showLineNumbers)}
-            className="px-3 py-1.5 text-xs bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-colors font-semibold"
-          >
-            {showLineNumbers ? "🔢 Hide" : "🔢 Show"} Line Numbers
-          </button>
-          {foldedSections.size > 0 && (
-            <button
-              onClick={() => setFoldedSections(new Set())}
-              className="px-3 py-1.5 text-xs bg-white dark:bg-zinc-700 border border-zinc-300 dark:border-zinc-600 rounded hover:bg-zinc-100 dark:hover:bg-zinc-600 transition-colors font-semibold"
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowLineNumbers(!showLineNumbers)}
+              variant="outline"
+              size="sm"
             >
-              🔓 Unfold All
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Code Content */}
-      {isHighlighting ? (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Highlighting code...
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <div className="relative">
-            {showLineNumbers ? (
-              <div className="font-mono text-sm">
-                {lines.map((line, index) => {
-                  if (isLineFolded(index)) {
-                    return null;
-                  }
-
-                  const foldRange = isFoldStart(index);
-                  const isFoldable = !!foldRange;
-                  const isFolded = foldRange
-                    ? foldedSections.has(`${foldRange.start}-${foldRange.end}`)
-                    : false;
-
-                  return (
-                    <div
-                      key={index}
-                      className="flex hover:bg-zinc-100 dark:hover:bg-zinc-800/50 group"
-                    >
-                      <div className="flex items-center flex-shrink-0 w-20 px-2 text-right text-zinc-400 dark:text-zinc-600 bg-zinc-50 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-800 select-none">
-                        {isFoldable && (
-                          <button
-                            onClick={() =>
-                              toggleFold(foldRange.start, foldRange.end)
-                            }
-                            className="w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:text-zinc-600 dark:hover:text-zinc-400"
-                            title={isFolded ? "Unfold" : "Fold"}
-                          >
-                            {isFolded ? "▶" : "▼"}
-                          </button>
-                        )}
-                        <span className="ml-auto text-xs">{index + 1}</span>
-                      </div>
-                      <div className="flex-1 px-4 py-0.5 overflow-x-auto min-h-[1.5rem]">
-                        {isFolded ? (
-                          <span className="text-zinc-400 dark:text-zinc-600 italic text-xs">
-                            ... {foldRange.end - foldRange.start} lines folded
-                            ...
-                          </span>
-                        ) : (
-                          <span className="text-zinc-900 dark:text-zinc-100">
-                            {line || " "}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div
-                className="shiki-container"
-                dangerouslySetInnerHTML={{ __html: highlightedCode }}
-              />
+              {showLineNumbers ? "🔢 Hide" : "🔢 Show"} Line Numbers
+            </Button>
+            {foldedSections.size > 0 && (
+              <Button
+                onClick={() => setFoldedSections(new Set())}
+                variant="outline"
+                size="sm"
+              >
+                🔓 Unfold All
+              </Button>
             )}
           </div>
         </div>
-      )}
+      </CardHeader>
+
+      <CardContent>
+        {isHighlighting ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/6" />
+            <Skeleton className="h-4 w-full" />
+            <p className="text-sm text-muted-foreground mt-4">
+              Highlighting code...
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="relative">
+              {showLineNumbers ? (
+                <div className="font-mono text-sm border rounded-lg overflow-hidden">
+                  {lines.map((line, index) => {
+                    if (isLineFolded(index)) {
+                      return null;
+                    }
+
+                    const foldRange = isFoldStart(index);
+                    const isFoldable = !!foldRange;
+                    const isFolded = foldRange
+                      ? foldedSections.has(
+                          `${foldRange.start}-${foldRange.end}`,
+                        )
+                      : false;
+
+                    return (
+                      <div key={index} className="flex hover:bg-muted group">
+                        <div className="flex items-center flex-shrink-0 w-20 px-2 text-right text-muted-foreground bg-muted border-r select-none">
+                          {isFoldable && (
+                            <Button
+                              onClick={() =>
+                                toggleFold(foldRange.start, foldRange.end)
+                              }
+                              variant="ghost"
+                              size="sm"
+                              className="w-4 h-4 p-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              title={isFolded ? "Unfold" : "Fold"}
+                            >
+                              {isFolded ? "▶" : "▼"}
+                            </Button>
+                          )}
+                          <span className="ml-auto text-xs">{index + 1}</span>
+                        </div>
+                        <div className="flex-1 px-4 py-0.5 overflow-x-auto min-h-[1.5rem]">
+                          {isFolded ? (
+                            <span className="text-muted-foreground italic text-xs">
+                              ... {foldRange.end - foldRange.start} lines folded
+                              ...
+                            </span>
+                          ) : (
+                            <span>{line || " "}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div
+                  className="shiki-container border rounded-lg overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: highlightedCode }}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
 
       <style jsx>{`
         .shiki-container :global(pre) {
@@ -234,6 +248,6 @@ export default function SourceCodeViewer({ sourceCode, fileName }) {
           min-height: 1.5rem;
         }
       `}</style>
-    </div>
+    </Card>
   );
 }
