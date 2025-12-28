@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { publicClient, shortenAddress } from "@/lib/viem";
-import { parseTokenTransfers, detectTokenType, formatTokenAmount } from "@/lib/tokens";
+import {
+  parseTokenTransfers,
+  detectTokenType,
+  formatTokenAmount,
+} from "@/lib/tokens";
 import Link from "next/link";
 import LabelBadge from "./LabelBadge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import { Button } from "@/app/components/ui/button";
 
 export default function RecentTokenTransfers() {
   const [transfers, setTransfers] = useState([]);
@@ -33,7 +46,8 @@ export default function RecentTokenTransfers() {
               .getTransactionReceipt({ hash: tx.hash })
               .catch(() => null);
 
-            if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
+            if (!receipt || !receipt.logs || receipt.logs.length === 0)
+              continue;
 
             const txTransfers = parseTokenTransfers(receipt.logs);
 
@@ -71,9 +85,12 @@ export default function RecentTokenTransfers() {
                 };
               }
             } catch (error) {
-              console.error(`Error fetching metadata for ${tokenAddress}:`, error);
+              console.error(
+                `Error fetching metadata for ${tokenAddress}:`,
+                error,
+              );
             }
-          })
+          }),
         );
 
         setTokenMetadata(metadata);
@@ -87,161 +104,158 @@ export default function RecentTokenTransfers() {
     loadRecentTransfers();
   }, []);
 
+  const getTokenBadgeVariant = (type) => {
+    if (type.startsWith("ERC20")) return "default";
+    if (type.startsWith("ERC721")) return "secondary";
+    return "outline";
+  };
+
   if (loading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-            Recent Token Transfers
-          </h2>
-        </div>
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Token Transfers</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (transfers.length === 0) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-            Recent Token Transfers
-          </h2>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-4xl mb-3">🪙</div>
-          <div className="text-zinc-600 dark:text-zinc-400">
-            No recent token transfers
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Token Transfers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="text-4xl mb-3">🪙</div>
+            <div className="text-muted-foreground">
+              No recent token transfers
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-          Recent Token Transfers
-        </h2>
-        <Link
-          href="/tokens"
-          className="text-sm text-red-600 dark:text-red-400 hover:underline font-medium"
-        >
-          View All →
-        </Link>
-      </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Recent Token Transfers</CardTitle>
+          <Button variant="link" size="sm" asChild>
+            <Link href="/tokens">View All →</Link>
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {transfers.map((transfer, index) => {
+            const metadata = tokenMetadata[transfer.token.toLowerCase()] || {};
+            const decimals = metadata.decimals || 18;
 
-      <div className="space-y-3">
-        {transfers.map((transfer, index) => {
-          const metadata = tokenMetadata[transfer.token.toLowerCase()] || {};
-          const decimals = metadata.decimals || 18;
+            return (
+              <div
+                key={`${transfer.txHash}-${index}`}
+                className="p-3 border rounded-lg hover:border-primary transition-colors"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  {/* Left: Type & Token Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={getTokenBadgeVariant(transfer.type)}>
+                        {transfer.type}
+                      </Badge>
+                      {metadata.name && (
+                        <Link
+                          href={`/tokens/${transfer.token}`}
+                          className="text-sm font-semibold hover:text-primary truncate"
+                        >
+                          {metadata.name}
+                        </Link>
+                      )}
+                      {metadata.symbol && (
+                        <span className="text-xs text-muted-foreground">
+                          ({metadata.symbol})
+                        </span>
+                      )}
+                    </div>
 
-          return (
-            <div
-              key={`${transfer.txHash}-${index}`}
-              className="p-3 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-red-500 dark:hover:border-red-500 transition-colors"
-            >
-              <div className="flex items-center justify-between gap-3">
-                {/* Left: Type & Token Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                        transfer.type.startsWith("ERC20")
-                          ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                          : transfer.type.startsWith("ERC721")
-                            ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
-                            : "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                      }`}
-                    >
-                      {transfer.type}
-                    </span>
-                    {metadata.name && (
+                    {/* Addresses */}
+                    <div className="flex items-center gap-1.5 text-xs">
                       <Link
-                        href={`/tokens/${transfer.token}`}
-                        className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 truncate"
+                        href={`/address/${transfer.from}`}
+                        className="font-mono hover:text-primary"
                       >
-                        {metadata.name}
+                        <LabelBadge
+                          address={transfer.from}
+                          fallback={shortenAddress(transfer.from, 4)}
+                        />
                       </Link>
-                    )}
-                    {metadata.symbol && (
-                      <span className="text-xs text-zinc-500">
-                        ({metadata.symbol})
-                      </span>
-                    )}
-                  </div>
+                      <span className="text-muted-foreground text-xs">→</span>
+                      <Link
+                        href={`/address/${transfer.to}`}
+                        className="font-mono hover:text-primary"
+                      >
+                        <LabelBadge
+                          address={transfer.to}
+                          fallback={shortenAddress(transfer.to, 4)}
+                        />
+                      </Link>
+                    </div>
 
-                  {/* Addresses */}
-                  <div className="flex items-center gap-1.5 text-xs">
+                    {/* TX Hash */}
                     <Link
-                      href={`/address/${transfer.from}`}
-                      className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
+                      href={`/tx/${transfer.txHash}`}
+                      className="text-xs text-muted-foreground hover:text-primary font-mono mt-1 block"
                     >
-                      <LabelBadge
-                        address={transfer.from}
-                        fallback={shortenAddress(transfer.from, 4)}
-                      />
-                    </Link>
-                    <span className="text-zinc-400 text-xs">→</span>
-                    <Link
-                      href={`/address/${transfer.to}`}
-                      className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
-                    >
-                      <LabelBadge
-                        address={transfer.to}
-                        fallback={shortenAddress(transfer.to, 4)}
-                      />
+                      {shortenAddress(transfer.txHash, 4)}
                     </Link>
                   </div>
 
-                  {/* TX Hash */}
-                  <Link
-                    href={`/tx/${transfer.txHash}`}
-                    className="text-xs text-zinc-500 hover:text-red-600 dark:hover:text-red-400 font-mono mt-1 block"
-                  >
-                    {shortenAddress(transfer.txHash, 4)}
-                  </Link>
-                </div>
-
-                {/* Right: Amount/Value */}
-                <div className="text-right text-sm">
-                  {transfer.type.startsWith("ERC20") && transfer.value ? (
-                    <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                      {formatTokenAmount(BigInt(transfer.value), decimals)}
-                    </div>
-                  ) : transfer.type.startsWith("ERC721") && transfer.tokenId ? (
-                    <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                      #{transfer.tokenId}
-                    </div>
-                  ) : transfer.type === "ERC1155" ? (
-                    <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                      #{transfer.tokenId}×{transfer.value}
-                    </div>
-                  ) : null}
-                  {transfer.timestamp && (
-                    <div className="text-xs text-zinc-500 mt-1">
-                      {new Date(Number(transfer.timestamp) * 1000).toLocaleTimeString()}
-                    </div>
-                  )}
+                  {/* Right: Amount/Value */}
+                  <div className="text-right text-sm">
+                    {transfer.type.startsWith("ERC20") && transfer.value ? (
+                      <div className="font-semibold">
+                        {formatTokenAmount(BigInt(transfer.value), decimals)}
+                      </div>
+                    ) : transfer.type.startsWith("ERC721") &&
+                      transfer.tokenId ? (
+                      <div className="font-mono text-xs">
+                        #{transfer.tokenId}
+                      </div>
+                    ) : transfer.type === "ERC1155" ? (
+                      <div className="font-mono text-xs">
+                        #{transfer.tokenId}×{transfer.value}
+                      </div>
+                    ) : null}
+                    {transfer.timestamp && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {new Date(
+                          Number(transfer.timestamp) * 1000,
+                        ).toLocaleTimeString()}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {/* Footer */}
-      <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        <Link
-          href="/tokens"
-          className="block text-center text-sm text-red-600 dark:text-red-400 hover:underline font-medium"
-        >
-          View All Token Transfers →
-        </Link>
-      </div>
-    </div>
+        {/* Footer */}
+        <div className="mt-4 pt-4 border-t">
+          <Button variant="link" className="w-full" asChild>
+            <Link href="/tokens">View All Token Transfers →</Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

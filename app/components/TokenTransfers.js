@@ -5,6 +5,14 @@ import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { detectTokenType, formatTokenAmount } from "@/lib/tokens";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 export default function TokenTransfers({ logs }) {
   const [transfers, setTransfers] = useState([]);
@@ -61,14 +69,15 @@ export default function TokenTransfers({ logs }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-          Token Transfers
-        </h2>
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Token Transfers</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -76,18 +85,29 @@ export default function TokenTransfers({ logs }) {
     return null; // Don't show section if no token transfers
   }
 
-  return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-          Token Transfers
-        </h2>
-        <span className="text-sm text-zinc-500">
-          {transfers.length} transfer{transfers.length !== 1 ? "s" : ""}
-        </span>
-      </div>
+  const getTokenBadgeVariant = (type) => {
+    switch (type) {
+      case "ERC20":
+      case "ERC20/721":
+        return "default";
+      case "ERC721":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
 
-      <div className="space-y-4">
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Token Transfers</CardTitle>
+          <Badge variant="secondary">
+            {transfers.length} transfer{transfers.length !== 1 ? "s" : ""}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
         {transfers.map((transfer, index) => {
           const metadata = tokenMetadata[transfer.token.toLowerCase()] || {};
           const decimals = metadata.decimals || 18;
@@ -95,28 +115,18 @@ export default function TokenTransfers({ logs }) {
           return (
             <div
               key={`${transfer.token}-${transfer.logIndex || index}`}
-              className="p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg"
+              className="p-4 border rounded-lg"
             >
               {/* Transfer Type Badge */}
               <div className="flex items-center gap-2 mb-3">
-                <span
-                  className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                    transfer.type === "ERC20" || transfer.type === "ERC20/721"
-                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                      : transfer.type === "ERC721"
-                        ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
-                        : "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                  }`}
-                >
+                <Badge variant={getTokenBadgeVariant(transfer.type)}>
                   {transfer.type}
-                </span>
+                </Badge>
                 {metadata.name && (
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                    {metadata.name}
-                  </span>
+                  <span className="font-semibold">{metadata.name}</span>
                 )}
                 {metadata.symbol && (
-                  <span className="text-sm text-zinc-500">
+                  <span className="text-sm text-muted-foreground">
                     ({metadata.symbol})
                   </span>
                 )}
@@ -124,10 +134,12 @@ export default function TokenTransfers({ logs }) {
 
               {/* Token Address */}
               <div className="mb-3">
-                <div className="text-xs text-zinc-500 mb-1">Token Address</div>
+                <div className="text-xs text-muted-foreground mb-1">
+                  Token Address
+                </div>
                 <Link
                   href={`/address/${transfer.token}`}
-                  className="font-mono text-sm text-red-600 dark:text-red-400 hover:underline"
+                  className="font-mono text-sm text-primary hover:underline"
                 >
                   {shortenAddress(transfer.token, 8)}
                 </Link>
@@ -137,12 +149,13 @@ export default function TokenTransfers({ logs }) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* From */}
                 <div>
-                  <div className="text-xs text-zinc-500 mb-1">From</div>
+                  <div className="text-xs text-muted-foreground mb-1">From</div>
                   <Link
                     href={`/address/${transfer.from}`}
-                    className="font-mono text-sm text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                    className="font-mono text-sm hover:text-primary transition-colors"
                   >
-                    {transfer.from === "0x0000000000000000000000000000000000000000"
+                    {transfer.from ===
+                    "0x0000000000000000000000000000000000000000"
                       ? "0x0 (Mint)"
                       : shortenAddress(transfer.from, 6)}
                   </Link>
@@ -150,12 +163,13 @@ export default function TokenTransfers({ logs }) {
 
                 {/* To */}
                 <div>
-                  <div className="text-xs text-zinc-500 mb-1">To</div>
+                  <div className="text-xs text-muted-foreground mb-1">To</div>
                   <Link
                     href={`/address/${transfer.to}`}
-                    className="font-mono text-sm text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                    className="font-mono text-sm hover:text-primary transition-colors"
                   >
-                    {transfer.to === "0x0000000000000000000000000000000000000000"
+                    {transfer.to ===
+                    "0x0000000000000000000000000000000000000000"
                       ? "0x0 (Burn)"
                       : shortenAddress(transfer.to, 6)}
                   </Link>
@@ -163,10 +177,13 @@ export default function TokenTransfers({ logs }) {
 
                 {/* Amount/Token ID */}
                 <div>
-                  {transfer.type === "ERC20" || transfer.type === "ERC20/721" ? (
+                  {transfer.type === "ERC20" ||
+                  transfer.type === "ERC20/721" ? (
                     <>
-                      <div className="text-xs text-zinc-500 mb-1">Amount</div>
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Amount
+                      </div>
+                      <div className="font-semibold">
                         {transfer.value && BigInt(transfer.value) < 1000000n
                           ? `Token ID #${transfer.value}`
                           : formatTokenAmount(BigInt(transfer.value), decimals)}
@@ -174,26 +191,28 @@ export default function TokenTransfers({ logs }) {
                     </>
                   ) : transfer.type === "ERC721" ? (
                     <>
-                      <div className="text-xs text-zinc-500 mb-1">Token ID</div>
-                      <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Token ID
+                      </div>
+                      <div className="font-mono text-sm">
                         #{transfer.tokenId}
                       </div>
                     </>
                   ) : transfer.type === "ERC1155" ? (
                     <>
-                      <div className="text-xs text-zinc-500 mb-1">
+                      <div className="text-xs text-muted-foreground mb-1">
                         Token ID / Amount
                       </div>
-                      <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                      <div className="font-mono text-sm">
                         #{transfer.tokenId} × {transfer.value}
                       </div>
                     </>
                   ) : transfer.type === "ERC1155_BATCH" ? (
                     <>
-                      <div className="text-xs text-zinc-500 mb-1">
+                      <div className="text-xs text-muted-foreground mb-1">
                         Batch Transfer
                       </div>
-                      <div className="text-sm text-zinc-900 dark:text-zinc-100">
+                      <div className="text-sm">
                         {transfer.tokenIds?.length || 0} tokens
                       </div>
                     </>
@@ -203,13 +222,13 @@ export default function TokenTransfers({ logs }) {
 
               {/* Operator (for ERC1155) */}
               {transfer.operator && transfer.operator !== transfer.from && (
-                <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                  <div className="text-xs text-zinc-500 mb-1">
+                <div className="mt-3 pt-3 border-t">
+                  <div className="text-xs text-muted-foreground mb-1">
                     Operator (Approved)
                   </div>
                   <Link
                     href={`/address/${transfer.operator}`}
-                    className="font-mono text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
+                    className="font-mono text-sm text-muted-foreground hover:text-primary"
                   >
                     {shortenAddress(transfer.operator, 6)}
                   </Link>
@@ -220,8 +239,8 @@ export default function TokenTransfers({ logs }) {
               {transfer.type === "ERC1155_BATCH" &&
                 transfer.tokenIds &&
                 transfer.values && (
-                  <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                    <div className="text-xs text-zinc-500 mb-2">
+                  <div className="mt-3 pt-3 border-t">
+                    <div className="text-xs text-muted-foreground mb-2">
                       Batch Details
                     </div>
                     <div className="max-h-32 overflow-y-auto">
@@ -230,12 +249,10 @@ export default function TokenTransfers({ logs }) {
                           key={idx}
                           className="flex items-center justify-between text-xs py-1"
                         >
-                          <span className="font-mono text-zinc-600 dark:text-zinc-400">
+                          <span className="font-mono text-muted-foreground">
                             Token #{tokenId}
                           </span>
-                          <span className="text-zinc-900 dark:text-zinc-100">
-                            × {transfer.values[idx]}
-                          </span>
+                          <span>× {transfer.values[idx]}</span>
                         </div>
                       ))}
                     </div>
@@ -244,7 +261,7 @@ export default function TokenTransfers({ logs }) {
             </div>
           );
         })}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
