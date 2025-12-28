@@ -1,0 +1,392 @@
+# FurnaceScout Project Rules
+
+## Technology Stack
+
+- **Framework**: Next.js 14+ (App Router)
+- **Runtime**: Bun
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Blockchain**: viem + wagmi
+- **State**: React hooks, localStorage
+- **Theme**: next-themes (dark/light/system)
+
+## Code Style
+
+### General
+- Use ES6+ syntax
+- Prefer functional components with hooks
+- Use TypeScript-style JSDoc comments
+- Keep functions small and focused
+- Follow DRY principles
+
+### React/Next.js
+- Always use "use client" for client components
+- Use React.use() for async params in Server Components
+- Prefer named exports for components
+- Keep components under 300 lines when possible
+- Extract reusable logic into custom hooks
+
+### File Naming
+- Components: PascalCase (e.g., `TokenBalances.js`)
+- Utilities: camelCase (e.g., `token-transfers.js`)
+- Pages: Next.js convention (e.g., `[address]/page.js`)
+
+## shadcn/ui Guidelines
+
+### Installation & Setup
+- shadcn/ui is configured via `components.json`
+- Registry: `@shadcn`
+- Components live in `app/components/ui/`
+- Use CLI to add components: `bunx shadcn@latest add [component]`
+
+### Component Usage
+
+#### 1. Always Use shadcn Components When Available
+Instead of custom Tailwind components, use shadcn equivalents:
+
+**Buttons**:
+```jsx
+// ❌ Avoid
+<button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+  Submit
+</button>
+
+// ✅ Prefer
+import { Button } from "@/components/ui/button"
+<Button variant="destructive">Submit</Button>
+```
+
+**Inputs**:
+```jsx
+// ❌ Avoid
+<input className="w-full px-3 py-2 border rounded..." />
+
+// ✅ Prefer
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+<div>
+  <Label htmlFor="field">Field Name</Label>
+  <Input id="field" type="text" />
+</div>
+```
+
+**Cards**:
+```jsx
+// ❌ Avoid
+<div className="bg-white dark:bg-zinc-900 border rounded-lg p-6">
+  <h2 className="text-xl font-bold mb-4">Title</h2>
+  <p>Content</p>
+</div>
+
+// ✅ Prefer
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <p>Content</p>
+  </CardContent>
+</Card>
+```
+
+**Dialogs/Modals**:
+```jsx
+// ❌ Avoid custom modal implementations
+
+// ✅ Prefer
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+<Dialog open={isOpen} onOpenChange={setIsOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Title</DialogTitle>
+    </DialogHeader>
+    {/* content */}
+  </DialogContent>
+</Dialog>
+```
+
+**Selects**:
+```jsx
+// ❌ Avoid native select
+<select className="...">
+  <option value="1">Option 1</option>
+</select>
+
+// ✅ Prefer
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+<Select value={value} onValueChange={setValue}>
+  <SelectTrigger>
+    <SelectValue placeholder="Select..." />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="1">Option 1</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+#### 2. Component Variants
+Use built-in variants instead of custom classes:
+
+**Button Variants**: default, secondary, destructive, outline, ghost, link
+**Badge Variants**: default, secondary, destructive, outline
+**Alert Variants**: default, destructive
+
+```jsx
+<Button variant="outline" size="sm">Small Outlined</Button>
+<Badge variant="destructive">Error</Badge>
+```
+
+#### 3. Composition Over Customization
+Compose shadcn components rather than heavily customizing:
+
+```jsx
+// ✅ Good - compose components
+<Card>
+  <CardHeader>
+    <div className="flex items-center justify-between">
+      <CardTitle>Title</CardTitle>
+      <Badge>New</Badge>
+    </div>
+  </CardHeader>
+  <CardContent>...</CardContent>
+</Card>
+```
+
+#### 4. Theme-Aware Styling
+shadcn components automatically support dark mode. Use semantic color classes:
+
+```jsx
+// ✅ Use semantic colors
+<p className="text-foreground">Main text</p>
+<p className="text-muted-foreground">Secondary text</p>
+<div className="bg-background border-border">Container</div>
+
+// ⚠️ Only use direct colors when necessary
+<div className="bg-red-600">Intentional red background</div>
+```
+
+#### 5. Accessibility First
+shadcn components are accessible by default - maintain this:
+
+```jsx
+// ✅ Always include labels
+<Label htmlFor="email">Email</Label>
+<Input id="email" type="email" />
+
+// ✅ Use proper ARIA attributes (already in shadcn)
+<Button aria-label="Close dialog">X</Button>
+
+// ✅ Maintain keyboard navigation
+// shadcn handles this automatically
+```
+
+#### 6. When to Add New Components
+Before writing custom UI:
+1. Check if shadcn has a suitable component
+2. Check the registry: `bunx shadcn@latest view @shadcn`
+3. Add the component: `bunx shadcn@latest add [component-name]`
+4. Only create custom if shadcn doesn't provide it
+
+#### 7. Available Core Components
+Always use these instead of custom implementations:
+- `button` - All button types
+- `input` - Text inputs
+- `label` - Form labels
+- `card` - Cards and panels
+- `badge` - Labels and tags
+- `select` - Dropdowns
+- `dialog` - Modals
+- `sheet` - Side panels
+- `table` - Data tables
+- `tabs` - Tab interfaces
+- `toast` / `sonner` - Notifications
+- `skeleton` - Loading states
+- `separator` - Dividers
+- `scroll-area` - Scrollable containers
+- `popover` - Popovers
+- `tooltip` - Tooltips
+- `dropdown-menu` - Action menus
+- `checkbox` - Checkboxes
+- `radio-group` - Radio buttons
+- `switch` - Toggle switches
+- `slider` - Range sliders
+- `progress` - Progress bars
+- `accordion` - Collapsible sections
+- `alert` - Alert messages
+- `alert-dialog` - Confirmation dialogs
+- `pagination` - Pagination controls
+
+### Customization Guidelines
+
+#### When to Customize
+Only customize shadcn components in `app/components/ui/` when:
+1. Adjusting colors to match brand (use CSS variables)
+2. Adding project-specific functionality
+3. Fixing accessibility issues
+
+#### How to Customize
+1. Edit the component file in `app/components/ui/`
+2. Use the `cn()` utility for conditional classes
+3. Maintain TypeScript types
+4. Document changes
+
+```jsx
+// ✅ Good customization
+import { cn } from "@/lib/utils"
+
+const Button = ({ className, variant, ...props }) => {
+  return (
+    <button
+      className={cn(
+        buttonVariants({ variant }),
+        className // Allow external overrides
+      )}
+      {...props}
+    />
+  )
+}
+```
+
+### Theme Integration
+
+#### CSS Variables
+Define theme colors in `globals.css`:
+
+```css
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --primary: 0 72.2% 50.6%; /* FurnaceScout red */
+    /* ... */
+  }
+  
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    /* ... */
+  }
+}
+```
+
+#### Using Theme Colors
+```jsx
+// ✅ Use CSS variables via Tailwind
+<div className="bg-primary text-primary-foreground">
+  Primary colored element
+</div>
+```
+
+## Blockchain Integration
+
+### viem Usage
+- Use `publicClient` from `@/lib/viem`
+- Handle BigInt properly (toString() for display)
+- Catch and handle RPC errors gracefully
+- Use viem utilities for address/hash formatting
+
+### Token Standards
+- Detect token type before displaying
+- Support ERC20, ERC721, ERC1155
+- Use `lib/tokens.js` for token utilities
+- Format token amounts with decimals
+
+## State Management
+
+### Local State
+- Use `useState` for component state
+- Use `useEffect` for side effects
+- Custom hooks for reusable logic
+
+### Persistent State
+- Use `localStorage` for user preferences
+- Namespace keys: `furnacescout_*`
+- Parse/stringify JSON carefully
+- Provide fallbacks for SSR
+
+## Performance
+
+### React Optimization
+- Use `useMemo` for expensive calculations
+- Use `useCallback` for event handlers in lists
+- Lazy load heavy components
+- Paginate large lists
+
+### Bundle Size
+- Use dynamic imports for large dependencies
+- Tree-shake unused code
+- Monitor bundle size after adding components
+
+## Error Handling
+
+### User Feedback
+```jsx
+// ✅ Use toast notifications instead of alert()
+import { toast } from "sonner"
+toast.success("Operation completed!")
+toast.error("Something went wrong")
+
+// ❌ Avoid
+alert("Success!")
+```
+
+### Error Boundaries
+- Wrap unstable code in try-catch
+- Provide user-friendly error messages
+- Log errors for debugging
+
+## Documentation
+
+### Component Documentation
+```jsx
+/**
+ * TokenBalances component displays token balances for an address
+ * @param {string} address - Ethereum address
+ * @param {Array} transactions - Transaction history
+ * @returns {JSX.Element}
+ */
+export default function TokenBalances({ address, transactions }) {
+  // ...
+}
+```
+
+### Inline Comments
+- Explain "why" not "what"
+- Document complex logic
+- Add TODOs with context
+
+## Testing
+
+### Manual Testing Checklist
+- [ ] Light mode
+- [ ] Dark mode
+- [ ] Mobile responsive
+- [ ] Keyboard navigation
+- [ ] Screen reader
+- [ ] Error states
+- [ ] Loading states
+- [ ] Empty states
+
+## Git Workflow
+
+### Commit Messages
+Follow conventional commits:
+- `feat: add token transfer filtering`
+- `fix: correct balance calculation`
+- `refactor: convert buttons to shadcn`
+- `docs: update README`
+- `style: format with prettier`
+
+### Branch Strategy
+- `main` - production ready
+- `feature/*` - new features
+- `fix/*` - bug fixes
+- `refactor/*` - code improvements
+
+## Resources
+
+- **Next.js**: https://nextjs.org/docs
+- **shadcn/ui**: https://ui.shadcn.com/docs
+- **Tailwind CSS**: https://tailwindcss.com/docs
+- **viem**: https://viem.sh
+- **Radix UI**: https://www.radix-ui.com/primitives
