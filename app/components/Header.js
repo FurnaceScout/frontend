@@ -106,6 +106,12 @@ export default function Header() {
             >
               📊 Stats
             </Link>
+            <Link
+              href="/gas"
+              className="text-zinc-700 dark:text-zinc-300 hover:text-red-600 transition-colors"
+            >
+              ⛽ Gas
+            </Link>
             <FoundryProjectManager />
             <EventStreamManager />
             <ForgeTestRunner />

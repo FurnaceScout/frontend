@@ -9,6 +9,7 @@ import SourceCodeViewer from "@/app/components/SourceCodeViewer";
 import TokenBalances from "@/app/components/TokenBalances";
 import AddressLabel from "@/app/components/AddressLabel";
 import LabelBadge from "@/app/components/LabelBadge";
+import ContractGasProfile from "@/app/components/ContractGasProfile";
 
 export default function AddressPage({ params }) {
   const { address } = use(params);
@@ -223,6 +224,13 @@ export default function AddressPage({ params }) {
       {isContract && abiData && (
         <div className="mb-8">
           <ContractInteraction address={address} abiData={abiData} />
+        </div>
+      )}
+
+      {/* Contract Gas Profile */}
+      {isContract && (
+        <div className="mb-8">
+          <ContractGasProfile address={address} />
         </div>
       )}
 
