@@ -9,6 +9,16 @@ import {
 } from "@/lib/tokens";
 import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
 
 export default function TokenBalances({ address, transactions }) {
   const [tokens, setTokens] = useState([]);
@@ -50,104 +60,109 @@ export default function TokenBalances({ address, transactions }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-          Token Balances
-        </h2>
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Token Balances</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-          Token Balances
-        </h2>
-        <div className="text-center py-8">
-          <div className="text-red-500 mb-2">⚠️</div>
-          <div className="text-zinc-600 dark:text-zinc-400">{error}</div>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Token Balances</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 
   if (tokens.length === 0) {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
-          Token Balances
-        </h2>
-        <div className="text-center py-8">
-          <div className="text-4xl mb-3">🪙</div>
-          <div className="text-zinc-600 dark:text-zinc-400">
-            No token balances found
+      <Card>
+        <CardHeader>
+          <CardTitle>Token Balances</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="text-4xl mb-3">🪙</div>
+            <div className="text-muted-foreground">No token balances found</div>
+            <div className="text-xs text-muted-foreground mt-2">
+              Tokens will appear here after transactions
+            </div>
           </div>
-          <div className="text-xs text-zinc-500 mt-2">
-            Tokens will appear here after transactions
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-          Token Balances
-        </h2>
-        <span className="text-sm text-zinc-500">
-          {tokens.length} token{tokens.length !== 1 ? "s" : ""}
-        </span>
-      </div>
+  const getTokenBadgeVariant = (type) => {
+    switch (type) {
+      case "ERC20":
+        return "default";
+      case "ERC721":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
 
-      <div className="space-y-3">
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Token Balances</CardTitle>
+          <Badge variant="secondary">
+            {tokens.length} token{tokens.length !== 1 ? "s" : ""}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
         {tokens.map((token, index) => (
           <Link
             key={`${token.token}-${index}`}
             href={`/address/${token.token}`}
-            className="block p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-red-500 transition-colors"
+            className="block p-4 border rounded-lg hover:border-primary transition-colors"
           >
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {/* Token Type Badge */}
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                      token.type === "ERC20"
-                        ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                        : token.type === "ERC721"
-                          ? "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
-                          : "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                    }`}
-                  >
+                  <Badge variant={getTokenBadgeVariant(token.type)}>
                     {token.type}
-                  </span>
+                  </Badge>
 
                   {/* Token Name/Symbol */}
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-semibold">
                     {token.metadata?.name || "Unknown Token"}
                   </span>
                   {token.metadata?.symbol && (
-                    <span className="text-sm text-zinc-500">
+                    <span className="text-sm text-muted-foreground">
                       ({token.metadata.symbol})
                     </span>
                   )}
                 </div>
 
                 {/* Token Address */}
-                <div className="font-mono text-xs text-zinc-500">
+                <div className="font-mono text-xs text-muted-foreground">
                   {shortenAddress(token.token, 6)}
                 </div>
               </div>
 
               {/* Balance */}
               <div className="text-right ml-4">
-                <div className="font-bold text-zinc-900 dark:text-zinc-100">
+                <div className="font-bold">
                   {token.type === "ERC20"
                     ? formatTokenAmount(
                         BigInt(token.balance),
@@ -155,11 +170,13 @@ export default function TokenBalances({ address, transactions }) {
                       )
                     : token.balance}{" "}
                   {token.type === "ERC721" && (
-                    <span className="text-xs text-zinc-500">NFT{token.balance !== "1" ? "s" : ""}</span>
+                    <span className="text-xs text-muted-foreground">
+                      NFT{token.balance !== "1" ? "s" : ""}
+                    </span>
                   )}
                 </div>
                 {token.type === "ERC20" && token.metadata?.totalSupply && (
-                  <div className="text-xs text-zinc-500 mt-1">
+                  <div className="text-xs text-muted-foreground mt-1">
                     Supply:{" "}
                     {formatTokenAmount(
                       BigInt(token.metadata.totalSupply),
@@ -171,14 +188,14 @@ export default function TokenBalances({ address, transactions }) {
             </div>
           </Link>
         ))}
-      </div>
 
-      {/* Info Footer */}
-      <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="text-xs text-zinc-500 text-center">
-          💡 Token balances are detected from transaction history
+        {/* Info Footer */}
+        <div className="pt-2 border-t">
+          <div className="text-xs text-muted-foreground text-center">
+            💡 Token balances are detected from transaction history
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
