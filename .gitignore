@@ -47,7 +47,15 @@ bun.lockb
 .DS_Store
 Thumbs.db
 
-# MD Files
+# MD Files - Exclude temporary/generated docs, keep important ones
 *.md
 !README.md
 !**/README.md
+!CHANGELOG.md
+!PERFORMANCE_OPTIMIZATION.md
+!NEXTJS_BEST_PRACTICES_IMPLEMENTATION.md
+!docs/DOCKER.md
+!docs/REAL_TIME_FEATURES.md
+!docs/ENHANCEMENTS_SUMMARY.md
+!docs/VISUAL_GUIDE.md
+!docs/TESTING_GUIDE.md
