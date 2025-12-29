@@ -13,6 +13,45 @@ import {
   deleteDeployment,
   getDeploymentByAddress,
 } from "@/lib/foundry-deployments";
+import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Badge } from "@/app/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Checkbox } from "@/app/components/ui/checkbox";
 
 export default function DeploymentTracker({ defaultChainId = "31337" }) {
   const [deployments, setDeployments] = useState([]);
@@ -26,6 +65,9 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
   const [filter, setFilter] = useState("");
   const [sortBy, setSortBy] = useState("timestamp");
   const [sortDesc, setSortDesc] = useState(true);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Load deployments from localStorage on mount
   useEffect(() => {
@@ -33,7 +75,9 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
   }, [selectedChain]);
 
   function loadFromStorage() {
-    const stored = getDeployments(selectedChain === "all" ? null : selectedChain);
+    const stored = getDeployments(
+      selectedChain === "all" ? null : selectedChain,
+    );
     setDeployments(stored);
     setStats(getDeploymentStats());
   }
@@ -46,16 +90,21 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
     try {
       const result = await scanFoundryDeployments(
         selectedChain === "all" ? null : selectedChain,
-        showHistory
+        showHistory,
       );
 
       if (!result.found) {
-        setError("No Foundry project detected");
+        const errorMsg = "No Foundry project detected";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
       if (!result.hasBroadcast) {
-        setError("No broadcast directory found. Run 'forge script' to deploy contracts.");
+        const errorMsg =
+          "No broadcast directory found. Run 'forge script' to deploy contracts.";
+        setError(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
@@ -77,8 +126,11 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
       }
 
       setError(null);
+      toast.success(`Scanned ${count} deployments`);
     } catch (err) {
-      setError(err.message || "Failed to scan deployments");
+      const errorMsg = err.message || "Failed to scan deployments";
+      setError(errorMsg);
+      toast.error(errorMsg);
       console.error("Scan error:", err);
     } finally {
       setLoading(false);
@@ -86,13 +138,17 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
   }
 
   function handleClear() {
-    if (confirm("Clear all deployment data?")) {
-      clearDeployments();
-      setDeployments([]);
-      setHistory(null);
-      setStats(null);
-      setLinkResult(null);
-    }
+    setShowClearConfirm(true);
+  }
+
+  function confirmClear() {
+    clearDeployments();
+    setDeployments([]);
+    setHistory(null);
+    setStats(null);
+    setLinkResult(null);
+    setShowClearConfirm(false);
+    toast.success("All deployment data cleared");
   }
 
   function handleExport() {
@@ -104,6 +160,7 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
     a.download = `foundry-deployments-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Deployments exported");
   }
 
   function handleImport() {
@@ -116,23 +173,32 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
         const text = await file.text();
         const count = importDeployments(text);
         loadFromStorage();
-        alert(`Imported ${count} deployments`);
+        toast.success(`Imported ${count} deployments`);
       } catch (err) {
-        alert(`Import failed: ${err.message}`);
+        toast.error(`Import failed: ${err.message}`);
       }
     };
     input.click();
   }
 
   function handleDelete(address, chainId) {
-    if (confirm(`Delete deployment for ${address}?`)) {
-      deleteDeployment(address, chainId);
+    setDeleteTarget({ address, chainId });
+    setShowDeleteConfirm(true);
+  }
+
+  function confirmDelete() {
+    if (deleteTarget) {
+      deleteDeployment(deleteTarget.address, deleteTarget.chainId);
       loadFromStorage();
+      toast.success("Deployment deleted");
+      setDeleteTarget(null);
     }
+    setShowDeleteConfirm(false);
   }
 
   function handleCopyAddress(address) {
     navigator.clipboard.writeText(address);
+    toast.success("Address copied to clipboard");
   }
 
   function handleNavigateToAddress(address) {
@@ -195,269 +261,309 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Foundry Deployments</h2>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleScan}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors"
-          >
+          <Button onClick={handleScan} disabled={loading} variant="default">
             {loading ? "Scanning..." : "Scan Deployments"}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={handleExport}
             disabled={deployments.length === 0}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded transition-colors"
+            variant="secondary"
           >
             Export
-          </button>
-          <button
-            type="button"
-            onClick={handleImport}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
-          >
+          </Button>
+          <Button onClick={handleImport} variant="secondary">
             Import
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={handleClear}
             disabled={deployments.length === 0}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded transition-colors"
+            variant="destructive"
           >
             Clear
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Options */}
-      <div className="flex items-center gap-4 p-4 bg-gray-800 rounded">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium">Chain ID:</label>
-          <select
-            value={selectedChain}
-            onChange={(e) => setSelectedChain(e.target.value)}
-            className="px-3 py-1 bg-gray-700 border border-gray-600 rounded"
-          >
-            <option value="all">All Chains</option>
-            <option value="31337">31337 (Anvil)</option>
-            <option value="1">1 (Mainnet)</option>
-            <option value="11155111">11155111 (Sepolia)</option>
-          </select>
-        </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="chain-select">Chain ID:</Label>
+              <Select value={selectedChain} onValueChange={setSelectedChain}>
+                <SelectTrigger id="chain-select" className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Chains</SelectItem>
+                  <SelectItem value="31337">31337 (Anvil)</SelectItem>
+                  <SelectItem value="1">1 (Mainnet)</SelectItem>
+                  <SelectItem value="11155111">11155111 (Sepolia)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="showHistory"
-            checked={showHistory}
-            onChange={(e) => setShowHistory(e.target.checked)}
-            className="w-4 h-4"
-          />
-          <label htmlFor="showHistory" className="text-sm font-medium">
-            Include full history
-          </label>
-        </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="showHistory"
+                checked={showHistory}
+                onCheckedChange={setShowHistory}
+              />
+              <Label htmlFor="showHistory" className="cursor-pointer">
+                Include full history
+              </Label>
+            </div>
 
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Filter by name, address, or script..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-full px-3 py-1 bg-gray-700 border border-gray-600 rounded"
-          />
-        </div>
-      </div>
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                type="text"
+                placeholder="Filter by name, address, or script..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats */}
       {stats && stats.total > 0 && (
         <div className="grid grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-800 rounded">
-            <div className="text-sm text-gray-400">Total Deployments</div>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </div>
-          <div className="p-4 bg-gray-800 rounded">
-            <div className="text-sm text-gray-400">Unique Contracts</div>
-            <div className="text-2xl font-bold">{stats.contractCount}</div>
-          </div>
-          <div className="p-4 bg-gray-800 rounded">
-            <div className="text-sm text-gray-400">Chains</div>
-            <div className="text-2xl font-bold">{stats.chainCount}</div>
-          </div>
-          <div className="p-4 bg-gray-800 rounded">
-            <div className="text-sm text-gray-400">Latest</div>
-            <div className="text-sm font-mono">
-              {stats.latestDeployment
-                ? new Date(stats.latestDeployment).toLocaleString()
-                : "N/A"}
-            </div>
-          </div>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground">
+                Total Deployments
+              </div>
+              <div className="text-2xl font-bold">{stats.total}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground">
+                Unique Contracts
+              </div>
+              <div className="text-2xl font-bold">{stats.contractCount}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground">Chains</div>
+              <div className="text-2xl font-bold">{stats.chainCount}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground">Latest</div>
+              <div className="text-sm font-mono">
+                {stats.latestDeployment
+                  ? new Date(stats.latestDeployment).toLocaleString()
+                  : "N/A"}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Link Result */}
       {linkResult && (
-        <div className="p-4 bg-green-900/20 border border-green-700 rounded">
-          <div className="font-medium">ABIs Linked</div>
-          <div className="text-sm text-gray-300">
-            Linked {linkResult.linked} of {linkResult.total} deployments to ABIs
-            {linkResult.notFound > 0 && ` (${linkResult.notFound} ABIs not found)`}
-          </div>
-        </div>
+        <Alert>
+          <AlertDescription>
+            <div className="font-medium">ABIs Linked</div>
+            <div className="text-sm">
+              Linked {linkResult.linked} of {linkResult.total} deployments to
+              ABIs
+              {linkResult.notFound > 0 &&
+                ` (${linkResult.notFound} ABIs not found)`}
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Error */}
       {error && (
-        <div className="p-4 bg-red-900/20 border border-red-700 rounded">
-          <div className="font-medium">Error</div>
-          <div className="text-sm">{error}</div>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            <div className="font-medium">Error</div>
+            <div className="text-sm">{error}</div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Deployments Table */}
       {filteredDeployments.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-800 border-b border-gray-700">
-                <th className="px-4 py-2 text-left">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortBy("name");
-                      setSortDesc(!sortDesc);
-                    }}
-                    className="hover:text-blue-400"
-                  >
-                    Contract {sortBy === "name" && (sortDesc ? "↓" : "↑")}
-                  </button>
-                </th>
-                <th className="px-4 py-2 text-left">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortBy("address");
-                      setSortDesc(!sortDesc);
-                    }}
-                    className="hover:text-blue-400"
-                  >
-                    Address {sortBy === "address" && (sortDesc ? "↓" : "↑")}
-                  </button>
-                </th>
-                <th className="px-4 py-2 text-left">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortBy("block");
-                      setSortDesc(!sortDesc);
-                    }}
-                    className="hover:text-blue-400"
-                  >
-                    Block {sortBy === "block" && (sortDesc ? "↓" : "↑")}
-                  </button>
-                </th>
-                <th className="px-4 py-2 text-left">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSortBy("timestamp");
-                      setSortDesc(!sortDesc);
-                    }}
-                    className="hover:text-blue-400"
-                  >
-                    Deployed {sortBy === "timestamp" && (sortDesc ? "↓" : "↑")}
-                  </button>
-                </th>
-                <th className="px-4 py-2 text-left">Script</th>
-                <th className="px-4 py-2 text-left">Chain</th>
-                <th className="px-4 py-2 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDeployments.map((deployment, idx) => (
-                <tr
-                  key={`${deployment.contractAddress}-${deployment.chainId}-${idx}`}
-                  className="border-b border-gray-800 hover:bg-gray-800/50"
-                >
-                  <td className="px-4 py-2 font-mono text-sm">
-                    {deployment.contractName || "Unknown"}
-                  </td>
-                  <td className="px-4 py-2">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyAddress(deployment.contractAddress)}
-                      className="font-mono text-sm text-blue-400 hover:text-blue-300"
-                      title="Click to copy"
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSortBy("name");
+                          setSortDesc(!sortDesc);
+                        }}
+                        className="hover:text-primary"
+                      >
+                        Contract {sortBy === "name" && (sortDesc ? "↓" : "↑")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSortBy("address");
+                          setSortDesc(!sortDesc);
+                        }}
+                        className="hover:text-primary"
+                      >
+                        Address {sortBy === "address" && (sortDesc ? "↓" : "↑")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSortBy("block");
+                          setSortDesc(!sortDesc);
+                        }}
+                        className="hover:text-primary"
+                      >
+                        Block {sortBy === "block" && (sortDesc ? "↓" : "↑")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSortBy("timestamp");
+                          setSortDesc(!sortDesc);
+                        }}
+                        className="hover:text-primary"
+                      >
+                        Deployed{" "}
+                        {sortBy === "timestamp" && (sortDesc ? "↓" : "↑")}
+                      </Button>
+                    </TableHead>
+                    <TableHead>Script</TableHead>
+                    <TableHead>Chain</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDeployments.map((deployment, idx) => (
+                    <TableRow
+                      key={`${deployment.contractAddress}-${deployment.chainId}-${idx}`}
                     >
-                      {deployment.contractAddress?.slice(0, 10)}...
-                      {deployment.contractAddress?.slice(-8)}
-                    </button>
-                  </td>
-                  <td className="px-4 py-2">
-                    {deployment.blockNumber ? (
-                      <button
-                        type="button"
-                        onClick={() => handleNavigateToBlock(deployment.blockNumber)}
-                        className="text-blue-400 hover:text-blue-300"
-                      >
-                        {deployment.blockNumber}
-                      </button>
-                    ) : (
-                      "N/A"
-                    )}
-                  </td>
-                  <td className="px-4 py-2 text-sm">
-                    {deployment.deploymentTimestamp
-                      ? new Date(deployment.deploymentTimestamp).toLocaleString()
-                      : "N/A"}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-gray-400">
-                    {deployment.scriptName || "N/A"}
-                  </td>
-                  <td className="px-4 py-2 text-sm">{deployment.chainId || "N/A"}</td>
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        type="button"
-                        onClick={() => handleNavigateToAddress(deployment.contractAddress)}
-                        className="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded"
-                        title="View contract"
-                      >
-                        View
-                      </button>
-                      {deployment.transactionHash && (
-                        <button
-                          type="button"
-                          onClick={() => handleNavigateToTx(deployment.transactionHash)}
-                          className="px-2 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded"
-                          title="View deployment transaction"
+                      <TableCell className="font-mono text-sm">
+                        {deployment.contractName || "Unknown"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() =>
+                            handleCopyAddress(deployment.contractAddress)
+                          }
+                          className="font-mono text-sm p-0 h-auto"
+                          title="Click to copy"
                         >
-                          Tx
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDelete(deployment.contractAddress, deployment.chainId)
-                        }
-                        className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 rounded"
-                        title="Delete"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                          {deployment.contractAddress?.slice(0, 10)}...
+                          {deployment.contractAddress?.slice(-8)}
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        {deployment.blockNumber ? (
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() =>
+                              handleNavigateToBlock(deployment.blockNumber)
+                            }
+                            className="p-0 h-auto"
+                          >
+                            {deployment.blockNumber}
+                          </Button>
+                        ) : (
+                          "N/A"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {deployment.deploymentTimestamp
+                          ? new Date(
+                              deployment.deploymentTimestamp,
+                            ).toLocaleString()
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {deployment.scriptName || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {deployment.chainId || "N/A"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() =>
+                              handleNavigateToAddress(
+                                deployment.contractAddress,
+                              )
+                            }
+                            title="View contract"
+                          >
+                            View
+                          </Button>
+                          {deployment.transactionHash && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() =>
+                                handleNavigateToTx(deployment.transactionHash)
+                              }
+                              title="View deployment transaction"
+                            >
+                              Tx
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() =>
+                              handleDelete(
+                                deployment.contractAddress,
+                                deployment.chainId,
+                              )
+                            }
+                            title="Delete"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="p-8 text-center text-gray-400">
-          {deployments.length === 0
-            ? "No deployments found. Click 'Scan Deployments' to load from broadcast files."
-            : "No deployments match the current filter."}
-        </div>
+        <Card>
+          <CardContent className="pt-12 pb-12 text-center">
+            <div className="text-muted-foreground">
+              {deployments.length === 0
+                ? "No deployments found. Click 'Scan Deployments' to load from broadcast files."
+                : "No deployments match the current filter."}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* History */}
@@ -466,35 +572,79 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
           <h3 className="text-xl font-bold mb-4">Deployment History</h3>
           <div className="space-y-4">
             {history.map((entry, idx) => (
-              <div key={idx} className="p-4 bg-gray-800 rounded">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-mono font-medium">{entry.scriptName}</div>
-                  <div className="text-sm text-gray-400">
-                    {entry.timestamp
-                      ? new Date(entry.timestamp).toLocaleString()
-                      : "N/A"}
-                  </div>
-                </div>
-                <div className="text-sm text-gray-400 mb-2">
-                  Chain: {entry.chainId} • File: {entry.fileName}
-                  {entry.commit && ` • Commit: ${entry.commit.slice(0, 8)}`}
-                </div>
-                <div className="pl-4 border-l-2 border-gray-700 space-y-2">
-                  {entry.deployments.map((deployment, dIdx) => (
-                    <div key={dIdx} className="text-sm">
-                      <span className="font-mono">{deployment.contractName}</span>
-                      {" → "}
-                      <span className="text-blue-400 font-mono">
-                        {deployment.contractAddress}
-                      </span>
+              <Card key={idx}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-mono font-medium">
+                      {entry.scriptName}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <div className="text-sm text-muted-foreground">
+                      {entry.timestamp
+                        ? new Date(entry.timestamp).toLocaleString()
+                        : "N/A"}
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    Chain: {entry.chainId} • File: {entry.fileName}
+                    {entry.commit && ` • Commit: ${entry.commit.slice(0, 8)}`}
+                  </div>
+                  <div className="pl-4 border-l-2 border-border space-y-2">
+                    {entry.deployments.map((deployment, dIdx) => (
+                      <div key={dIdx} className="text-sm">
+                        <span className="font-mono">
+                          {deployment.contractName}
+                        </span>
+                        {" → "}
+                        <span className="text-primary font-mono">
+                          {deployment.contractAddress}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       )}
+
+      {/* Clear Confirmation AlertDialog */}
+      <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Deployment Data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all deployment data. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClear}>
+              Clear All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation AlertDialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Deployment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the deployment for{" "}
+              {deleteTarget?.address}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
