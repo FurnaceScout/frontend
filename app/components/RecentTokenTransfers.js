@@ -28,7 +28,18 @@ export default function RecentTokenTransfers() {
     async function loadRecentTransfers() {
       try {
         const latestBlock = await publicClient.getBlockNumber();
-        const fromBlock = latestBlock - 50n; // Last ~50 blocks
+
+        // Safety check: ensure we don't go below block 0
+        const blockRange = 50n;
+        const fromBlock =
+          latestBlock > blockRange ? latestBlock - blockRange : 0n;
+
+        // If there are no blocks, return early
+        if (latestBlock < 0n) {
+          setTransfers([]);
+          setLoading(false);
+          return;
+        }
 
         const allTransfers = [];
         const metadataMap = {};
