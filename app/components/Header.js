@@ -31,10 +31,6 @@ export default function Header() {
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showConverter, setShowConverter] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [showFoundryProject, setShowFoundryProject] = useState(false);
-  const [showForgeTest, setShowForgeTest] = useState(false);
-  const [showEventStream, setShowEventStream] = useState(false);
-  const [showAnvilState, setShowAnvilState] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e) => {
@@ -155,9 +151,9 @@ export default function Header() {
                   <NavigationMenuContent>
                     <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
                       <li>
-                        <button
-                          onClick={() => setShowFoundryProject(true)}
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        <Link
+                          href="/foundry-project"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
                           <div className="text-sm font-medium leading-none">
                             🏗️ Project Manager
@@ -165,12 +161,12 @@ export default function Header() {
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Scan and manage your Foundry project contracts
                           </p>
-                        </button>
+                        </Link>
                       </li>
                       <li>
-                        <button
-                          onClick={() => setShowForgeTest(true)}
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        <Link
+                          href="/forge-test"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
                           <div className="text-sm font-medium leading-none">
                             🧪 Test Runner
@@ -178,12 +174,12 @@ export default function Header() {
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Run and manage Forge tests with detailed results
                           </p>
-                        </button>
+                        </Link>
                       </li>
                       <li>
-                        <button
-                          onClick={() => setShowEventStream(true)}
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        <Link
+                          href="/event-stream"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
                           <div className="text-sm font-medium leading-none">
                             📡 Event Stream
@@ -191,12 +187,12 @@ export default function Header() {
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Subscribe to and monitor contract events live
                           </p>
-                        </button>
+                        </Link>
                       </li>
                       <li>
-                        <button
-                          onClick={() => setShowAnvilState(true)}
-                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
+                        <Link
+                          href="/anvil-state"
+                          className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                         >
                           <div className="text-sm font-medium leading-none">
                             ⚙️ Anvil State
@@ -204,7 +200,7 @@ export default function Header() {
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                             Manage snapshots, mining, and blockchain state
                           </p>
-                        </button>
+                        </Link>
                       </li>
                     </ul>
                   </NavigationMenuContent>
@@ -278,42 +274,6 @@ export default function Header() {
           <ThemeToggle
             isOpen={showThemeSelector}
             onClose={() => setShowThemeSelector(false)}
-          />
-        </Suspense>
-      )}
-
-      {showFoundryProject && (
-        <Suspense fallback={<div />}>
-          <FoundryProjectManager
-            isOpen={showFoundryProject}
-            onClose={() => setShowFoundryProject(false)}
-          />
-        </Suspense>
-      )}
-
-      {showForgeTest && (
-        <Suspense fallback={<div />}>
-          <ForgeTestRunner
-            isOpen={showForgeTest}
-            onClose={() => setShowForgeTest(false)}
-          />
-        </Suspense>
-      )}
-
-      {showEventStream && (
-        <Suspense fallback={<div />}>
-          <EventStreamManager
-            isOpen={showEventStream}
-            onClose={() => setShowEventStream(false)}
-          />
-        </Suspense>
-      )}
-
-      {showAnvilState && (
-        <Suspense fallback={<div />}>
-          <AnvilStateManager
-            isOpen={showAnvilState}
-            onClose={() => setShowAnvilState(false)}
           />
         </Suspense>
       )}

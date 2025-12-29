@@ -65,13 +65,13 @@ export default function Home() {
     // Detect search type and redirect
     if (query.startsWith("0x") && query.length === 66) {
       // Transaction hash
-      window.location.href = `/tx/${query}`;
+      router.push(`/tx/${query}`);
     } else if (query.startsWith("0x") && query.length === 42) {
       // Address
-      window.location.href = `/address/${query}`;
+      router.push(`/address/${query}`);
     } else if (/^\d+$/.test(query)) {
       // Block number
-      window.location.href = `/block/${query}`;
+      router.push(`/block/${query}`);
     }
   };
 

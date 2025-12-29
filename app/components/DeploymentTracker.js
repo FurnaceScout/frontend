@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   scanFoundryDeployments,
   loadDeployments,
@@ -54,6 +55,7 @@ import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { Checkbox } from "@/app/components/ui/checkbox";
 
 export default function DeploymentTracker({ defaultChainId = "31337" }) {
+  const router = useRouter();
   const [deployments, setDeployments] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -202,18 +204,18 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
   }
 
   function handleNavigateToAddress(address) {
-    window.location.href = `/address/${address}`;
+    router.push(`/address/${address}`);
   }
 
   function handleNavigateToTx(hash) {
     if (hash) {
-      window.location.href = `/tx/${hash}`;
+      router.push(`/tx/${hash}`);
     }
   }
 
   function handleNavigateToBlock(blockNumber) {
     if (blockNumber) {
-      window.location.href = `/block/${blockNumber}`;
+      router.push(`/block/${blockNumber}`);
     }
   }
 
