@@ -1,5 +1,11 @@
 # Agent Rules for FurnaceScout Development
 
+## Optimization Checklist
+- After completing ANY optimization task from OPTIMIZATION_CHECKLIST.md, you MUST immediately mark it as complete with [x]
+- Never proceed to the next optimization task without first updating the checklist
+- Add brief completion notes next to checked items if relevant (e.g., `[x] Task name - completed, 50% improvement`)
+- The checklist is the source of truth for optimization progress
+
 ## Testing
 - Always test upon each phase completion
 - Run `bun run build` to verify no build errors
@@ -7,9 +13,11 @@
 - Document any test results or issues discovered
 
 ## Git Workflow
-- Always pause between each completed task for git commit/push
+- **MANDATORY**: After completing each task, you MUST pause and wait for the user to commit/push
+- Do NOT proceed to the next task until the user confirms the commit is complete
 - Use descriptive commit messages following format: "feat: [description]" or "fix: [description]"
-- Wait for explicit user confirmation before proceeding to next task after commit
+- Explicitly state: "Ready for commit. Please commit and push, then confirm to proceed."
+- Never batch multiple tasks into a single commit without explicit user approval
 
 ## Documentation
 - Always update the checklist (FEATURE_ROADMAP.md) when an item is completed
@@ -19,11 +27,22 @@
 
 ## Development Workflow
 1. Complete a task/feature
-2. Test the implementation
-3. Update FEATURE_ROADMAP.md checklist
-4. Pause for user to commit/push
-5. Wait for user confirmation to proceed
-6. Move to next task
+2. Test the implementation (`bun run build` at minimum)
+3. Update relevant checklist:
+   - FEATURE_ROADMAP.md for features
+   - OPTIMIZATION_CHECKLIST.md for optimizations
+4. **STOP** - Explicitly tell user: "Task complete. Ready for commit."
+5. **WAIT** - Do not proceed until user confirms commit is done
+6. Only after user confirmation, move to next task
+
+## Optimization Workflow (Specific)
+1. Pick ONE task from OPTIMIZATION_CHECKLIST.md
+2. Implement the optimization
+3. Test with `bun run build`
+4. Mark the task as [x] complete in OPTIMIZATION_CHECKLIST.md
+5. **STOP** and say: "Optimization complete. Please commit and push, then confirm to proceed."
+6. **WAIT** for user confirmation
+7. Repeat for next task
 
 ## Phase Completion
 When a full phase is completed:

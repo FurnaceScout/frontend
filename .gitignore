@@ -59,3 +59,18 @@ Thumbs.db
 !docs/ENHANCEMENTS_SUMMARY.md
 !docs/VISUAL_GUIDE.md
 !docs/TESTING_GUIDE.md
+
+
+# Agent/AI Rule Files
+.agent-rules
+*.agent-rules
+.clinerules
+*.clinerules
+.cursorrules
+*.cursorrules
+.aiderules
+*.aiderules
+.copilot*
+.github/copilot*
+AGENTS.md
+.claude*
