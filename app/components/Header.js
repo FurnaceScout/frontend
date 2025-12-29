@@ -1,15 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import BookmarksPanel from "./BookmarksPanel";
-import FoundryProjectManager from "./FoundryProjectManager";
-import EventStreamManager from "./EventStreamManager";
-import ForgeTestRunner from "./ForgeTestRunner";
-import AnvilStateManager from "./AnvilStateManager";
-import UnitConverter from "./UnitConverter";
-import ThemeToggle from "./ThemeToggle";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -24,11 +17,24 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+// Lazy load heavy dialog components for better initial load performance
+const BookmarksPanel = lazy(() => import("./BookmarksPanel"));
+const FoundryProjectManager = lazy(() => import("./FoundryProjectManager"));
+const EventStreamManager = lazy(() => import("./EventStreamManager"));
+const ForgeTestRunner = lazy(() => import("./ForgeTestRunner"));
+const AnvilStateManager = lazy(() => import("./AnvilStateManager"));
+const UnitConverter = lazy(() => import("./UnitConverter"));
+const ThemeToggle = lazy(() => import("./ThemeToggle"));
+
 export default function Header() {
   const [search, setSearch] = useState("");
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showConverter, setShowConverter] = useState(false);
   const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [showFoundryProject, setShowFoundryProject] = useState(false);
+  const [showForgeTest, setShowForgeTest] = useState(false);
+  const [showEventStream, setShowEventStream] = useState(false);
+  const [showAnvilState, setShowAnvilState] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e) => {
@@ -150,12 +156,7 @@ export default function Header() {
                     <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
                       <li>
                         <button
-                          onClick={() => {
-                            const projectBtn = document.querySelector(
-                              "[data-foundry-project]",
-                            );
-                            if (projectBtn) projectBtn.click();
-                          }}
+                          onClick={() => setShowFoundryProject(true)}
                           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
                         >
                           <div className="text-sm font-medium leading-none">
@@ -168,11 +169,7 @@ export default function Header() {
                       </li>
                       <li>
                         <button
-                          onClick={() => {
-                            const testBtn =
-                              document.querySelector("[data-forge-test]");
-                            if (testBtn) testBtn.click();
-                          }}
+                          onClick={() => setShowForgeTest(true)}
                           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
                         >
                           <div className="text-sm font-medium leading-none">
@@ -185,12 +182,7 @@ export default function Header() {
                       </li>
                       <li>
                         <button
-                          onClick={() => {
-                            const eventsBtn = document.querySelector(
-                              "[data-event-stream]",
-                            );
-                            if (eventsBtn) eventsBtn.click();
-                          }}
+                          onClick={() => setShowEventStream(true)}
                           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
                         >
                           <div className="text-sm font-medium leading-none">
@@ -203,11 +195,7 @@ export default function Header() {
                       </li>
                       <li>
                         <button
-                          onClick={() => {
-                            const anvilBtn =
-                              document.querySelector("[data-anvil-state]");
-                            if (anvilBtn) anvilBtn.click();
-                          }}
+                          onClick={() => setShowAnvilState(true)}
                           className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground w-full text-left"
                         >
                           <div className="text-sm font-medium leading-none">
@@ -223,22 +211,6 @@ export default function Header() {
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
-
-            {/* Hidden trigger buttons for Foundry tools */}
-            <div className="hidden">
-              <div data-foundry-project="true">
-                <FoundryProjectManager />
-              </div>
-              <div data-forge-test="true">
-                <ForgeTestRunner />
-              </div>
-              <div data-event-stream="true">
-                <EventStreamManager />
-              </div>
-              <div data-anvil-state="true">
-                <AnvilStateManager />
-              </div>
-            </div>
 
             {/* Utility Actions */}
             <div className="flex items-center gap-2 ml-2">
@@ -282,23 +254,69 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Unit Converter */}
-      <UnitConverter
-        isOpen={showConverter}
-        onClose={() => setShowConverter(false)}
-      />
+      {/* Lazy-loaded Dialog Components */}
+      {showBookmarks && (
+        <Suspense fallback={<div />}>
+          <BookmarksPanel
+            isOpen={showBookmarks}
+            onClose={() => setShowBookmarks(false)}
+          />
+        </Suspense>
+      )}
 
-      {/* Theme Selector */}
-      <ThemeToggle
-        isOpen={showThemeSelector}
-        onClose={() => setShowThemeSelector(false)}
-      />
+      {showConverter && (
+        <Suspense fallback={<div />}>
+          <UnitConverter
+            isOpen={showConverter}
+            onClose={() => setShowConverter(false)}
+          />
+        </Suspense>
+      )}
 
-      {/* Bookmarks Panel */}
-      <BookmarksPanel
-        isOpen={showBookmarks}
-        onClose={() => setShowBookmarks(false)}
-      />
+      {showThemeSelector && (
+        <Suspense fallback={<div />}>
+          <ThemeToggle
+            isOpen={showThemeSelector}
+            onClose={() => setShowThemeSelector(false)}
+          />
+        </Suspense>
+      )}
+
+      {showFoundryProject && (
+        <Suspense fallback={<div />}>
+          <FoundryProjectManager
+            isOpen={showFoundryProject}
+            onClose={() => setShowFoundryProject(false)}
+          />
+        </Suspense>
+      )}
+
+      {showForgeTest && (
+        <Suspense fallback={<div />}>
+          <ForgeTestRunner
+            isOpen={showForgeTest}
+            onClose={() => setShowForgeTest(false)}
+          />
+        </Suspense>
+      )}
+
+      {showEventStream && (
+        <Suspense fallback={<div />}>
+          <EventStreamManager
+            isOpen={showEventStream}
+            onClose={() => setShowEventStream(false)}
+          />
+        </Suspense>
+      )}
+
+      {showAnvilState && (
+        <Suspense fallback={<div />}>
+          <AnvilStateManager
+            isOpen={showAnvilState}
+            onClose={() => setShowAnvilState(false)}
+          />
+        </Suspense>
+      )}
     </header>
   );
 }

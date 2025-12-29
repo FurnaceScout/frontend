@@ -66,8 +66,21 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 
-export default function AnvilStateManager() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function AnvilStateManager({
+  isOpen: controlledIsOpen,
+  onClose: controlledOnClose,
+} = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen =
+    controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen =
+    controlledOnClose !== undefined
+      ? (value) => {
+          if (!value) controlledOnClose();
+        }
+      : setInternalIsOpen;
   const [activeTab, setActiveTab] = useState("snapshots");
   const [loading, setLoading] = useState({});
   const [error, setError] = useState(null);
