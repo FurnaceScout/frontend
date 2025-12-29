@@ -45,10 +45,8 @@ export default function EventsPage() {
 
     // Fetch events on load
     fetchEvents();
-  }, [
-    // Fetch events on load
-    fetchEvents,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchEvents = async () => {
     setLoading(true);

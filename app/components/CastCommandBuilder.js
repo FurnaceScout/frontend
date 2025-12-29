@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   generateCastBalance,
   generateCastBlock,
@@ -39,11 +39,11 @@ export default function CastCommandBuilder({
   const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || "http://127.0.0.1:8545";
 
   // Initialize args based on inputs
-  useState(() => {
-    if (inputs && inputs.length > 0) {
-      setArgs(new Array(inputs.length).fill(""));
+  useEffect(() => {
+    if (_inputs && _inputs.length > 0) {
+      setArgs(new Array(_inputs.length).fill(""));
     }
-  }, [inputs]);
+  }, [_inputs]);
 
   const handleArgChange = (index, value) => {
     const newArgs = [...args];
@@ -225,7 +225,10 @@ export default function CastCommandBuilder({
 
             {/* Contract Address */}
             <div>
-              <label htmlFor="contract-address" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+              <label
+                htmlFor="contract-address"
+                className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+              >
                 Contract Address
               </label>
               <input
@@ -240,7 +243,10 @@ export default function CastCommandBuilder({
 
             {/* Function Signature */}
             <div>
-              <label htmlFor="function-signature" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+              <label
+                htmlFor="function-signature"
+                className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+              >
                 Function Signature
               </label>
               <input
@@ -254,15 +260,18 @@ export default function CastCommandBuilder({
             </div>
 
             {/* Arguments */}
-            {inputs && inputs.length > 0 && (
+            {_inputs && _inputs.length > 0 && (
               <div>
                 <div className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
                   Arguments
                 </div>
                 <div className="space-y-2">
-                  {inputs.map((input, index) => (
+                  {_inputs.map((input, index) => (
                     <div key={index}>
-                      <label htmlFor={`arg-${index}`} className="block text-xs text-zinc-500 mb-1">
+                      <label
+                        htmlFor={`arg-${index}`}
+                        className="block text-xs text-zinc-500 mb-1"
+                      >
                         {input.name || `arg${index}`} ({input.type})
                       </label>
                       <input
@@ -280,18 +289,22 @@ export default function CastCommandBuilder({
             )}
 
             {/* Options for send */}
-            {/* Sender Account */}
             {commandType === "send" && (
-              <div>
-                <label htmlFor="sender-account" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                  Sender Account
-                </label>
-                <select
-                  id="sender-account"
-                  value={selectedAccount}
-                  onChange={(e) => setSelectedAccount(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
-                >
+              <>
+                {/* Sender Account */}
+                <div>
+                  <label
+                    htmlFor="sender-account"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                  >
+                    Sender Account
+                  </label>
+                  <select
+                    id="sender-account"
+                    value={selectedAccount}
+                    onChange={(e) => setSelectedAccount(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
+                  >
                     {anvilAccounts.map((account) => (
                       <option key={account.index} value={account.index}>
                         Account {account.index}: {account.address}
@@ -301,7 +314,10 @@ export default function CastCommandBuilder({
                 </div>
 
                 <div>
-                  <label htmlFor="tx-value" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                  <label
+                    htmlFor="tx-value"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                  >
                     Value (ETH, optional)
                   </label>
                   <input
@@ -315,21 +331,24 @@ export default function CastCommandBuilder({
                 </div>
 
                 {/* Gas Limit */}
-                {commandType === "send" && (
-                  <div>
-                    <label htmlFor="gas-limit" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                      Gas Limit (optional)
-                    </label>
-                    <input
-                      id="gas-limit"
-                      type="text"
-                      value={gasLimit}
-                      onChange={(e) => setGasLimit(e.target.value)}
-                      placeholder="auto"
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label
+                    htmlFor="gas-limit"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                  >
+                    Gas Limit (optional)
+                  </label>
+                  <input
+                    id="gas-limit"
+                    type="text"
+                    value={gasLimit}
+                    onChange={(e) => setGasLimit(e.target.value)}
+                    placeholder="auto"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -368,7 +387,10 @@ export default function CastCommandBuilder({
 
             {/* Transaction Hash */}
             <div>
-              <label htmlFor="tx-hash" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+              <label
+                htmlFor="tx-hash"
+                className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+              >
                 Transaction Hash
               </label>
               <input
@@ -386,7 +408,10 @@ export default function CastCommandBuilder({
         {mode === "utility" && (
           <>
             <div>
-              <label htmlFor="utility-command" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+              <label
+                htmlFor="utility-command"
+                className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+              >
                 Utility Command
               </label>
               <select
@@ -405,7 +430,10 @@ export default function CastCommandBuilder({
 
             {(commandType === "balance" || commandType === "code") && (
               <div>
-                <label htmlFor="utility-address" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                <label
+                  htmlFor="utility-address"
+                  className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                >
                   Address
                 </label>
                 <input
@@ -422,7 +450,10 @@ export default function CastCommandBuilder({
             {commandType === "storage" && (
               <>
                 <div>
-                  <label htmlFor="storage-address" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                  <label
+                    htmlFor="storage-address"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                  >
                     Contract Address
                   </label>
                   <input
@@ -435,26 +466,32 @@ export default function CastCommandBuilder({
                   />
                 </div>
                 {/* Storage Slot */}
-                {commandType === "storage" && (
-                  <div>
-                    <label htmlFor="storage-slot" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                      Storage Slot
-                    </label>
-                    <input
-                      id="storage-slot"
-                      type="text"
-                      value={storageSlot}
-                      onChange={(e) => setStorageSlot(e.target.value)}
-                      placeholder="0x0"
-                      className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label
+                    htmlFor="storage-slot"
+                    className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                  >
+                    Storage Slot
+                  </label>
+                  <input
+                    id="storage-slot"
+                    type="text"
+                    value={storageSlot}
+                    onChange={(e) => setStorageSlot(e.target.value)}
+                    placeholder="0x0"
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Block Number */}
             {commandType === "block" && (
               <div>
-                <label htmlFor="block-number" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                <label
+                  htmlFor="block-number"
+                  className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                >
                   Block Number
                 </label>
                 <input
@@ -471,7 +508,10 @@ export default function CastCommandBuilder({
             {/* Function Signature for sig command */}
             {commandType === "sig" && (
               <div>
-                <label htmlFor="sig-signature" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                <label
+                  htmlFor="sig-signature"
+                  className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2"
+                >
                   Function Signature
                 </label>
                 <input
