@@ -1,18 +1,21 @@
 "use client";
 
-import { parseTokenTransfers } from "@/lib/tokens";
-import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { detectTokenType, formatTokenAmount } from "@/lib/tokens";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import {
+  detectTokenType,
+  formatTokenAmount,
+  parseTokenTransfers,
+} from "@/lib/tokens";
+import { shortenAddress } from "@/lib/viem";
 
 export default function TokenTransfers({ logs }) {
   const [transfers, setTransfers] = useState([]);
@@ -177,46 +180,48 @@ export default function TokenTransfers({ logs }) {
 
                 {/* Amount/Token ID */}
                 <div>
-                  {transfer.type === "ERC20" ||
-                  transfer.type === "ERC20/721" ? (
-                    <>
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Amount
-                      </div>
-                      <div className="font-semibold">
-                        {transfer.value && BigInt(transfer.value) < 1000000n
-                          ? `Token ID #${transfer.value}`
-                          : formatTokenAmount(BigInt(transfer.value), decimals)}
-                      </div>
-                    </>
-                  ) : transfer.type === "ERC721" ? (
-                    <>
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Token ID
-                      </div>
-                      <div className="font-mono text-sm">
-                        #{transfer.tokenId}
-                      </div>
-                    </>
-                  ) : transfer.type === "ERC1155" ? (
-                    <>
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Token ID / Amount
-                      </div>
-                      <div className="font-mono text-sm">
-                        #{transfer.tokenId} × {transfer.value}
-                      </div>
-                    </>
-                  ) : transfer.type === "ERC1155_BATCH" ? (
-                    <>
-                      <div className="text-xs text-muted-foreground mb-1">
-                        Batch Transfer
-                      </div>
-                      <div className="text-sm">
-                        {transfer.tokenIds?.length || 0} tokens
-                      </div>
-                    </>
-                  ) : null}
+                  {transfer.type === "ERC20" || transfer.type === "ERC20/721"
+                    ? <>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          Amount
+                        </div>
+                        <div className="font-semibold">
+                          {transfer.value && BigInt(transfer.value) < 1000000n
+                            ? `Token ID #${transfer.value}`
+                            : formatTokenAmount(
+                                BigInt(transfer.value),
+                                decimals,
+                              )}
+                        </div>
+                      </>
+                    : transfer.type === "ERC721"
+                      ? <>
+                          <div className="text-xs text-muted-foreground mb-1">
+                            Token ID
+                          </div>
+                          <div className="font-mono text-sm">
+                            #{transfer.tokenId}
+                          </div>
+                        </>
+                      : transfer.type === "ERC1155"
+                        ? <>
+                            <div className="text-xs text-muted-foreground mb-1">
+                              Token ID / Amount
+                            </div>
+                            <div className="font-mono text-sm">
+                              #{transfer.tokenId} × {transfer.value}
+                            </div>
+                          </>
+                        : transfer.type === "ERC1155_BATCH"
+                          ? <>
+                              <div className="text-xs text-muted-foreground mb-1">
+                                Batch Transfer
+                              </div>
+                              <div className="text-sm">
+                                {transfer.tokenIds?.length || 0} tokens
+                              </div>
+                            </>
+                          : null}
                 </div>
               </div>
 

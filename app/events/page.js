@@ -1,18 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { publicClient } from "@/lib/viem";
-import { decodeLogs } from "@/lib/contract-decoder";
-import { getAllABIs } from "@/lib/abi-store";
 import Link from "next/link";
-import { shortenAddress } from "@/lib/viem";
+import { useEffect, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -22,7 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { Badge } from "@/app/components/ui/badge";
+import { getAllABIs } from "@/lib/abi-store";
+import { decodeLogs } from "@/lib/contract-decoder";
+import { publicClient, shortenAddress } from "@/lib/viem";
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
@@ -46,7 +45,10 @@ export default function EventsPage() {
 
     // Fetch events on load
     fetchEvents();
-  }, []);
+  }, [
+    // Fetch events on load
+    fetchEvents,
+  ]);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -110,16 +112,10 @@ export default function EventsPage() {
                     })),
                   );
                 }
-              } catch (e) {
-                // Skip failed receipts
-                continue;
-              }
+              } catch (_e) {}
             }
           }
-        } catch (e) {
-          // Skip failed blocks
-          continue;
-        }
+        } catch (_e) {}
       }
 
       setEvents(allEvents);
@@ -187,40 +183,38 @@ export default function EventsPage() {
               {/* Contract Address Filter */}
               <div className="space-y-2">
                 <Label htmlFor="contract-address">Contract Address</Label>
-                {availableContracts.length > 0 ? (
-                  <Select
-                    value={filters.address}
-                    onValueChange={(value) =>
-                      handleFilterChange("address", value)
-                    }
-                  >
-                    <SelectTrigger id="contract-address">
-                      <SelectValue placeholder="All Contracts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Contracts</SelectItem>
-                      {availableContracts.map((contract) => (
-                        <SelectItem
-                          key={contract.address}
-                          value={contract.address}
-                        >
-                          {contract.name || shortenAddress(contract.address)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="contract-address"
-                    type="text"
-                    value={filters.address}
-                    onChange={(e) =>
-                      handleFilterChange("address", e.target.value)
-                    }
-                    placeholder="0x..."
-                    className="font-mono"
-                  />
-                )}
+                {availableContracts.length > 0
+                  ? <Select
+                      value={filters.address}
+                      onValueChange={(value) =>
+                        handleFilterChange("address", value)
+                      }
+                    >
+                      <SelectTrigger id="contract-address">
+                        <SelectValue placeholder="All Contracts" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Contracts</SelectItem>
+                        {availableContracts.map((contract) => (
+                          <SelectItem
+                            key={contract.address}
+                            value={contract.address}
+                          >
+                            {contract.name || shortenAddress(contract.address)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  : <Input
+                      id="contract-address"
+                      type="text"
+                      value={filters.address}
+                      onChange={(e) =>
+                        handleFilterChange("address", e.target.value)
+                      }
+                      placeholder="0x..."
+                      className="font-mono"
+                    />}
               </div>
 
               {/* Event Name Filter */}
@@ -313,130 +307,124 @@ export default function EventsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {!loading && events.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <div className="text-4xl mb-3">📋</div>
-              <div className="font-semibold mb-1">No events found</div>
-              <div className="text-sm">
-                Try adjusting your filters or block range
+          {!loading && events.length === 0
+            ? <div className="text-center py-12 text-muted-foreground">
+                <div className="text-4xl mb-3">📋</div>
+                <div className="font-semibold mb-1">No events found</div>
+                <div className="text-sm">
+                  Try adjusting your filters or block range
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {events.map((event, index) => (
-                <Card
-                  key={`${event.transactionHash}-${event.logIndex}-${index}`}
-                  className="hover:border-primary transition-colors"
-                >
-                  <CardContent className="pt-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          {event.decoded ? (
-                            <Badge className="bg-green-600 hover:bg-green-700">
-                              DECODED
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="secondary"
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                            >
-                              RAW
-                            </Badge>
-                          )}
-                          <span className="font-mono text-sm font-semibold text-primary">
-                            {event.decoded?.eventName || "Unknown Event"}
-                          </span>
-                          {event.contractName && (
-                            <span className="text-xs text-muted-foreground">
-                              ({event.contractName})
+            : <div className="space-y-3">
+                {events.map((event, index) => (
+                  <Card
+                    key={`${event.transactionHash}-${event.logIndex}-${index}`}
+                    className="hover:border-primary transition-colors"
+                  >
+                    <CardContent className="pt-6">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            {event.decoded
+                              ? <Badge className="bg-green-600 hover:bg-green-700">
+                                  DECODED
+                                </Badge>
+                              : <Badge
+                                  variant="secondary"
+                                  className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                                >
+                                  RAW
+                                </Badge>}
+                            <span className="font-mono text-sm font-semibold text-primary">
+                              {event.decoded?.eventName || "Unknown Event"}
                             </span>
-                          )}
+                            {event.contractName && (
+                              <span className="text-xs text-muted-foreground">
+                                ({event.contractName})
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Log Index: {event.logIndex?.toString()}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Log Index: {event.logIndex?.toString()}
+                        <div className="text-right text-xs text-muted-foreground">
+                          <div>
+                            Block{" "}
+                            <Link
+                              href={`/block/${event.blockNumber}`}
+                              className="text-primary hover:underline font-mono"
+                            >
+                              {event.blockNumber?.toString()}
+                            </Link>
+                          </div>
+                          <div>
+                            {new Date(
+                              Number(event.timestamp) * 1000,
+                            ).toLocaleString()}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right text-xs text-muted-foreground">
+
+                      {/* Contract & Transaction */}
+                      <div className="grid grid-cols-2 gap-4 mb-3 text-xs">
                         <div>
-                          Block{" "}
+                          <div className="text-muted-foreground mb-1">
+                            Contract
+                          </div>
                           <Link
-                            href={`/block/${event.blockNumber}`}
-                            className="text-primary hover:underline font-mono"
+                            href={`/address/${event.address}`}
+                            className="font-mono text-primary hover:underline"
                           >
-                            {event.blockNumber?.toString()}
+                            {shortenAddress(event.address)}
                           </Link>
                         </div>
                         <div>
-                          {new Date(
-                            Number(event.timestamp) * 1000,
-                          ).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contract & Transaction */}
-                    <div className="grid grid-cols-2 gap-4 mb-3 text-xs">
-                      <div>
-                        <div className="text-muted-foreground mb-1">
-                          Contract
-                        </div>
-                        <Link
-                          href={`/address/${event.address}`}
-                          className="font-mono text-primary hover:underline"
-                        >
-                          {shortenAddress(event.address)}
-                        </Link>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground mb-1">
-                          Transaction
-                        </div>
-                        <Link
-                          href={`/tx/${event.transactionHash}`}
-                          className="font-mono text-primary hover:underline"
-                        >
-                          {shortenAddress(event.transactionHash, 8)}
-                        </Link>
-                      </div>
-                    </div>
-
-                    {/* Event Data */}
-                    {event.decoded?.args ? (
-                      <div className="bg-muted p-3 rounded">
-                        <div className="text-xs text-muted-foreground mb-2 font-semibold">
-                          Decoded Arguments:
-                        </div>
-                        <pre className="font-mono text-xs overflow-x-auto">
-                          {JSON.stringify(
-                            event.decoded.args,
-                            (_, v) =>
-                              typeof v === "bigint" ? v.toString() : v,
-                            2,
-                          )}
-                        </pre>
-                      </div>
-                    ) : (
-                      <div className="bg-muted p-3 rounded">
-                        <div className="text-xs text-muted-foreground mb-2 font-semibold">
-                          Raw Data:
-                        </div>
-                        <div className="font-mono text-xs break-all">
-                          {event.data}
-                        </div>
-                        {event.error && (
-                          <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-                            ⚠ {event.error}
+                          <div className="text-muted-foreground mb-1">
+                            Transaction
                           </div>
-                        )}
+                          <Link
+                            href={`/tx/${event.transactionHash}`}
+                            className="font-mono text-primary hover:underline"
+                          >
+                            {shortenAddress(event.transactionHash, 8)}
+                          </Link>
+                        </div>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+
+                      {/* Event Data */}
+                      {event.decoded?.args
+                        ? <div className="bg-muted p-3 rounded">
+                            <div className="text-xs text-muted-foreground mb-2 font-semibold">
+                              Decoded Arguments:
+                            </div>
+                            <pre className="font-mono text-xs overflow-x-auto">
+                              {JSON.stringify(
+                                event.decoded.args,
+                                (_, v) =>
+                                  typeof v === "bigint" ? v.toString() : v,
+                                2,
+                              )}
+                            </pre>
+                          </div>
+                        : <div className="bg-muted p-3 rounded">
+                            <div className="text-xs text-muted-foreground mb-2 font-semibold">
+                              Raw Data:
+                            </div>
+                            <div className="font-mono text-xs break-all">
+                              {event.data}
+                            </div>
+                            {event.error && (
+                              <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                                ⚠ {event.error}
+                              </div>
+                            )}
+                          </div>}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>}
         </CardContent>
       </Card>
     </div>

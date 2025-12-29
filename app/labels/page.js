@@ -1,24 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getAddressLabels,
-  getTransactionNotes,
-  deleteAddressLabel,
-  deleteTransactionNote,
-  searchLabelsAndNotes,
-  getLabelsStats,
-  exportLabelsAndNotes,
-  importLabelsAndNotes,
-  clearAllLabelsAndNotes,
-  LABEL_COLORS,
-  getLabelColorClass,
-} from "@/lib/labels";
-import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
 import {
   Card,
   CardContent,
@@ -27,21 +13,34 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Badge } from "@/app/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/app/components/ui/dialog";
-import { toast } from "sonner";
+  clearAllLabelsAndNotes,
+  deleteAddressLabel,
+  deleteTransactionNote,
+  exportLabelsAndNotes,
+  getAddressLabels,
+  getLabelColorClass,
+  getLabelsStats,
+  getTransactionNotes,
+  importLabelsAndNotes,
+  searchLabelsAndNotes,
+} from "@/lib/labels";
+import { shortenAddress } from "@/lib/viem";
 
 export default function LabelsPage() {
   const [labels, setLabels] = useState([]);
@@ -64,7 +63,7 @@ export default function LabelsPage() {
       window.removeEventListener("labelsUpdated", handleUpdate);
       window.removeEventListener("notesUpdated", handleUpdate);
     };
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -231,125 +230,121 @@ export default function LabelsPage() {
 
         {/* Labels Tab */}
         <TabsContent value="labels">
-          {displayLabels.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="text-4xl mb-3">🏷️</div>
-                <div className="text-muted-foreground">
-                  {searchQuery ? "No labels found" : "No labels yet"}
-                </div>
-                {!searchQuery && (
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Add labels to addresses to organize your testnet work
+          {displayLabels.length === 0
+            ? <Card>
+                <CardContent className="text-center py-12">
+                  <div className="text-4xl mb-3">🏷️</div>
+                  <div className="text-muted-foreground">
+                    {searchQuery ? "No labels found" : "No labels yet"}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {displayLabels.map((label) => (
-                <Card key={label.address}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge
-                            variant="secondary"
-                            className={getLabelColorClass(label.color)}
-                          >
-                            {label.label}
-                          </Badge>
-                        </div>
-                        <Link
-                          href={`/address/${label.address}`}
-                          className="font-mono text-sm text-primary hover:underline"
-                        >
-                          {shortenAddress(label.address, 8)}
-                        </Link>
-                        {label.note && (
-                          <div className="text-sm text-muted-foreground mt-2">
-                            {label.note}
-                          </div>
-                        )}
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {new Date(label.timestamp).toLocaleString()}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteLabel(label.address)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Delete
-                      </Button>
+                  {!searchQuery && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Add labels to addresses to organize your testnet work
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  )}
+                </CardContent>
+              </Card>
+            : <div className="space-y-3">
+                {displayLabels.map((label) => (
+                  <Card key={label.address}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge
+                              variant="secondary"
+                              className={getLabelColorClass(label.color)}
+                            >
+                              {label.label}
+                            </Badge>
+                          </div>
+                          <Link
+                            href={`/address/${label.address}`}
+                            className="font-mono text-sm text-primary hover:underline"
+                          >
+                            {shortenAddress(label.address, 8)}
+                          </Link>
+                          {label.note && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              {label.note}
+                            </div>
+                          )}
+                          <div className="text-xs text-muted-foreground mt-2">
+                            {new Date(label.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteLabel(label.address)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>}
         </TabsContent>
 
         {/* Notes Tab */}
         <TabsContent value="notes">
-          {displayNotes.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12">
-                <div className="text-4xl mb-3">📝</div>
-                <div className="text-muted-foreground">
-                  {searchQuery ? "No notes found" : "No notes yet"}
-                </div>
-                {!searchQuery && (
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Add notes to transactions to track important events
+          {displayNotes.length === 0
+            ? <Card>
+                <CardContent className="text-center py-12">
+                  <div className="text-4xl mb-3">📝</div>
+                  <div className="text-muted-foreground">
+                    {searchQuery ? "No notes found" : "No notes yet"}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {displayNotes.map((note) => (
-                <Card key={note.txHash}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="mb-2">
-                          <Link
-                            href={`/tx/${note.txHash}`}
-                            className="font-mono text-sm text-primary hover:underline"
-                          >
-                            {shortenAddress(note.txHash, 10)}
-                          </Link>
-                        </div>
-                        {note.note && (
-                          <div className="text-sm text-foreground mb-2">
-                            {note.note}
-                          </div>
-                        )}
-                        {note.category && (
-                          <Badge variant="outline" className="mb-2">
-                            {note.category}
-                          </Badge>
-                        )}
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(note.timestamp).toLocaleString()}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteNote(note.txHash)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Delete
-                      </Button>
+                  {!searchQuery && (
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Add notes to transactions to track important events
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  )}
+                </CardContent>
+              </Card>
+            : <div className="space-y-3">
+                {displayNotes.map((note) => (
+                  <Card key={note.txHash}>
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="mb-2">
+                            <Link
+                              href={`/tx/${note.txHash}`}
+                              className="font-mono text-sm text-primary hover:underline"
+                            >
+                              {shortenAddress(note.txHash, 10)}
+                            </Link>
+                          </div>
+                          {note.note && (
+                            <div className="text-sm text-foreground mb-2">
+                              {note.note}
+                            </div>
+                          )}
+                          {note.category && (
+                            <Badge variant="outline" className="mb-2">
+                              {note.category}
+                            </Badge>
+                          )}
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(note.timestamp).toLocaleString()}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteNote(note.txHash)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>}
         </TabsContent>
 
         {/* Statistics Tab */}

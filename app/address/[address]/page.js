@@ -1,24 +1,23 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { publicClient, formatEther, shortenAddress } from "@/lib/viem";
-import { getABI, getSourceCode, saveSourceCode } from "@/lib/abi-store";
 import Link from "next/link";
+import { use, useEffect, useState } from "react";
+import AddressLabel from "@/app/components/AddressLabel";
+import ContractGasProfile from "@/app/components/ContractGasProfile";
 import ContractInteraction from "@/app/components/ContractInteraction";
+import LabelBadge from "@/app/components/LabelBadge";
 import SourceCodeViewer from "@/app/components/SourceCodeViewer";
 import TokenBalances from "@/app/components/TokenBalances";
-import AddressLabel from "@/app/components/AddressLabel";
-import LabelBadge from "@/app/components/LabelBadge";
-import ContractGasProfile from "@/app/components/ContractGasProfile";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
-import { Separator } from "@/app/components/ui/separator";
+import { getABI, getSourceCode, saveSourceCode } from "@/lib/abi-store";
+import { formatEther, publicClient, shortenAddress } from "@/lib/viem";
 
 export default function AddressPage({ params }) {
   const { address } = use(params);
@@ -185,29 +184,27 @@ export default function AddressPage({ params }) {
                     Contract Status
                   </div>
                   <div className="flex items-center gap-2">
-                    {abiData ? (
-                      <>
-                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                        <span className="text-green-600 dark:text-green-400 font-semibold">
-                          ABI Available {abiData.name && `(${abiData.name})`}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                        <span className="text-yellow-600 dark:text-yellow-400">
-                          No ABI Available
-                        </span>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          asChild
-                          className="ml-2 h-auto p-0"
-                        >
-                          <Link href="/upload-abi">Upload ABI</Link>
-                        </Button>
-                      </>
-                    )}
+                    {abiData
+                      ? <>
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          <span className="text-green-600 dark:text-green-400 font-semibold">
+                            ABI Available {abiData.name && `(${abiData.name})`}
+                          </span>
+                        </>
+                      : <>
+                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                          <span className="text-yellow-600 dark:text-yellow-400">
+                            No ABI Available
+                          </span>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            asChild
+                            className="ml-2 h-auto p-0"
+                          >
+                            <Link href="/upload-abi">Upload ABI</Link>
+                          </Button>
+                        </>}
                   </div>
                 </div>
                 <div>
@@ -251,43 +248,41 @@ export default function AddressPage({ params }) {
       {/* Source Code */}
       {isContract && (
         <div className="mb-8">
-          {sourceData ? (
-            <SourceCodeViewer
-              sourceCode={sourceData.sourceCode}
-              fileName={sourceData.fileName}
-            />
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Contract Source Code</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">📄</div>
-                  <div className="text-muted-foreground mb-4">
-                    No source code available
+          {sourceData
+            ? <SourceCodeViewer
+                sourceCode={sourceData.sourceCode}
+                fileName={sourceData.fileName}
+              />
+            : <Card>
+                <CardHeader>
+                  <CardTitle>Contract Source Code</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-3">📄</div>
+                    <div className="text-muted-foreground mb-4">
+                      No source code available
+                    </div>
+                    <input
+                      type="file"
+                      accept=".sol"
+                      onChange={handleSourceUpload}
+                      className="hidden"
+                      id="source-upload"
+                    />
+                    <Button asChild>
+                      <label htmlFor="source-upload" className="cursor-pointer">
+                        {uploadingSource
+                          ? "Uploading..."
+                          : "📤 Upload Source Code"}
+                      </label>
+                    </Button>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      Upload .sol file from your Foundry project
+                    </div>
                   </div>
-                  <input
-                    type="file"
-                    accept=".sol"
-                    onChange={handleSourceUpload}
-                    className="hidden"
-                    id="source-upload"
-                  />
-                  <Button asChild>
-                    <label htmlFor="source-upload" className="cursor-pointer">
-                      {uploadingSource
-                        ? "Uploading..."
-                        : "📤 Upload Source Code"}
-                    </label>
-                  </Button>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Upload .sol file from your Foundry project
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>}
         </div>
       )}
 
@@ -311,74 +306,71 @@ export default function AddressPage({ params }) {
           <CardTitle>Transactions</CardTitle>
         </CardHeader>
         <CardContent>
-          {txLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : transactions.length > 0 ? (
-            <div className="space-y-3">
-              {transactions.map((tx) => {
-                const isFrom = tx.from.toLowerCase() === address.toLowerCase();
-                const isTo = tx.to?.toLowerCase() === address.toLowerCase();
+          {txLoading
+            ? <div className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            : transactions.length > 0
+              ? <div className="space-y-3">
+                  {transactions.map((tx) => {
+                    const isFrom =
+                      tx.from.toLowerCase() === address.toLowerCase();
+                    const isTo = tx.to?.toLowerCase() === address.toLowerCase();
 
-                return (
-                  <Link
-                    key={tx.hash}
-                    href={`/tx/${tx.hash}`}
-                    className="block p-4 border rounded-lg hover:border-primary transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {isFrom && <Badge variant="destructive">OUT</Badge>}
-                        {isTo && (
-                          <Badge className="bg-green-600 hover:bg-green-700">
-                            IN
-                          </Badge>
-                        )}
-                        <span className="font-mono text-sm">
-                          {shortenAddress(tx.hash, 8)}
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Block {tx.blockNumber?.toString()}
-                      </div>
-                    </div>
+                    return (
+                      <Link
+                        key={tx.hash}
+                        href={`/tx/${tx.hash}`}
+                        className="block p-4 border rounded-lg hover:border-primary transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {isFrom && <Badge variant="destructive">OUT</Badge>}
+                            {isTo && (
+                              <Badge className="bg-green-600 hover:bg-green-700">
+                                IN
+                              </Badge>
+                            )}
+                            <span className="font-mono text-sm">
+                              {shortenAddress(tx.hash, 8)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Block {tx.blockNumber?.toString()}
+                          </div>
+                        </div>
 
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        {isFrom ? (
-                          <>
-                            To:{" "}
-                            <span className="font-mono">
-                              {tx.to
-                                ? shortenAddress(tx.to)
-                                : "Contract Creation"}
-                            </span>
-                            {tx.to && <LabelBadge address={tx.to} />}
-                          </>
-                        ) : (
-                          <>
-                            From:{" "}
-                            <span className="font-mono">
-                              {shortenAddress(tx.from)}
-                            </span>
-                            <LabelBadge address={tx.from} />
-                          </>
-                        )}
-                      </div>
-                      <div className="font-semibold text-primary">
-                        {formatEther(tx.value)} ETH
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No transactions found in recent blocks
-            </div>
-          )}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            {isFrom
+                              ? <>
+                                  To:{" "}
+                                  <span className="font-mono">
+                                    {tx.to
+                                      ? shortenAddress(tx.to)
+                                      : "Contract Creation"}
+                                  </span>
+                                  {tx.to && <LabelBadge address={tx.to} />}
+                                </>
+                              : <>
+                                  From:{" "}
+                                  <span className="font-mono">
+                                    {shortenAddress(tx.from)}
+                                  </span>
+                                  <LabelBadge address={tx.from} />
+                                </>}
+                          </div>
+                          <div className="font-semibold text-primary">
+                            {formatEther(tx.value)} ETH
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              : <div className="text-center py-8 text-muted-foreground">
+                  No transactions found in recent blocks
+                </div>}
         </CardContent>
       </Card>
     </div>

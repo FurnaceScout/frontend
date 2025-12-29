@@ -1,43 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useEventSubscriptions } from "@/app/hooks/useBlockchain";
-import {
-  getStoredEvents,
-  clearStoredEvents,
-  getEventStats,
-  getPinnedEvents,
-  togglePinEvent,
-  isEventPinned,
-  getNotificationSettings,
-  saveNotificationSettings,
-  requestNotificationPermission,
-  exportEvents,
-  exportEventsCSV,
-} from "@/lib/event-streaming";
-import { getAllABIs } from "@/lib/abi-store";
-import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/app/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +13,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -55,15 +39,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { Separator } from "@/app/components/ui/separator";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import { Switch } from "@/app/components/ui/switch";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Switch } from "@/app/components/ui/switch";
-import { Skeleton } from "@/app/components/ui/skeleton";
-import { Separator } from "@/app/components/ui/separator";
+import { useEventSubscriptions } from "@/app/hooks/useBlockchain";
+import { getAllABIs } from "@/lib/abi-store";
+import {
+  clearStoredEvents,
+  exportEvents,
+  exportEventsCSV,
+  getEventStats,
+  getNotificationSettings,
+  getPinnedEvents,
+  getStoredEvents,
+  isEventPinned,
+  requestNotificationPermission,
+  saveNotificationSettings,
+  togglePinEvent,
+} from "@/lib/event-streaming";
+import { shortenAddress } from "@/lib/viem";
 
 export default function EventStreamManager({
   isOpen: controlledIsOpen,
@@ -83,7 +83,7 @@ export default function EventStreamManager({
   const [activeTab, setActiveTab] = useState("subscriptions");
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);
-  const [pinnedEvents, setPinnedEvents] = useState([]);
+  const [_pinnedEvents, setPinnedEvents] = useState([]);
   const [settings, setSettings] = useState(getNotificationSettings());
   const [showNewSubscription, setShowNewSubscription] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -110,6 +110,20 @@ export default function EventStreamManager({
     refresh,
   } = useEventSubscriptions();
 
+  const loadData = useCallback(() => {
+    const allEvents = getStoredEvents();
+    setEvents(allEvents);
+    setStats(getEventStats());
+    setPinnedEvents(getPinnedEvents());
+
+    const abis = getAllABIs();
+    const contracts = Object.entries(abis).map(([addr, data]) => ({
+      address: addr,
+      name: data.name || "Unnamed Contract",
+    }));
+    setAvailableContracts(contracts);
+  }, []);
+
   // Load data
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -126,28 +140,14 @@ export default function EventStreamManager({
 
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [loadData]);
 
   // Refresh when subscriptions change
   useEffect(() => {
     if (isOpen) {
       loadData();
     }
-  }, [subscriptions, isOpen]);
-
-  const loadData = () => {
-    const allEvents = getStoredEvents();
-    setEvents(allEvents);
-    setStats(getEventStats());
-    setPinnedEvents(getPinnedEvents());
-
-    const abis = getAllABIs();
-    const contracts = Object.entries(abis).map(([addr, data]) => ({
-      address: addr,
-      name: data.name || "Unnamed Contract",
-    }));
-    setAvailableContracts(contracts);
-  };
+  }, [isOpen, loadData]);
 
   const handleCreateSubscription = async (e) => {
     e.preventDefault();
@@ -659,7 +659,7 @@ export default function EventStreamManager({
                         onChange={(e) =>
                           setSettings({
                             ...settings,
-                            autoClose: parseInt(e.target.value) || 5000,
+                            autoClose: parseInt(e.target.value, 10) || 5000,
                           })
                         }
                         className="mt-2"

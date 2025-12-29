@@ -1,21 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getTransactionNote,
-  saveTransactionNote,
-  deleteTransactionNote,
-} from "@/lib/labels";
-import { Button } from "@/app/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Textarea } from "@/app/components/ui/textarea";
-import { Label } from "@/app/components/ui/label";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,12 +13,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Label } from "@/app/components/ui/label";
+import { Textarea } from "@/app/components/ui/textarea";
+import {
+  deleteTransactionNote,
+  getTransactionNote,
+  saveTransactionNote,
+} from "@/lib/labels";
 
 export default function TransactionNote({ txHash }) {
   const [note, setNote] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editNote, setEditNote] = useState("");
+
+  const loadNote = useCallback(() => {
+    const noteData = getTransactionNote(txHash);
+    setNote(noteData);
+  }, [txHash]);
 
   useEffect(() => {
     loadNote();
@@ -41,12 +46,7 @@ export default function TransactionNote({ txHash }) {
     const handleUpdate = () => loadNote();
     window.addEventListener("notesUpdated", handleUpdate);
     return () => window.removeEventListener("notesUpdated", handleUpdate);
-  }, [txHash]);
-
-  function loadNote() {
-    const noteData = getTransactionNote(txHash);
-    setNote(noteData);
-  }
+  }, [loadNote]);
 
   function handleEdit() {
     setEditNote(note?.note || "");

@@ -1,5 +1,5 @@
-import Modal from "@/app/components/Modal";
 import AnvilStateManager from "@/app/components/AnvilStateManager";
+import Modal from "@/app/components/Modal";
 
 export default function InterceptedAnvilStatePage() {
   return (

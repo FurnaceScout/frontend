@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { codeToHtml } from "shiki";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
 
 export default function SourceCodeViewer({ sourceCode, fileName }) {
@@ -157,76 +157,75 @@ export default function SourceCodeViewer({ sourceCode, fileName }) {
       </CardHeader>
 
       <CardContent>
-        {isHighlighting ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-4/6" />
-            <Skeleton className="h-4 w-full" />
-            <p className="text-sm text-muted-foreground mt-4">
-              Highlighting code...
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <div className="relative">
-              {showLineNumbers ? (
-                <div className="font-mono text-sm border rounded-lg overflow-hidden">
-                  {lines.map((line, index) => {
-                    if (isLineFolded(index)) {
-                      return null;
-                    }
-
-                    const foldRange = isFoldStart(index);
-                    const isFoldable = !!foldRange;
-                    const isFolded = foldRange
-                      ? foldedSections.has(
-                          `${foldRange.start}-${foldRange.end}`,
-                        )
-                      : false;
-
-                    return (
-                      <div key={index} className="flex hover:bg-muted group">
-                        <div className="flex items-center flex-shrink-0 w-20 px-2 text-right text-muted-foreground bg-muted border-r select-none">
-                          {isFoldable && (
-                            <Button
-                              onClick={() =>
-                                toggleFold(foldRange.start, foldRange.end)
-                              }
-                              variant="ghost"
-                              size="sm"
-                              className="w-4 h-4 p-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                              title={isFolded ? "Unfold" : "Fold"}
-                            >
-                              {isFolded ? "▶" : "▼"}
-                            </Button>
-                          )}
-                          <span className="ml-auto text-xs">{index + 1}</span>
-                        </div>
-                        <div className="flex-1 px-4 py-0.5 overflow-x-auto min-h-[1.5rem]">
-                          {isFolded ? (
-                            <span className="text-muted-foreground italic text-xs">
-                              ... {foldRange.end - foldRange.start} lines folded
-                              ...
-                            </span>
-                          ) : (
-                            <span>{line || " "}</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div
-                  className="shiki-container border rounded-lg overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: highlightedCode }}
-                />
-              )}
+        {isHighlighting
+          ? <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-4/6" />
+              <Skeleton className="h-4 w-full" />
+              <p className="text-sm text-muted-foreground mt-4">
+                Highlighting code...
+              </p>
             </div>
-          </div>
-        )}
+          : <div className="overflow-x-auto">
+              <div className="relative">
+                {showLineNumbers
+                  ? <div className="font-mono text-sm border rounded-lg overflow-hidden">
+                      {lines.map((line, index) => {
+                        if (isLineFolded(index)) {
+                          return null;
+                        }
+
+                        const foldRange = isFoldStart(index);
+                        const isFoldable = !!foldRange;
+                        const isFolded = foldRange
+                          ? foldedSections.has(
+                              `${foldRange.start}-${foldRange.end}`,
+                            )
+                          : false;
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex hover:bg-muted group"
+                          >
+                            <div className="flex items-center flex-shrink-0 w-20 px-2 text-right text-muted-foreground bg-muted border-r select-none">
+                              {isFoldable && (
+                                <Button
+                                  onClick={() =>
+                                    toggleFold(foldRange.start, foldRange.end)
+                                  }
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-4 h-4 p-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title={isFolded ? "Unfold" : "Fold"}
+                                >
+                                  {isFolded ? "▶" : "▼"}
+                                </Button>
+                              )}
+                              <span className="ml-auto text-xs">
+                                {index + 1}
+                              </span>
+                            </div>
+                            <div className="flex-1 px-4 py-0.5 overflow-x-auto min-h-[1.5rem]">
+                              {isFolded
+                                ? <span className="text-muted-foreground italic text-xs">
+                                    ... {foldRange.end - foldRange.start} lines
+                                    folded ...
+                                  </span>
+                                : <span>{line || " "}</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  : <div
+                      className="shiki-container border rounded-lg overflow-hidden"
+                      dangerouslySetInnerHTML={{ __html: highlightedCode }}
+                    />}
+              </div>
+            </div>}
       </CardContent>
 
       <style jsx>{`

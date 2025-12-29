@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
+import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -12,13 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Card, CardContent } from "@/app/components/ui/card";
 
 export default function UnitConverter({ isOpen, onClose }) {
   // Wei/Gwei/ETH converter state
@@ -61,7 +61,7 @@ export default function UnitConverter({ isOpen, onClose }) {
     }
     try {
       const gweiNum = parseFloat(value);
-      if (isNaN(gweiNum)) throw new Error("Invalid");
+      if (Number.isNaN(gweiNum)) throw new Error("Invalid");
       const weiNum = BigInt(Math.floor(gweiNum * 1e9));
       setWei(weiNum.toString());
       setEth((gweiNum / 1e9).toString());
@@ -80,7 +80,7 @@ export default function UnitConverter({ isOpen, onClose }) {
     }
     try {
       const ethNum = parseFloat(value);
-      if (isNaN(ethNum)) throw new Error("Invalid");
+      if (Number.isNaN(ethNum)) throw new Error("Invalid");
       const weiNum = BigInt(Math.floor(ethNum * 1e18));
       setWei(weiNum.toString());
       setGwei((ethNum * 1e9).toString());
@@ -99,7 +99,7 @@ export default function UnitConverter({ isOpen, onClose }) {
     }
     try {
       const cleaned = value.replace(/^0x/, "");
-      const decimal = BigInt("0x" + cleaned);
+      const decimal = BigInt(`0x${cleaned}`);
       setDecValue(decimal.toString());
     } catch {
       setDecValue("Invalid");
@@ -114,7 +114,7 @@ export default function UnitConverter({ isOpen, onClose }) {
     }
     try {
       const decimal = BigInt(value);
-      setHexValue("0x" + decimal.toString(16));
+      setHexValue(`0x${decimal.toString(16)}`);
     } catch {
       setHexValue("Invalid");
     }
@@ -128,8 +128,8 @@ export default function UnitConverter({ isOpen, onClose }) {
       return;
     }
     try {
-      const timestamp = parseInt(value);
-      if (isNaN(timestamp)) throw new Error("Invalid");
+      const timestamp = parseInt(value, 10);
+      if (Number.isNaN(timestamp)) throw new Error("Invalid");
       const date = new Date(timestamp * 1000);
       setDateValue(date.toISOString().slice(0, 16));
     } catch {

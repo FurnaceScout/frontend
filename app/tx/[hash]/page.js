@@ -1,23 +1,23 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { publicClient, formatEther, shortenAddress } from "@/lib/viem";
-import { decodeTransactionInput, decodeLogs } from "@/lib/contract-decoder";
 import Link from "next/link";
-import TransactionTrace from "@/app/components/TransactionTrace";
+import { use, useEffect, useState } from "react";
 import BookmarkButton from "@/app/components/BookmarkButton";
+import LabelBadge from "@/app/components/LabelBadge";
 import StateDiffViewer from "@/app/components/StateDiffViewer";
 import TokenTransfers from "@/app/components/TokenTransfers";
 import TransactionNote from "@/app/components/TransactionNote";
-import LabelBadge from "@/app/components/LabelBadge";
+import TransactionTrace from "@/app/components/TransactionTrace";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import { Separator } from "@/app/components/ui/separator";
+import { decodeLogs, decodeTransactionInput } from "@/lib/contract-decoder";
+import { formatEther, publicClient, shortenAddress } from "@/lib/viem";
 
 export default function TransactionPage({ params }) {
   const { hash } = use(params);
@@ -92,11 +92,9 @@ export default function TransactionPage({ params }) {
 
       {/* Status Badge & Bookmark */}
       <div className="mb-6 flex items-center gap-4">
-        {receipt.status === "success" ? (
-          <Badge className="bg-green-600 hover:bg-green-700">✓ Success</Badge>
-        ) : (
-          <Badge variant="destructive">✗ Failed</Badge>
-        )}
+        {receipt.status === "success"
+          ? <Badge className="bg-green-600 hover:bg-green-700">✓ Success</Badge>
+          : <Badge variant="destructive">✗ Failed</Badge>}
         <BookmarkButton
           hash={hash}
           defaultLabel={`Transaction ${receipt.status === "success" ? "Success" : "Failed"}`}
@@ -140,19 +138,17 @@ export default function TransactionPage({ params }) {
             <InfoRow
               label="To"
               value={
-                tx.to ? (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/address/${tx.to}`}
-                      className="text-primary hover:underline font-mono"
-                    >
-                      {tx.to}
-                    </Link>
-                    <LabelBadge address={tx.to} />
-                  </div>
-                ) : (
-                  <Badge variant="secondary">Contract Creation</Badge>
-                )
+                tx.to
+                  ? <div className="flex items-center gap-2">
+                      <Link
+                        href={`/address/${tx.to}`}
+                        className="text-primary hover:underline font-mono"
+                      >
+                        {tx.to}
+                      </Link>
+                      <LabelBadge address={tx.to} />
+                    </div>
+                  : <Badge variant="secondary">Contract Creation</Badge>
               }
               full
             />
@@ -197,37 +193,37 @@ export default function TransactionPage({ params }) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {decodedInput.error ? (
-              <div className="text-destructive mb-4">{decodedInput.error}</div>
-            ) : (
-              <div className="mb-4">
-                <div className="text-sm text-muted-foreground mb-1">
-                  Function
+            {decodedInput.error
+              ? <div className="text-destructive mb-4">
+                  {decodedInput.error}
                 </div>
-                <div className="font-mono text-primary font-semibold">
-                  {decodedInput.functionName}
-                </div>
-
-                {decodedInput.args && decodedInput.args.length > 0 && (
-                  <div className="mt-4">
-                    <div className="text-sm text-muted-foreground mb-2">
-                      Arguments
-                    </div>
-                    <div className="space-y-2">
-                      {decodedInput.args.map((arg, idx) => (
-                        <div key={idx} className="bg-muted p-3 rounded">
-                          <div className="font-mono text-sm break-all">
-                            {typeof arg === "bigint"
-                              ? arg.toString()
-                              : JSON.stringify(arg)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              : <div className="mb-4">
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Function
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="font-mono text-primary font-semibold">
+                    {decodedInput.functionName}
+                  </div>
+
+                  {decodedInput.args && decodedInput.args.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-sm text-muted-foreground mb-2">
+                        Arguments
+                      </div>
+                      <div className="space-y-2">
+                        {decodedInput.args.map((arg, idx) => (
+                          <div key={idx} className="bg-muted p-3 rounded">
+                            <div className="font-mono text-sm break-all">
+                              {typeof arg === "bigint"
+                                ? arg.toString()
+                                : JSON.stringify(arg)}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>}
 
             <Separator className="my-4" />
 
@@ -266,28 +262,26 @@ export default function TransactionPage({ params }) {
                       </Link>
                     </div>
 
-                    {log.decoded ? (
-                      <div>
-                        <div className="font-mono text-primary font-semibold mb-2">
-                          {log.decoded.eventName}{" "}
-                          {log.contractName && `(${log.contractName})`}
-                        </div>
-                        {log.decoded.args && (
-                          <div className="bg-muted p-3 rounded font-mono text-xs">
-                            {JSON.stringify(
-                              log.decoded.args,
-                              (_, v) =>
-                                typeof v === "bigint" ? v.toString() : v,
-                              2,
-                            )}
+                    {log.decoded
+                      ? <div>
+                          <div className="font-mono text-primary font-semibold mb-2">
+                            {log.decoded.eventName}{" "}
+                            {log.contractName && `(${log.contractName})`}
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">
-                        {log.error || "Not decoded"}
-                      </div>
-                    )}
+                          {log.decoded.args && (
+                            <div className="bg-muted p-3 rounded font-mono text-xs">
+                              {JSON.stringify(
+                                log.decoded.args,
+                                (_, v) =>
+                                  typeof v === "bigint" ? v.toString() : v,
+                                2,
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      : <div className="text-sm text-muted-foreground">
+                          {log.error || "Not decoded"}
+                        </div>}
                   </CardContent>
                 </Card>
               ))}

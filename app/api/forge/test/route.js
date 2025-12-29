@@ -1,7 +1,7 @@
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { NextResponse } from "next/server";
-import { spawn } from "child_process";
-import { existsSync } from "fs";
-import { join } from "path";
 
 /**
  * Run forge test and return results
@@ -10,9 +10,8 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const {
-      testFilter = "",
       gasReport = true,
-      coverage = false,
+      coverage: _coverage = false,
       matchContract = "",
       matchTest = "",
       verbosity = 2,
@@ -29,7 +28,7 @@ export async function POST(request) {
           success: false,
           error: "No Foundry project detected. foundry.toml not found.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,7 +78,7 @@ export async function POST(request) {
         success: false,
         error: error.message || "Failed to run forge test",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -87,7 +86,7 @@ export async function POST(request) {
 /**
  * Get test history (stored results)
  */
-export async function GET(request) {
+export async function GET(_request) {
   // Test history is stored client-side in localStorage
   // This endpoint could be extended to store server-side if needed
   return NextResponse.json({
@@ -117,7 +116,7 @@ function runForgeTest(args, cwd) {
       const lines = output.split("\n");
       for (const line of lines) {
         if (line.trim().startsWith("{")) {
-          jsonOutput += line + "\n";
+          jsonOutput += `${line}\n`;
         }
       }
     });
@@ -141,7 +140,7 @@ function runForgeTest(args, cwd) {
         });
       } catch (error) {
         reject(
-          new Error(`Failed to parse forge test output: ${error.message}`)
+          new Error(`Failed to parse forge test output: ${error.message}`),
         );
       }
     });
@@ -161,7 +160,7 @@ function runForgeTest(args, cwd) {
 /**
  * Parse forge test JSON output
  */
-function parseForgeTestOutput(jsonOutput, stdout, stderr) {
+function parseForgeTestOutput(jsonOutput, stdout, _stderr) {
   const results = {
     tests: [],
     summary: {
@@ -214,10 +213,7 @@ function parseForgeTestOutput(jsonOutput, stdout, stderr) {
             results.summary.duration += data.duration;
           }
         }
-      } catch (e) {
-        // Skip invalid JSON lines
-        continue;
-      }
+      } catch (_e) {}
     }
 
     // Parse gas report from stdout
@@ -272,15 +268,15 @@ function parseGasReport(stdout) {
 
       // Function gas usage
       const functionMatch = line.match(
-        /([A-Za-z_][A-Za-z0-9_]*)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/
+        /([A-Za-z_][A-Za-z0-9_]*)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/,
       );
       if (functionMatch && currentContract) {
         currentContract.functions.push({
           name: functionMatch[1],
-          min: parseInt(functionMatch[2]),
-          avg: parseInt(functionMatch[3]),
-          median: parseInt(functionMatch[4]),
-          max: parseInt(functionMatch[5]),
+          min: parseInt(functionMatch[2], 10),
+          avg: parseInt(functionMatch[3], 10),
+          median: parseInt(functionMatch[4], 10),
+          max: parseInt(functionMatch[5], 10),
         });
       }
     }
@@ -313,13 +309,15 @@ function parsePlainTextOutput(stdout) {
     for (const line of lines) {
       // Match test result lines
       // Format: [PASS] testName() (gas: 12345)
-      const passMatch = line.match(/\[PASS\]\s+([^\(]+)\(\)\s*(?:\(gas:\s*(\d+)\))?/);
+      const passMatch = line.match(
+        /\[PASS\]\s+([^(]+)\(\)\s*(?:\(gas:\s*(\d+)\))?/,
+      );
       if (passMatch) {
         results.tests.push({
           name: passMatch[1].trim(),
           contract: "Unknown",
           status: "Success",
-          gasUsed: passMatch[2] ? parseInt(passMatch[2]) : null,
+          gasUsed: passMatch[2] ? parseInt(passMatch[2], 10) : null,
           duration: 0,
         });
         results.summary.total++;
@@ -328,7 +326,7 @@ function parsePlainTextOutput(stdout) {
       }
 
       // Format: [FAIL] testName()
-      const failMatch = line.match(/\[FAIL\]\s+([^\(]+)\(\)/);
+      const failMatch = line.match(/\[FAIL\]\s+([^(]+)\(\)/);
       if (failMatch) {
         results.tests.push({
           name: failMatch[1].trim(),
@@ -339,17 +337,16 @@ function parsePlainTextOutput(stdout) {
         });
         results.summary.total++;
         results.summary.failed++;
-        continue;
       }
     }
 
     // Parse summary line
     const summaryMatch = stdout.match(
-      /Test result:\s+(\w+)\.\s+(\d+)\s+passed;\s+(\d+)\s+failed/i
+      /Test result:\s+(\w+)\.\s+(\d+)\s+passed;\s+(\d+)\s+failed/i,
     );
     if (summaryMatch) {
-      results.summary.passed = parseInt(summaryMatch[2]);
-      results.summary.failed = parseInt(summaryMatch[3]);
+      results.summary.passed = parseInt(summaryMatch[2], 10);
+      results.summary.failed = parseInt(summaryMatch[3], 10);
       results.summary.total = results.summary.passed + results.summary.failed;
     }
   } catch (error) {

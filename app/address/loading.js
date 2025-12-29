@@ -1,5 +1,5 @@
-import { Skeleton } from "@/app/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 export default function Loading() {
   return (
@@ -41,7 +41,10 @@ export default function Loading() {
         </CardHeader>
         <CardContent className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex justify-between items-center py-3 border-b">
+            <div
+              key={i}
+              className="flex justify-between items-center py-3 border-b"
+            >
               <div className="space-y-2">
                 <Skeleton className="h-5 w-64" />
                 <Skeleton className="h-4 w-48" />

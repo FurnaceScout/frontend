@@ -1,7 +1,7 @@
+import { existsSync } from "node:fs";
+import { readdir, readFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 import { NextResponse } from "next/server";
-import { readdir, readFile, stat } from "fs/promises";
-import { join, relative } from "path";
-import { existsSync } from "fs";
 
 // Find Foundry project root by looking for foundry.toml
 async function findFoundryRoot(startPath) {
@@ -81,7 +81,12 @@ async function scanDirectory(dirPath, baseDir, maxDepth = 3, currentDepth = 0) {
 
       if (entry.isDirectory()) {
         // Recursively scan subdirectories
-        const subFiles = await scanDirectory(fullPath, baseDir, maxDepth, currentDepth + 1);
+        const subFiles = await scanDirectory(
+          fullPath,
+          baseDir,
+          maxDepth,
+          currentDepth + 1,
+        );
         files.push(...subFiles);
       } else if (entry.isFile() && entry.name.endsWith(".json")) {
         files.push({
@@ -131,7 +136,7 @@ export async function GET(request) {
     if (!scanPath.startsWith(projectRoot)) {
       return NextResponse.json(
         { error: "Path outside project directory not allowed" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -161,7 +166,8 @@ export async function GET(request) {
         compiled: false,
         foundryRoot: relative(projectRoot, foundryRoot),
         config,
-        message: "Foundry project detected but not compiled. Run 'forge build' first.",
+        message:
+          "Foundry project detected but not compiled. Run 'forge build' first.",
       });
     }
 
@@ -175,11 +181,13 @@ export async function GET(request) {
       if (file.name === "metadata.json") continue;
 
       const parsed = await parseFoundryOutput(file.fullPath);
-      if (parsed && parsed.abi) {
+      if (parsed?.abi) {
         // Extract contract name from path
         // e.g., "Counter.sol/Counter.json" -> "Counter"
         const nameMatch = file.path.match(/([^/\\]+)\.json$/);
-        const contractName = nameMatch ? nameMatch[1] : file.name.replace(".json", "");
+        const contractName = nameMatch
+          ? nameMatch[1]
+          : file.name.replace(".json", "");
 
         contracts.push({
           name: contractName,
@@ -187,7 +195,8 @@ export async function GET(request) {
           abi: parsed.abi,
           bytecode: parsed.bytecode,
           hasBytecode: !!parsed.bytecode,
-          functionCount: parsed.abi.filter((item) => item.type === "function").length,
+          functionCount: parsed.abi.filter((item) => item.type === "function")
+            .length,
           eventCount: parsed.abi.filter((item) => item.type === "event").length,
         });
       }
@@ -211,7 +220,7 @@ export async function GET(request) {
     console.error("Foundry scan error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to scan for Foundry project" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

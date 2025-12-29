@@ -1,35 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  scanFoundryProject,
-  loadFoundryABIs,
-  getFoundryContracts,
-  linkFoundryContract,
-  clearFoundryData,
-  getFoundryStats,
-  saveFoundryConfig,
-} from "@/lib/foundry-project";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +13,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  clearFoundryData,
+  getFoundryContracts,
+  getFoundryStats,
+  linkFoundryContract,
+  loadFoundryABIs,
+  saveFoundryConfig,
+  scanFoundryProject,
+} from "@/lib/foundry-project";
 
 export default function FoundryProjectManager({
   isOpen: controlledIsOpen,
@@ -68,19 +67,19 @@ export default function FoundryProjectManager({
   const [loadSuccess, setLoadSuccess] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  const loadExistingContracts = useCallback(() => {
+    const foundryContracts = getFoundryContracts();
+    const foundryStats = getFoundryStats();
+    setContracts(foundryContracts);
+    setStats(foundryStats);
+  }, []);
+
   // Load existing Foundry contracts on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       loadExistingContracts();
     }
-  }, []);
-
-  const loadExistingContracts = () => {
-    const foundryContracts = getFoundryContracts();
-    const foundryStats = getFoundryStats();
-    setContracts(foundryContracts);
-    setStats(foundryStats);
-  };
+  }, [loadExistingContracts]);
 
   const handleScan = async () => {
     setScanning(true);
@@ -126,7 +125,7 @@ export default function FoundryProjectManager({
     if (!project || !project.contracts) return;
 
     try {
-      const loaded = loadFoundryABIs(project.contracts);
+      const _loaded = loadFoundryABIs(project.contracts);
       setLoadSuccess(true);
       loadExistingContracts();
       toast.success("ABIs loaded successfully!");
@@ -236,7 +235,7 @@ export default function FoundryProjectManager({
                   </Alert>
                 )}
 
-                {project && project.found && (
+                {project?.found && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useTheme } from "@/app/hooks/useTheme";
 import { Button } from "@/app/components/ui/button";
+import { Card, CardContent } from "@/app/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Card, CardContent } from "@/app/components/ui/card";
+import { useTheme } from "@/app/hooks/useTheme";
 
 export default function ThemeToggle({ isOpen, onClose }) {
   const { theme, resolvedTheme, setTheme, themes } = useTheme();
@@ -54,7 +54,7 @@ export default function ThemeToggle({ isOpen, onClose }) {
         <div className="grid gap-3">
           {themeOptions.map((option) => {
             const isActive = theme === option.value;
-            const isActiveResolved =
+            const _isActiveResolved =
               option.value === themes.SYSTEM
                 ? theme === themes.SYSTEM
                 : resolvedTheme === option.value;

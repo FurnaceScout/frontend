@@ -1,17 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { formatEther, shortenAddress } from "@/lib/viem";
-import {
-  useLatestBlocks,
-  useLatestTransactions,
-} from "@/app/hooks/useBlockchain";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
 import NetworkStatsWidget from "@/app/components/NetworkStatsWidget";
 import RecentTokenTransfers from "@/app/components/RecentTokenTransfers";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -19,12 +13,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
+import {
+  useLatestBlocks,
+  useLatestTransactions,
+} from "@/app/hooks/useBlockchain";
+import { formatEther, shortenAddress } from "@/lib/viem";
 
 export default function Home() {
   const { blocks, loading: blocksLoading } = useLatestBlocks(5);
   const { transactions, loading: txLoading } = useLatestTransactions(5, 50);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, _setSearchQuery] = useState("");
   const [networkStats, setNetworkStats] = useState(null);
   const publicClient = usePublicClient();
 
@@ -56,7 +54,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [publicClient]);
 
-  const handleSearch = (e) => {
+  const _handleSearch = (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
@@ -311,68 +309,68 @@ export default function Home() {
               </h3>
             </div>
             <div className="space-y-3">
-              {transactions.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <CardContent className="pt-6">
-                    <div className="text-4xl mb-4">⏳</div>
-                    <p className="text-muted-foreground">No transactions yet</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Transactions will appear here as they occur
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                transactions.map((tx) => (
-                  <Link key={tx.hash} href={`/tx/${tx.hash}`}>
-                    <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6 min-h-40">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-sm font-semibold">
-                            {shortenAddress(tx.hash)}
-                          </span>
-                          <Badge variant="outline">
-                            Block #{tx.blockNumber?.toString()}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-4 text-sm mb-2">
-                          <div>
-                            <div className="text-muted-foreground mb-1">
-                              From
-                            </div>
-                            <div className="font-mono">
-                              {shortenAddress(tx.from)}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-muted-foreground mb-1">To</div>
-                            <div className="font-mono">
-                              {tx.to ? (
-                                shortenAddress(tx.to)
-                              ) : (
-                                <Badge variant="secondary">
-                                  Contract Deploy
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        {tx.value && tx.value > 0n ? (
-                          <div className="text-sm pt-2 border-t">
-                            <span className="text-muted-foreground">
-                              Value:
+              {transactions.length === 0
+                ? <Card className="p-12 text-center">
+                    <CardContent className="pt-6">
+                      <div className="text-4xl mb-4">⏳</div>
+                      <p className="text-muted-foreground">
+                        No transactions yet
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Transactions will appear here as they occur
+                      </p>
+                    </CardContent>
+                  </Card>
+                : transactions.map((tx) => (
+                    <Link key={tx.hash} href={`/tx/${tx.hash}`}>
+                      <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6 min-h-40">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-sm font-semibold">
+                              {shortenAddress(tx.hash)}
                             </span>
-                            <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
-                              {formatEther(tx.value)} ETH
-                            </span>
+                            <Badge variant="outline">
+                              Block #{tx.blockNumber?.toString()}
+                            </Badge>
                           </div>
-                        ) : null}
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))
-              )}
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-4 text-sm mb-2">
+                            <div>
+                              <div className="text-muted-foreground mb-1">
+                                From
+                              </div>
+                              <div className="font-mono">
+                                {shortenAddress(tx.from)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-muted-foreground mb-1">
+                                To
+                              </div>
+                              <div className="font-mono">
+                                {tx.to
+                                  ? shortenAddress(tx.to)
+                                  : <Badge variant="secondary">
+                                      Contract Deploy
+                                    </Badge>}
+                              </div>
+                            </div>
+                          </div>
+                          {tx.value && tx.value > 0n
+                            ? <div className="text-sm pt-2 border-t">
+                                <span className="text-muted-foreground">
+                                  Value:
+                                </span>
+                                <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
+                                  {formatEther(tx.value)} ETH
+                                </span>
+                              </div>
+                            : null}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
             </div>
           </div>
         </div>

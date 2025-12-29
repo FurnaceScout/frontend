@@ -1,36 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  getTransactionStorageChanges,
-  getDetailedStorageChanges,
-  compareBlockStates,
-  getBlockBalanceChanges,
-  formatStorageKey,
-  formatStorageValue,
-  formatBalanceChange,
-  categorizeAddress,
-  getStateDiffSummary,
-  exportStateDiff,
-  detectERC20Transfers,
-  detectERC721Transfers,
-} from "@/lib/state-diff";
-import { Button } from "@/app/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
-import { Skeleton } from "@/app/components/ui/skeleton";
+import {
+  categorizeAddress,
+  detectERC20Transfers,
+  detectERC721Transfers,
+  exportStateDiff,
+  formatBalanceChange,
+  formatStorageKey,
+  formatStorageValue,
+  getDetailedStorageChanges,
+  getStateDiffSummary,
+  getTransactionStorageChanges,
+} from "@/lib/state-diff";
 
 export default function StateDiffViewer({ transactionHash, receipt }) {
   const [loading, setLoading] = useState(false);
@@ -47,7 +40,7 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
     if (transactionHash) {
       loadStateDiff();
     }
-  }, [transactionHash]);
+  }, [transactionHash, loadStateDiff]);
 
   useEffect(() => {
     if (receipt?.logs) {
@@ -678,33 +671,31 @@ export default function StateDiffViewer({ transactionHash, receipt }) {
                           {formatStorageKey(op.key)}
                         </div>
                       </div>
-                      {op.op === "SSTORE" ? (
-                        <>
-                          <div>
-                            <div className="text-muted-foreground">
-                              Old Value
+                      {op.op === "SSTORE"
+                        ? <>
+                            <div>
+                              <div className="text-muted-foreground">
+                                Old Value
+                              </div>
+                              <div className="font-mono text-xs break-all">
+                                {formatStorageValue(op.oldValue)}
+                              </div>
                             </div>
+                            <div className="col-span-2">
+                              <div className="text-muted-foreground">
+                                New Value
+                              </div>
+                              <div className="font-mono text-xs break-all">
+                                {formatStorageValue(op.newValue)}
+                              </div>
+                            </div>
+                          </>
+                        : <div>
+                            <div className="text-muted-foreground">Value</div>
                             <div className="font-mono text-xs break-all">
-                              {formatStorageValue(op.oldValue)}
+                              {formatStorageValue(op.value)}
                             </div>
-                          </div>
-                          <div className="col-span-2">
-                            <div className="text-muted-foreground">
-                              New Value
-                            </div>
-                            <div className="font-mono text-xs break-all">
-                              {formatStorageValue(op.newValue)}
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div>
-                          <div className="text-muted-foreground">Value</div>
-                          <div className="font-mono text-xs break-all">
-                            {formatStorageValue(op.value)}
-                          </div>
-                        </div>
-                      )}
+                          </div>}
                     </div>
                   </CardContent>
                 </Card>

@@ -1,31 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  scanFoundryDeployments,
-  loadDeployments,
-  getDeployments,
-  getDeploymentStats,
-  linkDeploymentsToABIs,
-  clearDeployments,
-  exportDeployments,
-  importDeployments,
-  deleteDeployment,
-  getDeploymentByAddress,
-} from "@/lib/foundry-deployments";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { Checkbox } from "@/app/components/ui/checkbox";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -42,17 +35,16 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/app/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
-import { Checkbox } from "@/app/components/ui/checkbox";
+  clearDeployments,
+  deleteDeployment,
+  exportDeployments,
+  getDeploymentStats,
+  getDeployments,
+  importDeployments,
+  linkDeploymentsToABIs,
+  loadDeployments,
+  scanFoundryDeployments,
+} from "@/lib/foundry-deployments";
 
 export default function DeploymentTracker({ defaultChainId = "31337" }) {
   const router = useRouter();
@@ -71,18 +63,18 @@ export default function DeploymentTracker({ defaultChainId = "31337" }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Load deployments from localStorage on mount
-  useEffect(() => {
-    loadFromStorage();
-  }, [selectedChain]);
-
-  function loadFromStorage() {
+  const loadFromStorage = useCallback(() => {
     const stored = getDeployments(
       selectedChain === "all" ? null : selectedChain,
     );
     setDeployments(stored);
     setStats(getDeploymentStats());
-  }
+  }, [selectedChain]);
+
+  // Load deployments from localStorage on mount
+  useEffect(() => {
+    loadFromStorage();
+  }, [loadFromStorage]);
 
   async function handleScan() {
     setLoading(true);

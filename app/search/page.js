@@ -1,28 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  searchTransactions,
-  getSearchHistory,
-  saveSearchToHistory,
-  deleteSearchFromHistory,
-  clearSearchHistory,
-  loadSearchFromHistory,
-  getCommonMethodIds,
-  formatSearchCriteria,
-  validateSearchCriteria,
-  exportResultsAsCSV,
-  downloadCSV,
-} from "@/lib/search";
-import { formatEther, shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -32,13 +19,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { Badge } from "@/app/components/ui/badge";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
+import {
+  clearSearchHistory,
+  deleteSearchFromHistory,
+  downloadCSV,
+  exportResultsAsCSV,
+  formatSearchCriteria,
+  getCommonMethodIds,
+  getSearchHistory,
+  loadSearchFromHistory,
+  saveSearchToHistory,
+  searchTransactions,
+  validateSearchCriteria,
+} from "@/lib/search";
+import { formatEther, shortenAddress } from "@/lib/viem";
 
 export default function AdvancedSearchPage() {
   // Form state
@@ -67,7 +67,7 @@ export default function AdvancedSearchPage() {
     window.addEventListener("searchHistoryUpdated", handleUpdate);
     return () =>
       window.removeEventListener("searchHistoryUpdated", handleUpdate);
-  }, []);
+  }, [loadHistory]);
 
   function loadHistory() {
     const history = getSearchHistory();
@@ -83,8 +83,8 @@ export default function AdvancedSearchPage() {
       methodId,
       minValue,
       maxValue,
-      startBlock: startBlock ? parseInt(startBlock) : null,
-      endBlock: endBlock ? parseInt(endBlock) : null,
+      startBlock: startBlock ? parseInt(startBlock, 10) : null,
+      endBlock: endBlock ? parseInt(endBlock, 10) : null,
       status,
       fromAddress,
       toAddress,
@@ -108,7 +108,7 @@ export default function AdvancedSearchPage() {
       loadHistory();
     } catch (error) {
       console.error("Search error:", error);
-      setErrors(["Search failed: " + error.message]);
+      setErrors([`Search failed: ${error.message}`]);
     } finally {
       setSearching(false);
     }
@@ -328,7 +328,7 @@ export default function AdvancedSearchPage() {
                     <Label htmlFor="limit">Result Limit</Label>
                     <Select
                       value={limit.toString()}
-                      onValueChange={(value) => setLimit(parseInt(value))}
+                      onValueChange={(value) => setLimit(parseInt(value, 10))}
                     >
                       <SelectTrigger id="limit">
                         <SelectValue />
@@ -475,56 +475,56 @@ export default function AdvancedSearchPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {searchHistory.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-3">📜</div>
-                  <div className="text-muted-foreground">
-                    No search history yet
+              {searchHistory.length === 0
+                ? <div className="text-center py-12">
+                    <div className="text-4xl mb-3">📜</div>
+                    <div className="text-muted-foreground">
+                      No search history yet
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-2">
+                      Your searches will appear here
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground mt-2">
-                    Your searches will appear here
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {searchHistory.map((entry) => (
-                    <Card key={entry.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="text-sm text-muted-foreground mb-1">
-                              {formatSearchCriteria(entry.criteria)}
+                : <div className="space-y-3">
+                    {searchHistory.map((entry) => (
+                      <Card key={entry.id}>
+                        <CardContent className="pt-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="text-sm text-muted-foreground mb-1">
+                                {formatSearchCriteria(entry.criteria)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(entry.timestamp).toLocaleString()} •{" "}
+                                <Badge variant="outline" className="text-xs">
+                                  {entry.resultCount} result
+                                  {entry.resultCount !== 1 ? "s" : ""}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(entry.timestamp).toLocaleString()} •{" "}
-                              <Badge variant="outline" className="text-xs">
-                                {entry.resultCount} result
-                                {entry.resultCount !== 1 ? "s" : ""}
-                              </Badge>
+                            <div className="flex items-center gap-2 ml-4">
+                              <Button
+                                onClick={() => handleLoadSearch(entry.id)}
+                                variant="outline"
+                                size="sm"
+                              >
+                                Load
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  deleteSearchFromHistory(entry.id)
+                                }
+                                variant="destructive"
+                                size="sm"
+                              >
+                                Delete
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 ml-4">
-                            <Button
-                              onClick={() => handleLoadSearch(entry.id)}
-                              variant="outline"
-                              size="sm"
-                            >
-                              Load
-                            </Button>
-                            <Button
-                              onClick={() => deleteSearchFromHistory(entry.id)}
-                              variant="destructive"
-                              size="sm"
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>}
             </CardContent>
           </Card>
         </TabsContent>

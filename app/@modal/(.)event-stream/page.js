@@ -1,5 +1,5 @@
-import Modal from "@/app/components/Modal";
 import EventStreamManager from "@/app/components/EventStreamManager";
+import Modal from "@/app/components/Modal";
 
 export default function InterceptedEventStreamPage() {
   return (

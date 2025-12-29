@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { lazy, Suspense, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -12,17 +13,15 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@/app/components/ui/navigation-menu";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 // Lazy load heavy dialog components for better initial load performance
 const BookmarksPanel = lazy(() => import("./BookmarksPanel"));
-const FoundryProjectManager = lazy(() => import("./FoundryProjectManager"));
-const EventStreamManager = lazy(() => import("./EventStreamManager"));
-const ForgeTestRunner = lazy(() => import("./ForgeTestRunner"));
-const AnvilStateManager = lazy(() => import("./AnvilStateManager"));
+const _FoundryProjectManager = lazy(() => import("./FoundryProjectManager"));
+const _EventStreamManager = lazy(() => import("./EventStreamManager"));
+const _ForgeTestRunner = lazy(() => import("./ForgeTestRunner"));
+const _AnvilStateManager = lazy(() => import("./AnvilStateManager"));
 const UnitConverter = lazy(() => import("./UnitConverter"));
 const ThemeToggle = lazy(() => import("./ThemeToggle"));
 

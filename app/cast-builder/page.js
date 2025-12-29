@@ -1,13 +1,13 @@
 "use client";
 
 import CastCommandBuilder from "@/app/components/CastCommandBuilder";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 
 export default function CastBuilderPage() {
   return (

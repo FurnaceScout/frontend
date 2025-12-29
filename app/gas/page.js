@@ -1,14 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getTopGasConsumers,
-  getGasTrends,
-  getGasStatistics,
-  formatGas,
-} from "@/lib/gas-profiling";
-import { formatEther, shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -25,12 +19,6 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
-import {
   Table,
   TableBody,
   TableCell,
@@ -38,7 +26,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
-import { Badge } from "@/app/components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import {
+  formatGas,
+  getGasStatistics,
+  getGasTrends,
+  getTopGasConsumers,
+} from "@/lib/gas-profiling";
+import { formatEther, shortenAddress } from "@/lib/viem";
 
 export default function GasAnalyticsPage() {
   const [topConsumers, setTopConsumers] = useState([]);
@@ -50,13 +50,13 @@ export default function GasAnalyticsPage() {
 
   useEffect(() => {
     loadData();
-  }, [blockRange]);
+  }, [loadData]);
 
   async function loadData() {
     try {
       setLoading(true);
 
-      const blockCount = parseInt(blockRange);
+      const blockCount = parseInt(blockRange, 10);
       const [consumersData, trendsData, statsData] = await Promise.all([
         getTopGasConsumers(blockCount, 10),
         getGasTrends(blockCount, 20),
@@ -195,84 +195,86 @@ export default function GasAnalyticsPage() {
               <CardTitle>Top Gas Consuming Contracts</CardTitle>
             </CardHeader>
             <CardContent>
-              {topConsumers.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-3">⛽</div>
-                  <div className="text-muted-foreground">
-                    No contract interactions found
+              {topConsumers.length === 0
+                ? <div className="text-center py-12">
+                    <div className="text-4xl mb-3">⛽</div>
+                    <div className="text-muted-foreground">
+                      No contract interactions found
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Rank</TableHead>
-                      <TableHead>Contract</TableHead>
-                      <TableHead className="text-right">Total Gas</TableHead>
-                      <TableHead className="text-right">Transactions</TableHead>
-                      <TableHead className="text-right">Avg Gas/Tx</TableHead>
-                      <TableHead className="text-right">Success Rate</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topConsumers.map((consumer, index) => (
-                      <TableRow key={consumer.address}>
-                        <TableCell>
-                          <span
-                            className={`text-lg font-bold ${
-                              index === 0
-                                ? "text-yellow-600"
-                                : index === 1
-                                  ? "text-gray-400"
-                                  : index === 2
-                                    ? "text-orange-600"
-                                    : "text-muted-foreground"
-                            }`}
-                          >
-                            {index === 0
-                              ? "🥇"
-                              : index === 1
-                                ? "🥈"
-                                : index === 2
-                                  ? "🥉"
-                                  : `#${index + 1}`}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Link
-                            href={`/address/${consumer.address}`}
-                            className="font-mono text-sm text-primary hover:underline"
-                          >
-                            {shortenAddress(consumer.address, 6)}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatGas(consumer.totalGasUsed, "M")}M
-                        </TableCell>
-                        <TableCell className="text-right text-sm">
-                          {consumer.transactionCount}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm">
-                          {formatGas(consumer.averageGasPerTx, "K")}K
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Badge
-                            variant={
-                              consumer.successRate === 100
-                                ? "default"
-                                : consumer.successRate >= 50
-                                  ? "secondary"
-                                  : "destructive"
-                            }
-                          >
-                            {consumer.successRate.toFixed(1)}%
-                          </Badge>
-                        </TableCell>
+                : <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Rank</TableHead>
+                        <TableHead>Contract</TableHead>
+                        <TableHead className="text-right">Total Gas</TableHead>
+                        <TableHead className="text-right">
+                          Transactions
+                        </TableHead>
+                        <TableHead className="text-right">Avg Gas/Tx</TableHead>
+                        <TableHead className="text-right">
+                          Success Rate
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                    </TableHeader>
+                    <TableBody>
+                      {topConsumers.map((consumer, index) => (
+                        <TableRow key={consumer.address}>
+                          <TableCell>
+                            <span
+                              className={`text-lg font-bold ${
+                                index === 0
+                                  ? "text-yellow-600"
+                                  : index === 1
+                                    ? "text-gray-400"
+                                    : index === 2
+                                      ? "text-orange-600"
+                                      : "text-muted-foreground"
+                              }`}
+                            >
+                              {index === 0
+                                ? "🥇"
+                                : index === 1
+                                  ? "🥈"
+                                  : index === 2
+                                    ? "🥉"
+                                    : `#${index + 1}`}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              href={`/address/${consumer.address}`}
+                              className="font-mono text-sm text-primary hover:underline"
+                            >
+                              {shortenAddress(consumer.address, 6)}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatGas(consumer.totalGasUsed, "M")}M
+                          </TableCell>
+                          <TableCell className="text-right text-sm">
+                            {consumer.transactionCount}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm">
+                            {formatGas(consumer.averageGasPerTx, "K")}K
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge
+                              variant={
+                                consumer.successRate === 100
+                                  ? "default"
+                                  : consumer.successRate >= 50
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
+                              {consumer.successRate.toFixed(1)}%
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>}
             </CardContent>
           </Card>
         </TabsContent>
@@ -284,70 +286,68 @@ export default function GasAnalyticsPage() {
               <CardTitle>Gas Usage Over Time</CardTitle>
             </CardHeader>
             <CardContent>
-              {trends.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-3">📊</div>
-                  <div className="text-muted-foreground">
-                    No trend data available
+              {trends.length === 0
+                ? <div className="text-center py-12">
+                    <div className="text-4xl mb-3">📊</div>
+                    <div className="text-muted-foreground">
+                      No trend data available
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {trends.map((trend, index) => {
-                    const maxGas = Math.max(
-                      ...trends.map((t) => Number(t.totalGasUsed)),
-                    );
-                    const width =
-                      maxGas > 0
-                        ? (Number(trend.totalGasUsed) / maxGas) * 100
-                        : 0;
+                : <div className="space-y-2">
+                    {trends.map((trend, index) => {
+                      const maxGas = Math.max(
+                        ...trends.map((t) => Number(t.totalGasUsed)),
+                      );
+                      const width =
+                        maxGas > 0
+                          ? (Number(trend.totalGasUsed) / maxGas) * 100
+                          : 0;
 
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center gap-4 py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors"
-                      >
-                        <div className="flex-shrink-0 w-20">
-                          <Link
-                            href={`/block/${trend.blockNumber}`}
-                            className="text-sm font-mono text-primary hover:underline"
-                          >
-                            #{trend.blockNumber}
-                          </Link>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-end px-2"
-                                style={{ width: `${width}%` }}
-                              >
-                                {width > 20 && (
-                                  <span className="text-xs font-semibold text-white">
-                                    {formatGas(trend.totalGasUsed, "M")}M
-                                  </span>
-                                )}
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center gap-4 py-2 px-3 hover:bg-muted/50 rounded-lg transition-colors"
+                        >
+                          <div className="flex-shrink-0 w-20">
+                            <Link
+                              href={`/block/${trend.blockNumber}`}
+                              className="text-sm font-mono text-primary hover:underline"
+                            >
+                              #{trend.blockNumber}
+                            </Link>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-end px-2"
+                                  style={{ width: `${width}%` }}
+                                >
+                                  {width > 20 && (
+                                    <span className="text-xs font-semibold text-white">
+                                      {formatGas(trend.totalGasUsed, "M")}M
+                                    </span>
+                                  )}
+                                </div>
                               </div>
+                              {width <= 20 && (
+                                <span className="text-xs font-mono text-muted-foreground">
+                                  {formatGas(trend.totalGasUsed, "M")}M
+                                </span>
+                              )}
                             </div>
-                            {width <= 20 && (
-                              <span className="text-xs font-mono text-muted-foreground">
-                                {formatGas(trend.totalGasUsed, "M")}M
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>{trend.transactionCount} txs</span>
+                              <span>•</span>
+                              <span>
+                                {trend.utilization.toFixed(1)}% utilized
                               </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span>{trend.transactionCount} txs</span>
-                            <span>•</span>
-                            <span>
-                              {trend.utilization.toFixed(1)}% utilized
-                            </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>}
             </CardContent>
           </Card>
 

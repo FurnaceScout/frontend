@@ -1,15 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import AnvilStatus from "@/app/components/AnvilStatus";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import Link from "next/link";
 
 export default function DashboardPage() {
   const [anvilExpanded, setAnvilExpanded] = useState(true);

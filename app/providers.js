@@ -1,10 +1,10 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, createConfig, http } from "wagmi";
-import { foundry } from "wagmi/chains";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
+import { createConfig, http, WagmiProvider } from "wagmi";
+import { foundry } from "wagmi/chains";
 
 const config = createConfig({
   chains: [foundry],

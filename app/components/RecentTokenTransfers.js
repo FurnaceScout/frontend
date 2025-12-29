@@ -1,23 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { publicClient, shortenAddress } from "@/lib/viem";
-import {
-  parseTokenTransfers,
-  detectTokenType,
-  formatTokenAmount,
-} from "@/lib/tokens";
 import Link from "next/link";
-import LabelBadge from "./LabelBadge";
+import { useEffect, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { Button } from "@/app/components/ui/button";
+import {
+  detectTokenType,
+  formatTokenAmount,
+  parseTokenTransfers,
+} from "@/lib/tokens";
+import { publicClient, shortenAddress } from "@/lib/viem";
+import LabelBadge from "./LabelBadge";
 
 export default function RecentTokenTransfers() {
   const [transfers, setTransfers] = useState([]);
@@ -232,20 +232,19 @@ export default function RecentTokenTransfers() {
 
                   {/* Right: Amount/Value */}
                   <div className="text-right text-sm">
-                    {transfer.type.startsWith("ERC20") && transfer.value ? (
-                      <div className="font-semibold">
-                        {formatTokenAmount(BigInt(transfer.value), decimals)}
-                      </div>
-                    ) : transfer.type.startsWith("ERC721") &&
-                      transfer.tokenId ? (
-                      <div className="font-mono text-xs">
-                        #{transfer.tokenId}
-                      </div>
-                    ) : transfer.type === "ERC1155" ? (
-                      <div className="font-mono text-xs">
-                        #{transfer.tokenId}×{transfer.value}
-                      </div>
-                    ) : null}
+                    {transfer.type.startsWith("ERC20") && transfer.value
+                      ? <div className="font-semibold">
+                          {formatTokenAmount(BigInt(transfer.value), decimals)}
+                        </div>
+                      : transfer.type.startsWith("ERC721") && transfer.tokenId
+                        ? <div className="font-mono text-xs">
+                            #{transfer.tokenId}
+                          </div>
+                        : transfer.type === "ERC1155"
+                          ? <div className="font-mono text-xs">
+                              #{transfer.tokenId}×{transfer.value}
+                            </div>
+                          : null}
                     {transfer.timestamp && (
                       <div className="text-xs text-muted-foreground mt-1">
                         {new Date(

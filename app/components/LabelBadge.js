@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getAddressLabel, getLabelColorClass } from "@/lib/labels";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
+import { getAddressLabel, getLabelColorClass } from "@/lib/labels";
 
 export default function LabelBadge({ address, showLink = false }) {
   const [label, setLabel] = useState(null);
+
+  const loadLabel = useCallback(() => {
+    const labelData = getAddressLabel(address);
+    setLabel(labelData);
+  }, [address]);
 
   useEffect(() => {
     loadLabel();
@@ -19,17 +24,12 @@ export default function LabelBadge({ address, showLink = false }) {
     };
     window.addEventListener("labelsUpdated", handleUpdate);
     return () => window.removeEventListener("labelsUpdated", handleUpdate);
-  }, [address]);
-
-  function loadLabel() {
-    const labelData = getAddressLabel(address);
-    setLabel(labelData);
-  }
+  }, [address, loadLabel]);
 
   if (!label) return null;
 
   // Map legacy color classes to shadcn badge variants
-  const getVariant = (color) => {
+  const getVariant = (_color) => {
     // Since shadcn Badge has limited variants (default, secondary, destructive, outline),
     // we'll use className for custom colors
     return "secondary";

@@ -1,33 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getNetworkHealth } from "@/lib/stats";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
-import { Button } from "@/app/components/ui/button";
+import { getNetworkHealth } from "@/lib/stats";
 
 export default function NetworkStatsWidget() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadStats();
-
-    // Refresh every 30 seconds
-    const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     try {
       const data = await getNetworkHealth();
       setStats(data);
@@ -38,7 +29,15 @@ export default function NetworkStatsWidget() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(loadStats, 30000);
+    return () => clearInterval(interval);
+  }, [loadStats]);
 
   if (loading) {
     return (

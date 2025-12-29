@@ -1,15 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getNetworkHealth,
-  getBlockStatsOverTime,
-  getTransactionVolume,
-  getActiveAddresses,
-  calculateAverageBlockTime,
-} from "@/lib/stats";
-import { formatEther } from "@/lib/viem";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -25,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import { Badge } from "@/app/components/ui/badge";
+import {
+  getActiveAddresses,
+  getBlockStatsOverTime,
+  getNetworkHealth,
+  getTransactionVolume,
+} from "@/lib/stats";
+import { formatEther } from "@/lib/viem";
 
 export default function StatsPage() {
   const [health, setHealth] = useState(null);
@@ -38,13 +36,13 @@ export default function StatsPage() {
 
   useEffect(() => {
     loadStats();
-  }, [blockRange]);
+  }, [loadStats]);
 
   async function loadStats() {
     try {
       setLoading(true);
 
-      const blockCount = parseInt(blockRange);
+      const blockCount = parseInt(blockRange, 10);
       const [healthData, statsData, volumeData, addressData] =
         await Promise.all([
           getNetworkHealth(),

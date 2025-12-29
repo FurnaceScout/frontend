@@ -1,7 +1,7 @@
+import { existsSync } from "node:fs";
+import { readdir, readFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 import { NextResponse } from "next/server";
-import { readdir, readFile } from "fs/promises";
-import { join, relative } from "path";
-import { existsSync } from "fs";
 
 // Find Foundry project root by looking for foundry.toml
 async function findFoundryRoot(startPath) {
@@ -34,7 +34,11 @@ async function parseBroadcastFile(filePath) {
     if (data.transactions && Array.isArray(data.transactions)) {
       for (const tx of data.transactions) {
         // Look for contract creation transactions
-        if (tx.transactionType === "CREATE" || tx.transactionType === "CREATE2" || !tx.transaction?.to) {
+        if (
+          tx.transactionType === "CREATE" ||
+          tx.transactionType === "CREATE2" ||
+          !tx.transaction?.to
+        ) {
           deployments.push({
             contractName: tx.contractName || "Unknown",
             contractAddress: tx.contractAddress || tx.transaction?.creates,
@@ -115,7 +119,10 @@ async function scanBroadcastDirectory(broadcastPath, chainId = null) {
         const files = await readdir(chainDir);
 
         for (const file of files) {
-          if (file.endsWith(".json") && (file.startsWith("run-") || file === "run-latest.json")) {
+          if (
+            file.endsWith(".json") &&
+            (file.startsWith("run-") || file === "run-latest.json")
+          ) {
             const filePath = join(chainDir, file);
             const parsed = await parseBroadcastFile(filePath);
 
@@ -186,7 +193,7 @@ export async function GET(request) {
     if (!scanPath.startsWith(projectRoot)) {
       return NextResponse.json(
         { error: "Path outside project directory not allowed" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -209,7 +216,8 @@ export async function GET(request) {
         found: true,
         foundryRoot: relative(projectRoot, foundryRoot),
         hasBroadcast: false,
-        message: "No broadcast directory found. Run 'forge script' to deploy contracts.",
+        message:
+          "No broadcast directory found. Run 'forge script' to deploy contracts.",
         deployments: [],
       });
     }
@@ -240,7 +248,7 @@ export async function GET(request) {
     console.error("Deployment scan error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to scan deployments" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

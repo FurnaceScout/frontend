@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { analyzeContractGasUsage, formatGas } from "@/lib/gas-profiling";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,8 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { analyzeContractGasUsage, formatGas } from "@/lib/gas-profiling";
 
 export default function ContractGasProfile({ address }) {
   const [analysis, setAnalysis] = useState(null);
@@ -28,11 +28,7 @@ export default function ContractGasProfile({ address }) {
   const [error, setError] = useState(null);
   const [blockRange, setBlockRange] = useState("100");
 
-  useEffect(() => {
-    loadAnalysis();
-  }, [address, blockRange]);
-
-  async function loadAnalysis() {
+  const loadAnalysis = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -44,7 +40,11 @@ export default function ContractGasProfile({ address }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [address, blockRange]);
+
+  useEffect(() => {
+    loadAnalysis();
+  }, [loadAnalysis]);
 
   if (loading) {
     return (

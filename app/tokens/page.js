@@ -1,34 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { publicClient } from "@/lib/viem";
-import {
-  parseTokenTransfers,
-  detectTokenType,
-  formatTokenAmount,
-} from "@/lib/tokens";
-import {
-  filterTransfers,
-  sortTransfers,
-  exportTransfersToCSV,
-  groupTransfersByToken,
-  paginateTransfers,
-  searchTransfers,
-  getTokenTransferStats,
-} from "@/lib/token-transfers";
-import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import LabelBadge from "@/app/components/LabelBadge";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -36,6 +20,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import {
+  exportTransfersToCSV,
+  filterTransfers,
+  getTokenTransferStats,
+  groupTransfersByToken,
+  paginateTransfers,
+  searchTransfers,
+  sortTransfers,
+} from "@/lib/token-transfers";
+import {
+  detectTokenType,
+  formatTokenAmount,
+  parseTokenTransfers,
+} from "@/lib/tokens";
+import { publicClient, shortenAddress } from "@/lib/viem";
 
 export default function TokenTransfersPage() {
   const [transfers, setTransfers] = useState([]);
@@ -61,7 +60,7 @@ export default function TokenTransfersPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, _setPageSize] = useState(25);
 
   // View mode
   const [viewMode, setViewMode] = useState("list"); // 'list', 'grouped'
@@ -439,245 +438,245 @@ export default function TokenTransfersPage() {
       </div>
 
       {/* Results */}
-      {filteredTransfers.length === 0 ? (
-        <Card className="p-12 text-center">
-          <CardContent>
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold mb-2">No transfers found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your filters or search query
-            </p>
-            <Button onClick={handleClearFilters} variant="destructive">
-              Clear Filters
-            </Button>
-          </CardContent>
-        </Card>
-      ) : viewMode === "list" ? (
-        <>
-          {/* List View */}
-          <Card>
-            <CardContent className="p-0">
-              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {paginatedData.items.map((transfer, index) => {
-                  const metadata =
-                    tokenMetadata[transfer.token.toLowerCase()] || {};
-                  const decimals = metadata.decimals || 18;
-
-                  return (
-                    <div
-                      key={`${transfer.txHash}-${index}`}
-                      className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        {/* Left: Transfer Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            {/* Type Badge */}
-                            <Badge
-                              variant={
-                                transfer.type.startsWith("ERC20")
-                                  ? "default"
-                                  : transfer.type.startsWith("ERC721")
-                                    ? "secondary"
-                                    : "outline"
-                              }
-                            >
-                              {transfer.type}
-                            </Badge>
-
-                            {/* Token Name */}
-                            {metadata.name && (
-                              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                                {metadata.name}
-                              </span>
-                            )}
-                            {metadata.symbol && (
-                              <span className="text-sm text-zinc-500">
-                                ({metadata.symbol})
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Addresses */}
-                          <div className="flex items-center gap-2 text-sm mb-2">
-                            <Link
-                              href={`/address/${transfer.from}`}
-                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                            >
-                              <LabelBadge
-                                address={transfer.from}
-                                fallback={shortenAddress(transfer.from, 6)}
-                              />
-                            </Link>
-                            <span className="text-zinc-400">→</span>
-                            <Link
-                              href={`/address/${transfer.to}`}
-                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                            >
-                              <LabelBadge
-                                address={transfer.to}
-                                fallback={shortenAddress(transfer.to, 6)}
-                              />
-                            </Link>
-                          </div>
-
-                          {/* Token Address & TX */}
-                          <div className="flex items-center gap-4 text-xs text-zinc-500">
-                            <Link
-                              href={`/address/${transfer.token}`}
-                              className="hover:text-red-600 dark:hover:text-red-400 font-mono"
-                            >
-                              Token: {shortenAddress(transfer.token, 4)}
-                            </Link>
-                            <Link
-                              href={`/tx/${transfer.txHash}`}
-                              className="hover:text-red-600 dark:hover:text-red-400 font-mono"
-                            >
-                              TX: {shortenAddress(transfer.txHash, 4)}
-                            </Link>
-                            <span>Block #{transfer.blockNumber}</span>
-                            {transfer.timestamp && (
-                              <span>
-                                {new Date(
-                                  Number(transfer.timestamp) * 1000,
-                                ).toLocaleString()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Right: Amount */}
-                        <div className="text-right">
-                          {transfer.type.startsWith("ERC20") &&
-                          transfer.value ? (
-                            <div className="font-bold text-zinc-900 dark:text-zinc-100">
-                              {formatTokenAmount(
-                                BigInt(transfer.value),
-                                decimals,
-                              )}
-                            </div>
-                          ) : transfer.type.startsWith("ERC721") &&
-                            transfer.tokenId ? (
-                            <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                              NFT #{transfer.tokenId}
-                            </div>
-                          ) : transfer.type === "ERC1155" ? (
-                            <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
-                              ID #{transfer.tokenId}
-                              <br />× {transfer.value}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+      {filteredTransfers.length === 0
+        ? <Card className="p-12 text-center">
+            <CardContent>
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-xl font-semibold mb-2">No transfers found</h3>
+              <p className="text-muted-foreground mb-4">
+                Try adjusting your filters or search query
+              </p>
+              <Button onClick={handleClearFilters} variant="destructive">
+                Clear Filters
+              </Button>
             </CardContent>
           </Card>
+        : viewMode === "list"
+          ? <>
+              {/* List View */}
+              <Card>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                    {paginatedData.items.map((transfer, index) => {
+                      const metadata =
+                        tokenMetadata[transfer.token.toLowerCase()] || {};
+                      const decimals = metadata.decimals || 18;
 
-          {/* Pagination */}
-          {paginatedData.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                {Math.min(currentPage * pageSize, filteredTransfers.length)} of{" "}
-                {filteredTransfers.length} transfers
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={!paginatedData.hasPrev}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {paginatedData.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  disabled={!paginatedData.hasNext}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        /* Grouped View */
-        <div className="space-y-4">
-          {Object.entries(groupTransfersByToken(paginatedData.items)).map(
-            ([tokenAddress, group]) => {
-              const metadata = tokenMetadata[tokenAddress] || {};
-
-              return (
-                <Card key={tokenAddress}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                          {metadata.name || "Unknown Token"}
-                        </h3>
-                        <Link
-                          href={`/address/${group.token}`}
-                          className="font-mono text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
-                        >
-                          {group.token}
-                        </Link>
-                      </div>
-                      <Badge variant="secondary">{group.count} transfers</Badge>
-                    </div>
-
-                    <div className="space-y-2">
-                      {group.transfers.map((transfer, idx) => (
+                      return (
                         <div
-                          key={idx}
-                          className="flex items-center justify-between py-2 border-t border-zinc-200 dark:border-zinc-800"
+                          key={`${transfer.txHash}-${index}`}
+                          className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                         >
-                          <div className="flex items-center gap-2 text-sm">
-                            <Link
-                              href={`/address/${transfer.from}`}
-                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
-                            >
-                              {shortenAddress(transfer.from, 4)}
-                            </Link>
-                            <span className="text-zinc-400">→</span>
-                            <Link
-                              href={`/address/${transfer.to}`}
-                              className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
-                            >
-                              {shortenAddress(transfer.to, 4)}
-                            </Link>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-zinc-500">
-                            {transfer.value && (
-                              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                                {formatTokenAmount(
-                                  BigInt(transfer.value),
-                                  metadata.decimals || 18,
+                          <div className="flex items-start justify-between gap-4">
+                            {/* Left: Transfer Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                {/* Type Badge */}
+                                <Badge
+                                  variant={
+                                    transfer.type.startsWith("ERC20")
+                                      ? "default"
+                                      : transfer.type.startsWith("ERC721")
+                                        ? "secondary"
+                                        : "outline"
+                                  }
+                                >
+                                  {transfer.type}
+                                </Badge>
+
+                                {/* Token Name */}
+                                {metadata.name && (
+                                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                    {metadata.name}
+                                  </span>
                                 )}
-                              </span>
-                            )}
-                            <Link
-                              href={`/tx/${transfer.txHash}`}
-                              className="font-mono hover:text-red-600 dark:hover:text-red-400"
-                            >
-                              {shortenAddress(transfer.txHash, 4)}
-                            </Link>
+                                {metadata.symbol && (
+                                  <span className="text-sm text-zinc-500">
+                                    ({metadata.symbol})
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Addresses */}
+                              <div className="flex items-center gap-2 text-sm mb-2">
+                                <Link
+                                  href={`/address/${transfer.from}`}
+                                  className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                >
+                                  <LabelBadge
+                                    address={transfer.from}
+                                    fallback={shortenAddress(transfer.from, 6)}
+                                  />
+                                </Link>
+                                <span className="text-zinc-400">→</span>
+                                <Link
+                                  href={`/address/${transfer.to}`}
+                                  className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                >
+                                  <LabelBadge
+                                    address={transfer.to}
+                                    fallback={shortenAddress(transfer.to, 6)}
+                                  />
+                                </Link>
+                              </div>
+
+                              {/* Token Address & TX */}
+                              <div className="flex items-center gap-4 text-xs text-zinc-500">
+                                <Link
+                                  href={`/address/${transfer.token}`}
+                                  className="hover:text-red-600 dark:hover:text-red-400 font-mono"
+                                >
+                                  Token: {shortenAddress(transfer.token, 4)}
+                                </Link>
+                                <Link
+                                  href={`/tx/${transfer.txHash}`}
+                                  className="hover:text-red-600 dark:hover:text-red-400 font-mono"
+                                >
+                                  TX: {shortenAddress(transfer.txHash, 4)}
+                                </Link>
+                                <span>Block #{transfer.blockNumber}</span>
+                                {transfer.timestamp && (
+                                  <span>
+                                    {new Date(
+                                      Number(transfer.timestamp) * 1000,
+                                    ).toLocaleString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right: Amount */}
+                            <div className="text-right">
+                              {transfer.type.startsWith("ERC20") &&
+                              transfer.value
+                                ? <div className="font-bold text-zinc-900 dark:text-zinc-100">
+                                    {formatTokenAmount(
+                                      BigInt(transfer.value),
+                                      decimals,
+                                    )}
+                                  </div>
+                                : transfer.type.startsWith("ERC721") &&
+                                    transfer.tokenId
+                                  ? <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                                      NFT #{transfer.tokenId}
+                                    </div>
+                                  : transfer.type === "ERC1155"
+                                    ? <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                                        ID #{transfer.tokenId}
+                                        <br />× {transfer.value}
+                                      </div>
+                                    : null}
+                            </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            },
-          )}
-        </div>
-      )}
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pagination */}
+              {paginatedData.totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                    {Math.min(currentPage * pageSize, filteredTransfers.length)}{" "}
+                    of {filteredTransfers.length} transfers
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={!paginatedData.hasPrev}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {paginatedData.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                      disabled={!paginatedData.hasNext}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          : /* Grouped View */
+            <div className="space-y-4">
+              {Object.entries(groupTransfersByToken(paginatedData.items)).map(
+                ([tokenAddress, group]) => {
+                  const metadata = tokenMetadata[tokenAddress] || {};
+
+                  return (
+                    <Card key={tokenAddress}>
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                              {metadata.name || "Unknown Token"}
+                            </h3>
+                            <Link
+                              href={`/address/${group.token}`}
+                              className="font-mono text-sm text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
+                            >
+                              {group.token}
+                            </Link>
+                          </div>
+                          <Badge variant="secondary">
+                            {group.count} transfers
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-2">
+                          {group.transfers.map((transfer, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between py-2 border-t border-zinc-200 dark:border-zinc-800"
+                            >
+                              <div className="flex items-center gap-2 text-sm">
+                                <Link
+                                  href={`/address/${transfer.from}`}
+                                  className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
+                                >
+                                  {shortenAddress(transfer.from, 4)}
+                                </Link>
+                                <span className="text-zinc-400">→</span>
+                                <Link
+                                  href={`/address/${transfer.to}`}
+                                  className="font-mono text-zinc-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-400"
+                                >
+                                  {shortenAddress(transfer.to, 4)}
+                                </Link>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-zinc-500">
+                                {transfer.value && (
+                                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                    {formatTokenAmount(
+                                      BigInt(transfer.value),
+                                      metadata.decimals || 18,
+                                    )}
+                                  </span>
+                                )}
+                                <Link
+                                  href={`/tx/${transfer.txHash}`}
+                                  className="font-mono hover:text-red-600 dark:hover:text-red-400"
+                                >
+                                  {shortenAddress(transfer.txHash, 4)}
+                                </Link>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                },
+              )}
+            </div>}
     </div>
   );
 }

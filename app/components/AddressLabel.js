@@ -1,16 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  getAddressLabel,
-  saveAddressLabel,
-  deleteAddressLabel,
-  LABEL_COLORS,
-  getLabelColorClass,
-} from "@/lib/labels";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
 import {
   Card,
   CardContent,
@@ -18,8 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { toast } from "sonner";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  deleteAddressLabel,
+  getAddressLabel,
+  getLabelColorClass,
+  LABEL_COLORS,
+  saveAddressLabel,
+} from "@/lib/labels";
 
 export default function AddressLabel({ address }) {
   const [label, setLabel] = useState(null);
@@ -28,6 +28,11 @@ export default function AddressLabel({ address }) {
   const [editNote, setEditNote] = useState("");
   const [editColor, setEditColor] = useState("blue");
 
+  const loadLabel = useCallback(() => {
+    const labelData = getAddressLabel(address);
+    setLabel(labelData);
+  }, [address]);
+
   useEffect(() => {
     loadLabel();
 
@@ -35,12 +40,7 @@ export default function AddressLabel({ address }) {
     const handleUpdate = () => loadLabel();
     window.addEventListener("labelsUpdated", handleUpdate);
     return () => window.removeEventListener("labelsUpdated", handleUpdate);
-  }, [address]);
-
-  function loadLabel() {
-    const labelData = getAddressLabel(address);
-    setLabel(labelData);
-  }
+  }, [loadLabel]);
 
   function handleEdit() {
     if (label) {

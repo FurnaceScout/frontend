@@ -1,46 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  runForgeTest,
-  getTestHistory,
-  deleteTestResult,
-  clearTestHistory,
-  getTestStatistics,
-  exportTestResults,
-  exportTestResultsCSV,
-  compareTestResults,
-  getTestSettings,
-  saveTestSettings,
-  toggleFavoriteTest,
-  isTestFavorite,
-  groupTestsByContract,
-  sortTests,
-  filterTests,
-  formatDuration,
-  formatGas,
-  getTestStatusIcon,
-  getTestStatusColor,
-} from "@/lib/forge-test";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +13,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -58,12 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
+import { Switch } from "@/app/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -72,9 +47,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
-import { Switch } from "@/app/components/ui/switch";
-import { Skeleton } from "@/app/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import {
+  clearTestHistory,
+  compareTestResults,
+  deleteTestResult,
+  exportTestResults,
+  exportTestResultsCSV,
+  filterTests,
+  formatDuration,
+  formatGas,
+  getTestHistory,
+  getTestSettings,
+  getTestStatistics,
+  getTestStatusIcon,
+  groupTestsByContract,
+  isTestFavorite,
+  runForgeTest,
+  saveTestSettings,
+  sortTests,
+  toggleFavoriteTest,
+} from "@/lib/forge-test";
 
 export default function ForgeTestRunner({
   isOpen: controlledIsOpen,
@@ -98,7 +96,7 @@ export default function ForgeTestRunner({
   const [history, setHistory] = useState([]);
   const [stats, setStats] = useState(null);
   const [settings, setSettings] = useState(getTestSettings());
-  const [selectedHistory, setSelectedHistory] = useState(null);
+  const [_selectedHistory, setSelectedHistory] = useState(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareWith, setCompareWith] = useState(null);
   const [comparison, setComparison] = useState(null);
@@ -112,29 +110,29 @@ export default function ForgeTestRunner({
   const [matchTest, setMatchTest] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [contractFilter, setContractFilter] = useState("");
+  const [contractFilter, _setContractFilter] = useState("");
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [sortBy, setSortBy] = useState("name");
   const [groupByContract, setGroupByContract] = useState(true);
+
+  const loadData = useCallback(() => {
+    setHistory(getTestHistory());
+    setStats(getTestStatistics());
+  }, []);
 
   // Load data on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       loadData();
     }
-  }, []);
+  }, [loadData]);
 
   // Refresh data when modal opens
   useEffect(() => {
     if (isOpen) {
       loadData();
     }
-  }, [isOpen]);
-
-  const loadData = () => {
-    setHistory(getTestHistory());
-    setStats(getTestStatistics());
-  };
+  }, [isOpen, loadData]);
 
   const handleRunTests = async () => {
     setRunning(true);
@@ -1044,7 +1042,7 @@ export default function ForgeTestRunner({
                         onValueChange={(value) =>
                           setSettings({
                             ...settings,
-                            verbosity: parseInt(value),
+                            verbosity: parseInt(value, 10),
                           })
                         }
                       >

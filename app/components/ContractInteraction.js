@@ -1,48 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
-import {
-  parseABI,
-  getFunctionSignature,
-  parseInputValue,
-  formatOutputValue,
-  callReadFunction,
-  estimateGas,
-  sendWriteTransaction,
-  simulateWriteFunction,
-  getDefaultValue,
-  validateInput,
-  getInputFieldType,
-  isPayable,
-  formatEther,
-  parseEther,
-  getRecentCalls,
-  saveCallToHistory,
-  clearCallHistory,
-} from "@/lib/contract-interaction";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
-import { Textarea } from "@/app/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
-import { Checkbox } from "@/app/components/ui/checkbox";
-import { Separator } from "@/app/components/ui/separator";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +15,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Checkbox } from "@/app/components/ui/checkbox";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import { Textarea } from "@/app/components/ui/textarea";
+import {
+  callReadFunction,
+  clearCallHistory,
+  estimateGas,
+  formatOutputValue,
+  getDefaultValue,
+  getFunctionSignature,
+  getInputFieldType,
+  getRecentCalls,
+  isPayable,
+  parseABI,
+  parseEther,
+  parseInputValue,
+  saveCallToHistory,
+  sendWriteTransaction,
+  simulateWriteFunction,
+  validateInput,
+} from "@/lib/contract-interaction";
 
 export default function ContractInteraction({ address, abiData }) {
   const [parsedABI, setParsedABI] = useState({
@@ -380,7 +378,7 @@ export default function ContractInteraction({ address, abiData }) {
       const func = [...parsedABI.read, ...parsedABI.write].find(
         (f) => f.name === functionName,
       );
-      if (func && func.inputs[idx]) {
+      if (func?.inputs[idx]) {
         newInputs[func.inputs[idx].name] = String(arg);
       }
     });
@@ -570,48 +568,46 @@ export default function ContractInteraction({ address, abiData }) {
 
             {/* Actions */}
             <div className="flex gap-2 flex-wrap">
-              {isWrite ? (
-                <>
-                  <Button
-                    variant="outline"
+              {isWrite
+                ? <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSimulate(func)}
+                      disabled={!isConnected || loading[`${functionName}_sim`]}
+                      className="bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
+                    >
+                      {loading[`${functionName}_sim`]
+                        ? "Simulating..."
+                        : "Simulate"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEstimateGas(func)}
+                      disabled={!isConnected || loading[`${functionName}_gas`]}
+                      className="bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20"
+                    >
+                      {loading[`${functionName}_gas`]
+                        ? "Estimating..."
+                        : "Estimate Gas"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleWriteFunction(func)}
+                      disabled={!isConnected || isLoading}
+                    >
+                      {isLoading ? "Sending..." : "Write"}
+                    </Button>
+                  </>
+                : <Button
                     size="sm"
-                    onClick={() => handleSimulate(func)}
-                    disabled={!isConnected || loading[`${functionName}_sim`]}
-                    className="bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20"
+                    onClick={() => handleReadFunction(func)}
+                    disabled={isLoading}
                   >
-                    {loading[`${functionName}_sim`]
-                      ? "Simulating..."
-                      : "Simulate"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEstimateGas(func)}
-                    disabled={!isConnected || loading[`${functionName}_gas`]}
-                    className="bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20"
-                  >
-                    {loading[`${functionName}_gas`]
-                      ? "Estimating..."
-                      : "Estimate Gas"}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleWriteFunction(func)}
-                    disabled={!isConnected || isLoading}
-                  >
-                    {isLoading ? "Sending..." : "Write"}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => handleReadFunction(func)}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Calling..." : "Query"}
-                </Button>
-              )}
+                    {isLoading ? "Calling..." : "Query"}
+                  </Button>}
 
               {hasHistory && (
                 <Button
@@ -693,46 +689,49 @@ export default function ContractInteraction({ address, abiData }) {
                     {result.success ? "Success" : "Error"}
                   </div>
 
-                  {result.success && isWrite ? (
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">
-                          Transaction Hash:
-                        </span>
-                        <a
-                          href={`/tx/${result.hash}`}
-                          className="ml-2 text-primary hover:underline font-mono"
-                        >
-                          {result.hash?.slice(0, 10)}...{result.hash?.slice(-8)}
-                        </a>
+                  {result.success && isWrite
+                    ? <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">
+                            Transaction Hash:
+                          </span>
+                          <a
+                            href={`/tx/${result.hash}`}
+                            className="ml-2 text-primary hover:underline font-mono"
+                          >
+                            {result.hash?.slice(0, 10)}...
+                            {result.hash?.slice(-8)}
+                          </a>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Status:</span>
+                          <span
+                            className={`ml-2 font-semibold ${
+                              result.receipt?.status === "success"
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-destructive"
+                            }`}
+                          >
+                            {result.receipt?.status}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">
+                            Gas Used:
+                          </span>
+                          <span className="ml-2 font-mono">
+                            {result.receipt?.gasUsed?.toString()}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Status:</span>
-                        <span
-                          className={`ml-2 font-semibold ${
-                            result.receipt?.status === "success"
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-destructive"
-                          }`}
-                        >
-                          {result.receipt?.status}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Gas Used:</span>
-                        <span className="ml-2 font-mono">
-                          {result.receipt?.gasUsed?.toString()}
-                        </span>
-                      </div>
-                    </div>
-                  ) : result.success ? (
-                    <div className="text-sm font-mono break-all">
-                      {formatOutputValue(
-                        result.data,
-                        func.outputs?.[0]?.type || "unknown",
-                      )}
-                    </div>
-                  ) : null}
+                    : result.success
+                      ? <div className="text-sm font-mono break-all">
+                          {formatOutputValue(
+                            result.data,
+                            func.outputs?.[0]?.type || "unknown",
+                          )}
+                        </div>
+                      : null}
                 </AlertDescription>
               </Alert>
             )}
@@ -809,125 +808,123 @@ export default function ContractInteraction({ address, abiData }) {
 
   return (
     <>
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Contract Interaction</h2>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Contract Interaction</h2>
 
-        {/* Wallet Connection */}
-        <div>
-          {isConnected ? (
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 font-mono"
-              >
-                {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-              </Badge>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => disconnect()}
-              >
-                Disconnect
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="default"
-              onClick={() => connect({ connector: injected() })}
-            >
-              Connect Wallet
-            </Button>
-          )}
+          {/* Wallet Connection */}
+          <div>
+            {isConnected
+              ? <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 font-mono"
+                  >
+                    {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+                  </Badge>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => disconnect()}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              : <Button
+                  variant="default"
+                  onClick={() => connect({ connector: injected() })}
+                >
+                  Connect Wallet
+                </Button>}
+          </div>
         </div>
+
+        {/* Info Banner */}
+        {!isConnected && parsedABI.write.length > 0 && (
+          <Alert className="bg-yellow-500/10 border-yellow-500/20">
+            <AlertDescription className="text-sm text-yellow-600 dark:text-yellow-500">
+              Connect your wallet to interact with write functions
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="read">
+              Read Functions ({parsedABI.read.length})
+            </TabsTrigger>
+            <TabsTrigger value="write">
+              Write Functions ({parsedABI.write.length})
+            </TabsTrigger>
+            <TabsTrigger value="events">
+              Events ({parsedABI.events.length})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Read Functions */}
+          <TabsContent value="read" className="space-y-3 mt-4">
+            {parsedABI.read.length > 0
+              ? parsedABI.read.map((func) => renderFunctionCard(func, false))
+              : <div className="p-8 text-center text-muted-foreground">
+                  No read functions available
+                </div>}
+          </TabsContent>
+
+          {/* Write Functions */}
+          <TabsContent value="write" className="space-y-3 mt-4">
+            {parsedABI.write.length > 0
+              ? parsedABI.write.map((func) => renderFunctionCard(func, true))
+              : <div className="p-8 text-center text-muted-foreground">
+                  No write functions available
+                </div>}
+          </TabsContent>
+
+          {/* Events */}
+          <TabsContent value="events" className="space-y-3 mt-4">
+            {parsedABI.events.length > 0
+              ? parsedABI.events.map((event, idx) => (
+                  <Card key={idx}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge
+                          variant="outline"
+                          className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        >
+                          EVENT
+                        </Badge>
+                        <span className="font-mono font-medium">
+                          {event.name}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded">
+                        {event.name}(
+                        {event.inputs
+                          ?.map((inp) => `${inp.type} ${inp.name}`)
+                          .join(", ")}
+                        )
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              : <div className="p-8 text-center text-muted-foreground">
+                  No events defined
+                </div>}
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Info Banner */}
-      {!isConnected && parsedABI.write.length > 0 && (
-        <Alert className="bg-yellow-500/10 border-yellow-500/20">
-          <AlertDescription className="text-sm text-yellow-600 dark:text-yellow-500">
-            Connect your wallet to interact with write functions
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="read">
-            Read Functions ({parsedABI.read.length})
-          </TabsTrigger>
-          <TabsTrigger value="write">
-            Write Functions ({parsedABI.write.length})
-          </TabsTrigger>
-          <TabsTrigger value="events">
-            Events ({parsedABI.events.length})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Read Functions */}
-        <TabsContent value="read" className="space-y-3 mt-4">
-          {parsedABI.read.length > 0 ? (
-            parsedABI.read.map((func) => renderFunctionCard(func, false))
-          ) : (
-            <div className="p-8 text-center text-muted-foreground">
-              No read functions available
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Write Functions */}
-        <TabsContent value="write" className="space-y-3 mt-4">
-          {parsedABI.write.length > 0 ? (
-            parsedABI.write.map((func) => renderFunctionCard(func, true))
-          ) : (
-            <div className="p-8 text-center text-muted-foreground">
-              No write functions available
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Events */}
-        <TabsContent value="events" className="space-y-3 mt-4">
-          {parsedABI.events.length > 0 ? (
-            parsedABI.events.map((event, idx) => (
-              <Card key={idx}>
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Badge
-                      variant="outline"
-                      className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
-                    >
-                      EVENT
-                    </Badge>
-                    <span className="font-mono font-medium">{event.name}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground font-mono bg-muted p-2 rounded">
-                    {event.name}(
-                    {event.inputs
-                      ?.map((inp) => `${inp.type} ${inp.name}`)
-                      .join(", ")}
-                    )
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="p-8 text-center text-muted-foreground">
-              No events defined
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
       {/* Clear History Confirmation AlertDialog */}
-      <AlertDialog open={showClearHistoryConfirm} onOpenChange={setShowClearHistoryConfirm}>
+      <AlertDialog
+        open={showClearHistoryConfirm}
+        onOpenChange={setShowClearHistoryConfirm}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Clear Call History?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the call history for {clearHistoryTarget}. This action cannot be undone.
+              This will permanently delete the call history for{" "}
+              {clearHistoryTarget}. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { publicClient } from "@/lib/viem";
 
 /**
@@ -360,7 +360,7 @@ export function useWatchEvents(options = {}) {
         unwatchRef.current();
       }
     };
-  }, [options.address, options.event]);
+  }, [options.address, options.event, options.args]);
 
   return { events, loading, error };
 }

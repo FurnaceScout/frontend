@@ -1,19 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  getBookmarks,
-  removeBookmark,
-  updateBookmark,
-  searchBookmarks,
-  exportBookmarks,
-  clearAllBookmarks,
-} from "@/lib/bookmarks";
 import Link from "next/link";
-import { shortenAddress } from "@/lib/viem";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -21,8 +14,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/app/components/ui/sheet";
-import { Card, CardContent } from "@/app/components/ui/card";
-import { toast } from "sonner";
+import {
+  clearAllBookmarks,
+  exportBookmarks,
+  getBookmarks,
+  removeBookmark,
+  searchBookmarks,
+  updateBookmark,
+} from "@/lib/bookmarks";
+import { shortenAddress } from "@/lib/viem";
 
 export default function BookmarksPanel({ isOpen, onClose }) {
   const [bookmarks, setBookmarks] = useState([]);
@@ -31,19 +31,19 @@ export default function BookmarksPanel({ isOpen, onClose }) {
   const [editLabel, setEditLabel] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
-  useEffect(() => {
-    if (isOpen) {
-      loadBookmarks();
-    }
-  }, [isOpen]);
-
-  const loadBookmarks = () => {
+  const loadBookmarks = useCallback(() => {
     if (searchQuery) {
       setBookmarks(searchBookmarks(searchQuery));
     } else {
       setBookmarks(getBookmarks());
     }
-  };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadBookmarks();
+    }
+  }, [isOpen, loadBookmarks]);
 
   const handleRemove = (id) => {
     removeBookmark(id);
@@ -67,7 +67,7 @@ export default function BookmarksPanel({ isOpen, onClose }) {
       loadBookmarks();
       toast.success("Bookmark updated");
     } catch (error) {
-      toast.error("Failed to update bookmark: " + error.message);
+      toast.error(`Failed to update bookmark: ${error.message}`);
     }
   };
 

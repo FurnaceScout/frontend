@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { publicClient, formatEther, shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { use, useEffect, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
-import { Badge } from "@/app/components/ui/badge";
+import { formatEther, publicClient, shortenAddress } from "@/lib/viem";
 
 export default function BlockPage({ params }) {
   const { number } = use(params);
@@ -140,61 +140,57 @@ export default function BlockPage({ params }) {
           <CardTitle>Transactions ({txCount})</CardTitle>
         </CardHeader>
         <CardContent>
-          {txCount > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Hash</TableHead>
-                  <TableHead>From</TableHead>
-                  <TableHead>To</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {block.transactions.map((tx) => (
-                  <TableRow key={tx.hash}>
-                    <TableCell>
-                      <Link
-                        href={`/tx/${tx.hash}`}
-                        className="font-mono text-primary hover:underline"
-                      >
-                        {shortenAddress(tx.hash, 8)}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        href={`/address/${tx.from}`}
-                        className="font-mono text-sm hover:text-primary transition-colors"
-                      >
-                        {shortenAddress(tx.from)}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {tx.to ? (
+          {txCount > 0
+            ? <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Hash</TableHead>
+                    <TableHead>From</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead className="text-right">Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {block.transactions.map((tx) => (
+                    <TableRow key={tx.hash}>
+                      <TableCell>
                         <Link
-                          href={`/address/${tx.to}`}
+                          href={`/tx/${tx.hash}`}
+                          className="font-mono text-primary hover:underline"
+                        >
+                          {shortenAddress(tx.hash, 8)}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/address/${tx.from}`}
                           className="font-mono text-sm hover:text-primary transition-colors"
                         >
-                          {shortenAddress(tx.to)}
+                          {shortenAddress(tx.from)}
                         </Link>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs">
-                          Contract Creation
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatEther(tx.value)} ETH
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No transactions in this block
-            </div>
-          )}
+                      </TableCell>
+                      <TableCell>
+                        {tx.to
+                          ? <Link
+                              href={`/address/${tx.to}`}
+                              className="font-mono text-sm hover:text-primary transition-colors"
+                            >
+                              {shortenAddress(tx.to)}
+                            </Link>
+                          : <Badge variant="secondary" className="text-xs">
+                              Contract Creation
+                            </Badge>}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatEther(tx.value)} ETH
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            : <div className="text-center py-8 text-muted-foreground">
+                No transactions in this block
+              </div>}
         </CardContent>
       </Card>
     </div>

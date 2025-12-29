@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { formatEther, shortenAddress } from "@/lib/viem";
-import { useChainInfo, useWatchBalances } from "@/app/hooks/useBlockchain";
+import { toast } from "sonner";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,9 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
-import { toast } from "sonner";
+import { useChainInfo, useWatchBalances } from "@/app/hooks/useBlockchain";
+import { formatEther, shortenAddress } from "@/lib/viem";
 
 // Anvil's default test accounts
 const ANVIL_ACCOUNTS = [
@@ -80,7 +80,7 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
 
   const copyToClipboard = async (text, label) => {
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
         const textArea = document.createElement("textarea");

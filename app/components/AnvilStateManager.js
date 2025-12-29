@@ -1,60 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  createSnapshot,
-  revertToSnapshot,
-  mineBlock,
-  mineBlocks,
-  increaseTime,
-  setNextBlockTimestamp,
-  setBalance,
-  setNonce,
-  impersonateAccount,
-  stopImpersonatingAccount,
-  setAutomine,
-  setIntervalMining,
-  reset,
-  dropAllTransactions,
-  getSavedSnapshots,
-  saveSnapshotMetadata,
-  deleteSnapshotMetadata,
-  clearSnapshotMetadata,
-  getImpersonatedAccounts,
-  addImpersonatedAccount,
-  removeImpersonatedAccount,
-  clearImpersonatedAccounts,
-  ethToWei,
-  weiToEth,
-  formatTimestamp,
-  getCurrentBlockTimestamp,
-} from "@/lib/anvil-state";
-import { publicClient } from "@/lib/viem";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/app/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +12,52 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
+import {
+  addImpersonatedAccount,
+  clearImpersonatedAccounts,
+  clearSnapshotMetadata,
+  createSnapshot,
+  deleteSnapshotMetadata,
+  dropAllTransactions,
+  ethToWei,
+  formatTimestamp,
+  getCurrentBlockTimestamp,
+  getImpersonatedAccounts,
+  getSavedSnapshots,
+  impersonateAccount,
+  increaseTime,
+  mineBlocks,
+  removeImpersonatedAccount,
+  reset,
+  revertToSnapshot,
+  saveSnapshotMetadata,
+  setAutomine,
+  setBalance,
+  setNonce,
+  stopImpersonatingAccount,
+} from "@/lib/anvil-state";
 
 export default function AnvilStateManager({
   isOpen: controlledIsOpen,
@@ -124,29 +117,29 @@ export default function AnvilStateManager({
   const [showDropTxsConfirm, setShowDropTxsConfirm] = useState(false);
   const [deleteSnapshotTarget, setDeleteSnapshotTarget] = useState(null);
 
-  // Load data on mount
-  useEffect(() => {
-    loadSnapshots();
-    loadImpersonations();
-    loadCurrentTimestamp();
+  const loadSnapshots = useCallback(() => {
+    setSnapshots(getSavedSnapshots());
   }, []);
 
-  function loadSnapshots() {
-    setSnapshots(getSavedSnapshots());
-  }
-
-  function loadImpersonations() {
+  const loadImpersonations = useCallback(() => {
     setImpersonatedAccounts(getImpersonatedAccounts());
-  }
+  }, []);
 
-  async function loadCurrentTimestamp() {
+  const loadCurrentTimestamp = useCallback(async () => {
     try {
       const timestamp = await getCurrentBlockTimestamp();
       setCurrentTimestamp(timestamp);
     } catch (error) {
       console.error("Failed to load timestamp:", error);
     }
-  }
+  }, []);
+
+  // Load data on mount
+  useEffect(() => {
+    loadSnapshots();
+    loadImpersonations();
+    loadCurrentTimestamp();
+  }, [loadCurrentTimestamp, loadImpersonations, loadSnapshots]);
 
   function clearMessages() {
     setError(null);
@@ -310,8 +303,8 @@ export default function AnvilStateManager({
       return;
     }
 
-    const timestamp = parseInt(nextBlockTimestamp);
-    if (isNaN(timestamp)) {
+    const timestamp = parseInt(nextBlockTimestamp, 10);
+    if (Number.isNaN(timestamp)) {
       showError("Invalid timestamp");
       return;
     }
@@ -366,8 +359,8 @@ export default function AnvilStateManager({
       return;
     }
 
-    const nonce = parseInt(nonceValue);
-    if (isNaN(nonce) || nonce < 0) {
+    const nonce = parseInt(nonceValue, 10);
+    if (Number.isNaN(nonce) || nonce < 0) {
       showError("Invalid nonce value");
       return;
     }
@@ -655,7 +648,7 @@ export default function AnvilStateManager({
                         min="1"
                         value={blockCount}
                         onChange={(e) =>
-                          setBlockCount(parseInt(e.target.value) || 1)
+                          setBlockCount(parseInt(e.target.value, 10) || 1)
                         }
                         className="flex-1"
                       />
@@ -714,7 +707,7 @@ export default function AnvilStateManager({
                         min="0"
                         value={intervalMining}
                         onChange={(e) =>
-                          setIntervalMining(parseInt(e.target.value) || 0)
+                          setIntervalMining(parseInt(e.target.value, 10) || 0)
                         }
                         placeholder="Seconds (0 to disable)"
                         className="flex-1"
@@ -760,7 +753,7 @@ export default function AnvilStateManager({
                         min="1"
                         value={timeIncrease}
                         onChange={(e) =>
-                          setTimeIncrease(parseInt(e.target.value) || 1)
+                          setTimeIncrease(parseInt(e.target.value, 10) || 1)
                         }
                         placeholder="Seconds"
                         className="flex-1"

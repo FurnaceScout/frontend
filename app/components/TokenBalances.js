@@ -1,24 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  detectTokenType,
-  getTokenBalances,
-  extractTokenAddresses,
-  formatTokenAmount,
-} from "@/lib/tokens";
-import { shortenAddress } from "@/lib/viem";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Badge } from "@/app/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { Badge } from "@/app/components/ui/badge";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import {
+  extractTokenAddresses,
+  formatTokenAmount,
+  getTokenBalances,
+} from "@/lib/tokens";
+import { shortenAddress } from "@/lib/viem";
 
 export default function TokenBalances({ address, transactions }) {
   const [tokens, setTokens] = useState([]);

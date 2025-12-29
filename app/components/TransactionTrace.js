@@ -1,13 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  debugTraceTransaction,
-  debugTraceTransactionOpcodes,
-  parseStorageChanges,
-  formatGas,
-  shortenAddress,
-} from "@/lib/viem";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { Badge } from "@/app/components/ui/badge";
+import { Button } from "@/app/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,17 +11,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Badge } from "@/app/components/ui/badge";
-import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Skeleton } from "@/app/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import {
+  debugTraceTransaction,
+  debugTraceTransactionOpcodes,
+  formatGas,
+  parseStorageChanges,
+  shortenAddress,
+} from "@/lib/viem";
 
 export default function TransactionTrace({ hash }) {
   const [trace, setTrace] = useState(null);
@@ -551,7 +551,7 @@ function MemoryView({ structLogs, selectedStep, setSelectedStep }) {
 
   const copyMemory = () => {
     const hex = memoryBytes.join("");
-    navigator.clipboard.writeText("0x" + hex);
+    navigator.clipboard.writeText(`0x${hex}`);
   };
 
   const goToPrevStep = () => {
@@ -606,76 +606,76 @@ function MemoryView({ structLogs, selectedStep, setSelectedStep }) {
         </Badge>
       </div>
 
-      {totalBytes === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          No memory data at this step
-        </div>
-      ) : (
-        <>
-          {/* Memory Display */}
-          <div className="border rounded-lg overflow-hidden font-mono text-xs">
-            <div className="bg-muted p-2 flex gap-4 text-muted-foreground border-b">
-              <div className="w-20">Offset</div>
-              <div className="flex-1">Hex</div>
-              <div className="w-32">ASCII</div>
-            </div>
-
-            <div className="max-h-[400px] overflow-y-auto">
-              {rows.map((row, idx) => (
-                <div
-                  key={idx}
-                  className="flex gap-4 p-2 border-b hover:bg-muted"
-                >
-                  <div className="w-20 text-muted-foreground">
-                    0x{row.offset.toString(16).padStart(4, "0")}
-                  </div>
-                  <div className="flex-1">
-                    {row.bytes.map((byte, i) => (
-                      <span key={i} className={i % 2 === 0 ? "mr-1" : "mr-2"}>
-                        {byte}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="w-32 text-muted-foreground">
-                    {bytesToAscii(row.bytes)}
-                  </div>
-                </div>
-              ))}
-            </div>
+      {totalBytes === 0
+        ? <div className="text-center py-12 text-muted-foreground">
+            No memory data at this step
           </div>
+        : <>
+            {/* Memory Display */}
+            <div className="border rounded-lg overflow-hidden font-mono text-xs">
+              <div className="bg-muted p-2 flex gap-4 text-muted-foreground border-b">
+                <div className="w-20">Offset</div>
+                <div className="flex-1">Hex</div>
+                <div className="w-32">ASCII</div>
+              </div>
 
-          {/* Pagination */}
-          {totalBytes > bytesPerRow * 16 && (
-            <div className="mt-4 flex items-center justify-between">
-              <Button
-                onClick={() =>
-                  setMemoryOffset(Math.max(0, memoryOffset - bytesPerRow * 16))
-                }
-                disabled={memoryOffset === 0}
-                size="sm"
-                variant="outline"
-              >
-                ← Previous Page
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Bytes {startByte} - {endByte} of {totalBytes}
-              </span>
-              <Button
-                onClick={() =>
-                  setMemoryOffset(
-                    Math.min(maxOffset, memoryOffset + bytesPerRow * 16),
-                  )
-                }
-                disabled={memoryOffset >= maxOffset}
-                size="sm"
-                variant="outline"
-              >
-                Next Page →
-              </Button>
+              <div className="max-h-[400px] overflow-y-auto">
+                {rows.map((row, idx) => (
+                  <div
+                    key={idx}
+                    className="flex gap-4 p-2 border-b hover:bg-muted"
+                  >
+                    <div className="w-20 text-muted-foreground">
+                      0x{row.offset.toString(16).padStart(4, "0")}
+                    </div>
+                    <div className="flex-1">
+                      {row.bytes.map((byte, i) => (
+                        <span key={i} className={i % 2 === 0 ? "mr-1" : "mr-2"}>
+                          {byte}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="w-32 text-muted-foreground">
+                      {bytesToAscii(row.bytes)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
-        </>
-      )}
+
+            {/* Pagination */}
+            {totalBytes > bytesPerRow * 16 && (
+              <div className="mt-4 flex items-center justify-between">
+                <Button
+                  onClick={() =>
+                    setMemoryOffset(
+                      Math.max(0, memoryOffset - bytesPerRow * 16),
+                    )
+                  }
+                  disabled={memoryOffset === 0}
+                  size="sm"
+                  variant="outline"
+                >
+                  ← Previous Page
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Bytes {startByte} - {endByte} of {totalBytes}
+                </span>
+                <Button
+                  onClick={() =>
+                    setMemoryOffset(
+                      Math.min(maxOffset, memoryOffset + bytesPerRow * 16),
+                    )
+                  }
+                  disabled={memoryOffset >= maxOffset}
+                  size="sm"
+                  variant="outline"
+                >
+                  Next Page →
+                </Button>
+              </div>
+            )}
+          </>}
 
       {/* Steps with Memory */}
       {stepsWithMemory.length > 0 && (

@@ -1,29 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { saveABI, getAllABIs } from "@/lib/abi-store";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Input } from "@/app/components/ui/input";
-import { Label } from "@/app/components/ui/label";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Badge } from "@/app/components/ui/badge";
+import { getAllABIs, saveABI } from "@/lib/abi-store";
 
 export default function UploadABIPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const [address, setAddress] = useState("");
   const [abiText, setAbiText] = useState("");
   const [contractName, setContractName] = useState("");
@@ -309,42 +308,40 @@ export default function UploadABIPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {Object.entries(savedABIs).length > 0 ? (
-                Object.entries(savedABIs).map(([addr, data]) => (
-                  <Link
-                    key={addr}
-                    href={`/address/${addr}`}
-                    className="block p-4 border border-border rounded-lg hover:border-primary transition-colors"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-semibold">
-                        {data.name || "Unnamed Contract"}
+              {Object.entries(savedABIs).length > 0
+                ? Object.entries(savedABIs).map(([addr, data]) => (
+                    <Link
+                      key={addr}
+                      href={`/address/${addr}`}
+                      className="block p-4 border border-border rounded-lg hover:border-primary transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-semibold">
+                          {data.name || "Unnamed Contract"}
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {
+                            data.abi.filter((item) => item.type === "function")
+                              .length
+                          }{" "}
+                          functions
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {
-                          data.abi.filter((item) => item.type === "function")
-                            .length
-                        }{" "}
-                        functions
-                      </Badge>
+                      <div className="font-mono text-xs text-muted-foreground break-all">
+                        {addr}
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Saved {new Date(data.timestamp).toLocaleDateString()}
+                      </div>
+                    </Link>
+                  ))
+                : <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-4xl mb-2">📋</div>
+                    <div className="font-semibold mb-1">No saved ABIs yet</div>
+                    <div className="text-xs">
+                      Upload your first contract ABI to get started
                     </div>
-                    <div className="font-mono text-xs text-muted-foreground break-all">
-                      {addr}
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      Saved {new Date(data.timestamp).toLocaleDateString()}
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <div className="text-4xl mb-2">📋</div>
-                  <div className="font-semibold mb-1">No saved ABIs yet</div>
-                  <div className="text-xs">
-                    Upload your first contract ABI to get started
-                  </div>
-                </div>
-              )}
+                  </div>}
             </div>
           </CardContent>
         </Card>
