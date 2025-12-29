@@ -21,6 +21,11 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import {
+  fetchBlocksBatched,
+  fetchReceiptsBatched,
+  getLatestBlockNumber,
+} from "@/lib/block-utils";
+import {
   exportTransfersToCSV,
   filterTransfers,
   getTokenTransferStats,
@@ -34,7 +39,7 @@ import {
   formatTokenAmount,
   parseTokenTransfers,
 } from "@/lib/tokens";
-import { publicClient, shortenAddress } from "@/lib/viem";
+import { shortenAddress } from "@/lib/viem";
 
 export default function TokenTransfersPage() {
   const [transfers, setTransfers] = useState([]);
@@ -70,43 +75,59 @@ export default function TokenTransfersPage() {
     async function loadRecentTransfers() {
       try {
         setLoading(true);
-        const latestBlock = await publicClient.getBlockNumber();
-        const fromBlock = latestBlock - 500n; // Last ~500 blocks
+        const latestBlock = await getLatestBlockNumber();
+        const fromBlock = latestBlock - 500n > 0n ? latestBlock - 500n : 0n;
 
+        // Fetch all blocks in parallel batches
+        const blocks = await fetchBlocksBatched(fromBlock, latestBlock, {
+          includeTransactions: true,
+          batchSize: 10,
+        });
+
+        // Sort blocks by number descending (newest first)
+        blocks.sort((a, b) => Number(b.number) - Number(a.number));
+
+        // Collect all transaction hashes and create lookup map
+        const txHashToBlock = new Map();
+        for (const block of blocks) {
+          if (!block || !block.transactions) continue;
+          for (const tx of block.transactions) {
+            const hash = typeof tx === "string" ? tx : tx.hash;
+            txHashToBlock.set(hash.toLowerCase(), block);
+          }
+        }
+
+        // Fetch all receipts in parallel batches
+        const allHashes = Array.from(txHashToBlock.keys());
+        const receipts = await fetchReceiptsBatched(allHashes, {
+          batchSize: 20,
+        });
+
+        // Process receipts and extract token transfers
         const allTransfers = [];
         const metadataMap = {};
 
-        // Fetch recent blocks
-        for (let i = latestBlock; i > fromBlock; i--) {
-          const block = await publicClient.getBlock({
-            blockNumber: i,
-            includeTransactions: true,
-          });
+        for (const receipt of receipts) {
+          if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
 
-          if (!block || !block.transactions) continue;
+          const block = txHashToBlock.get(
+            receipt.transactionHash.toLowerCase(),
+          );
+          if (!block) continue;
 
-          for (const tx of block.transactions) {
-            const receipt = await publicClient
-              .getTransactionReceipt({ hash: tx.hash })
-              .catch(() => null);
+          const txTransfers = parseTokenTransfers(receipt.logs);
 
-            if (!receipt || !receipt.logs || receipt.logs.length === 0)
-              continue;
+          for (const transfer of txTransfers) {
+            allTransfers.push({
+              ...transfer,
+              txHash: receipt.transactionHash,
+              blockNumber: block.number.toString(),
+              timestamp: block.timestamp,
+            });
 
-            const txTransfers = parseTokenTransfers(receipt.logs);
-
-            for (const transfer of txTransfers) {
-              allTransfers.push({
-                ...transfer,
-                txHash: tx.hash,
-                blockNumber: block.number.toString(),
-                timestamp: block.timestamp,
-              });
-
-              // Queue token metadata fetch
-              if (!metadataMap[transfer.token.toLowerCase()]) {
-                metadataMap[transfer.token.toLowerCase()] = null;
-              }
+            // Queue token metadata fetch
+            if (!metadataMap[transfer.token.toLowerCase()]) {
+              metadataMap[transfer.token.toLowerCase()] = null;
             }
           }
 
@@ -114,8 +135,15 @@ export default function TokenTransfersPage() {
           if (allTransfers.length >= 500) break;
         }
 
-        setTransfers(allTransfers);
-        setFilteredTransfers(allTransfers);
+        // Sort transfers by block number descending
+        allTransfers.sort((a, b) => {
+          const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
+          if (blockDiff !== 0) return blockDiff;
+          return Number(b.timestamp) - Number(a.timestamp);
+        });
+
+        setTransfers(allTransfers.slice(0, 500));
+        setFilteredTransfers(allTransfers.slice(0, 500));
 
         // Fetch metadata for all unique tokens
         const uniqueTokens = Object.keys(metadataMap);
@@ -143,7 +171,9 @@ export default function TokenTransfersPage() {
         setTokenMetadata(metadata);
 
         // Calculate stats
-        const transferStats = await getTokenTransferStats(allTransfers);
+        const transferStats = await getTokenTransferStats(
+          allTransfers.slice(0, 500),
+        );
         setStats(transferStats);
       } catch (error) {
         console.error("Error loading token transfers:", error);

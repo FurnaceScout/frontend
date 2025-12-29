@@ -20,8 +20,13 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { getAllABIs } from "@/lib/abi-store";
+import {
+  fetchBlocksBatched,
+  fetchReceiptsBatched,
+  getLatestBlockNumber,
+} from "@/lib/block-utils";
 import { decodeLogs } from "@/lib/contract-decoder";
-import { publicClient, shortenAddress } from "@/lib/viem";
+import { shortenAddress } from "@/lib/viem";
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
@@ -51,72 +56,89 @@ export default function EventsPage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const blockNumber = await publicClient.getBlockNumber();
+      const blockNumber = await getLatestBlockNumber();
       const fromBlock = filters.fromBlock
         ? BigInt(filters.fromBlock)
         : blockNumber - 100n;
       const toBlock = filters.toBlock ? BigInt(filters.toBlock) : blockNumber;
 
-      const allEvents = [];
+      // Fetch all blocks in parallel batches
+      const blocks = await fetchBlocksBatched(fromBlock, toBlock, {
+        includeTransactions: true,
+        batchSize: 10,
+      });
 
-      // Fetch logs from blocks
-      for (let i = fromBlock; i <= toBlock && allEvents.length < 100; i++) {
-        try {
-          const block = await publicClient.getBlock({
-            blockNumber: i,
-            includeTransactions: true,
-          });
-
-          if (
-            Array.isArray(block.transactions) &&
-            block.transactions.length > 0
-          ) {
-            for (const tx of block.transactions) {
-              try {
-                const receipt = await publicClient.getTransactionReceipt({
-                  hash: tx.hash,
-                });
-
-                if (receipt.logs && receipt.logs.length > 0) {
-                  // Filter by address if specified
-                  let filteredLogs = receipt.logs;
-                  if (filters.address) {
-                    filteredLogs = filteredLogs.filter(
-                      (log) =>
-                        log.address.toLowerCase() ===
-                        filters.address.toLowerCase(),
-                    );
-                  }
-
-                  // Decode logs
-                  const decodedLogs = decodeLogs(filteredLogs);
-
-                  // Filter by event name if specified
-                  let finalLogs = decodedLogs;
-                  if (filters.eventName) {
-                    finalLogs = decodedLogs.filter((log) =>
-                      log.decoded?.eventName
-                        ?.toLowerCase()
-                        .includes(filters.eventName.toLowerCase()),
-                    );
-                  }
-
-                  allEvents.push(
-                    ...finalLogs.map((log) => ({
-                      ...log,
-                      transactionHash: tx.hash,
-                      blockNumber: block.number,
-                      timestamp: block.timestamp,
-                    })),
-                  );
-                }
-              } catch (_e) {}
-            }
+      // Collect all transaction hashes from blocks that have transactions
+      const txHashToBlock = new Map();
+      for (const block of blocks) {
+        if (
+          Array.isArray(block.transactions) &&
+          block.transactions.length > 0
+        ) {
+          for (const tx of block.transactions) {
+            const hash = typeof tx === "string" ? tx : tx.hash;
+            txHashToBlock.set(hash.toLowerCase(), block);
           }
-        } catch (_e) {}
+        }
       }
 
-      setEvents(allEvents);
+      // Fetch all receipts in parallel batches
+      const allHashes = Array.from(txHashToBlock.keys());
+      const receipts = await fetchReceiptsBatched(allHashes, { batchSize: 20 });
+
+      // Process receipts and extract events
+      const allEvents = [];
+      for (const receipt of receipts) {
+        if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
+
+        const block = txHashToBlock.get(receipt.transactionHash.toLowerCase());
+        if (!block) continue;
+
+        // Filter by address if specified
+        let filteredLogs = receipt.logs;
+        if (filters.address) {
+          filteredLogs = filteredLogs.filter(
+            (log) =>
+              log.address.toLowerCase() === filters.address.toLowerCase(),
+          );
+        }
+
+        if (filteredLogs.length === 0) continue;
+
+        // Decode logs
+        const decodedLogs = decodeLogs(filteredLogs);
+
+        // Filter by event name if specified
+        let finalLogs = decodedLogs;
+        if (filters.eventName) {
+          finalLogs = decodedLogs.filter((log) =>
+            log.decoded?.eventName
+              ?.toLowerCase()
+              .includes(filters.eventName.toLowerCase()),
+          );
+        }
+
+        allEvents.push(
+          ...finalLogs.map((log) => ({
+            ...log,
+            transactionHash: receipt.transactionHash,
+            blockNumber: block.number,
+            timestamp: block.timestamp,
+          })),
+        );
+
+        // Limit to 100 events
+        if (allEvents.length >= 100) break;
+      }
+
+      // Sort events by block number descending (newest first)
+      allEvents.sort((a, b) => {
+        const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
+        if (blockDiff !== 0) return blockDiff;
+        return (b.logIndex || 0) - (a.logIndex || 0);
+      });
+
+      setEvents(allEvents.slice(0, 100));
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
