@@ -223,9 +223,6 @@ export default function AdvancedSearchPage() {
                         <SelectValue placeholder="Select common method..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">
-                          Select common method...
-                        </SelectItem>
                         {getCommonMethodIds().map((method) => (
                           <SelectItem key={method.id} value={method.id}>
                             {method.name}
@@ -475,56 +472,56 @@ export default function AdvancedSearchPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {searchHistory.length === 0
-                ? <div className="text-center py-12">
-                    <div className="text-4xl mb-3">📜</div>
-                    <div className="text-muted-foreground">
-                      No search history yet
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-2">
-                      Your searches will appear here
-                    </div>
+              {searchHistory.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-3">📜</div>
+                  <div className="text-muted-foreground">
+                    No search history yet
                   </div>
-                : <div className="space-y-3">
-                    {searchHistory.map((entry) => (
-                      <Card key={entry.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="text-sm text-muted-foreground mb-1">
-                                {formatSearchCriteria(entry.criteria)}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {new Date(entry.timestamp).toLocaleString()} •{" "}
-                                <Badge variant="outline" className="text-xs">
-                                  {entry.resultCount} result
-                                  {entry.resultCount !== 1 ? "s" : ""}
-                                </Badge>
-                              </div>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Your searches will appear here
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {searchHistory.map((entry) => (
+                    <Card key={entry.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="text-sm text-muted-foreground mb-1">
+                              {formatSearchCriteria(entry.criteria)}
                             </div>
-                            <div className="flex items-center gap-2 ml-4">
-                              <Button
-                                onClick={() => handleLoadSearch(entry.id)}
-                                variant="outline"
-                                size="sm"
-                              >
-                                Load
-                              </Button>
-                              <Button
-                                onClick={() =>
-                                  deleteSearchFromHistory(entry.id)
-                                }
-                                variant="destructive"
-                                size="sm"
-                              >
-                                Delete
-                              </Button>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(entry.timestamp).toLocaleString()} •{" "}
+                              <Badge variant="outline" className="text-xs">
+                                {entry.resultCount} result
+                                {entry.resultCount !== 1 ? "s" : ""}
+                              </Badge>
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>}
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              onClick={() => handleLoadSearch(entry.id)}
+                              variant="outline"
+                              size="sm"
+                            >
+                              Load
+                            </Button>
+                            <Button
+                              onClick={() => deleteSearchFromHistory(entry.id)}
+                              variant="destructive"
+                              size="sm"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

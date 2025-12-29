@@ -671,14 +671,16 @@ export default function ForgeTestRunner({
                             className="flex-1 min-w-[200px]"
                           />
                           <Select
-                            value={statusFilter}
-                            onValueChange={setStatusFilter}
+                            value={statusFilter || "all"}
+                            onValueChange={(value) =>
+                              setStatusFilter(value === "all" ? "" : value)
+                            }
                           >
                             <SelectTrigger className="w-[150px]">
                               <SelectValue placeholder="All Status" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">All Status</SelectItem>
+                              <SelectItem value="all">All Status</SelectItem>
                               <SelectItem value="success">Passed</SelectItem>
                               <SelectItem value="failure">Failed</SelectItem>
                               <SelectItem value="skipped">Skipped</SelectItem>

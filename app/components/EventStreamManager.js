@@ -711,14 +711,14 @@ export default function EventStreamManager({
               </Label>
               {availableContracts.length > 0 ? (
                 <Select
-                  value={newSubForm.address}
+                  value={newSubForm.address || "all"}
                   onValueChange={(value) => {
                     const selected = availableContracts.find(
                       (c) => c.address === value,
                     );
                     setNewSubForm({
                       ...newSubForm,
-                      address: value,
+                      address: value === "all" ? "" : value,
                       contractName: selected?.name || "",
                     });
                   }}
@@ -727,7 +727,7 @@ export default function EventStreamManager({
                     <SelectValue placeholder="All Contracts" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Contracts</SelectItem>
+                    <SelectItem value="all">All Contracts</SelectItem>
                     {availableContracts.map((contract) => (
                       <SelectItem
                         key={contract.address}
