@@ -54,6 +54,17 @@ import {
   TabsTrigger,
 } from "@/app/components/ui/tabs";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 export default function AnvilStateManager() {
   const [isOpen, setIsOpen] = useState(false);
@@ -91,6 +102,13 @@ export default function AnvilStateManager() {
 
   // Load data on mount
   useEffect(() => {
+  // AlertDialog states
+  const [showDeleteSnapshotConfirm, setShowDeleteSnapshotConfirm] = useState(false);
+  const [showClearSnapshotsConfirm, setShowClearSnapshotsConfirm] = useState(false);
+  const [showClearImpersonationsConfirm, setShowClearImpersonationsConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showDropTxsConfirm, setShowDropTxsConfirm] = useState(false);
+  const [deleteSnapshotTarget, setDeleteSnapshotTarget] = useState(null);
     loadSnapshots();
     loadImpersonations();
     loadCurrentTimestamp();
@@ -171,23 +189,29 @@ export default function AnvilStateManager() {
   }
 
   function handleDeleteSnapshot(snapshotId) {
-    if (
-      confirm(
-        "Delete this snapshot metadata? (Note: The snapshot may still exist in Anvil)",
-      )
-    ) {
-      deleteSnapshotMetadata(snapshotId);
+    setDeleteSnapshotTarget(snapshotId);
+    setShowDeleteSnapshotConfirm(true);
+  }
+
+  function confirmDeleteSnapshot() {
+    if (deleteSnapshotTarget) {
+      deleteSnapshotMetadata(deleteSnapshotTarget);
       loadSnapshots();
       showSuccess("Snapshot metadata deleted");
+      setDeleteSnapshotTarget(null);
     }
+    setShowDeleteSnapshotConfirm(false);
   }
 
   function handleClearSnapshots() {
-    if (confirm("Clear all snapshot metadata?")) {
-      clearSnapshotMetadata();
-      loadSnapshots();
-      showSuccess("All snapshot metadata cleared");
-    }
+    setShowClearSnapshotsConfirm(true);
+  }
+
+  function confirmClearSnapshots() {
+    clearSnapshotMetadata();
+    loadSnapshots();
+    showSuccess("All snapshot metadata cleared");
+    setShowClearSnapshotsConfirm(false);
   }
 
   async function handleMineBlocks() {
@@ -391,34 +415,30 @@ export default function AnvilStateManager() {
   }
 
   function handleClearImpersonations() {
-    if (
-      confirm(
-        "Clear all impersonation tracking? (Note: This only clears tracking, accounts remain impersonated in Anvil)",
-      )
-    ) {
-      clearImpersonatedAccounts();
-      loadImpersonations();
-      showSuccess("Impersonation tracking cleared");
-    }
+    setShowClearImpersonationsConfirm(true);
   }
 
-  async function handleReset() {
-    if (
-      !confirm("Reset Anvil? This will clear all state and cannot be undone.")
-    ) {
-      return;
-    }
+  function confirmClearImpersonations() {
+    clearImpersonatedAccounts();
+    setImpersonatedAccounts([]);
+    showSuccess("All impersonation tracking cleared");
+    setShowClearImpersonationsConfirm(false);
+  }
 
+
+  async function handleReset() {
+    setShowResetConfirm(true);
+  }
+
+  async function confirmReset() {
+    setShowResetConfirm(false);
     setLoading((prev) => ({ ...prev, reset: true }));
     clearMessages();
 
     try {
       await reset();
-      clearSnapshotMetadata();
-      clearImpersonatedAccounts();
-      loadSnapshots();
-      loadImpersonations();
-      await loadCurrentTimestamp();
+      setSnapshots([]);
+      setImpersonatedAccounts([]);
       showSuccess("Anvil reset successfully");
     } catch (err) {
       showError(err.message || "Failed to reset Anvil");
@@ -427,11 +447,31 @@ export default function AnvilStateManager() {
     }
   }
 
-  async function handleDropAllTransactions() {
-    if (!confirm("Drop all pending transactions?")) {
-      return;
-    }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async function handleDropAllTransactions() {
+    setShowDropTxsConfirm(true);
+  }
+
+  async function confirmDropAllTransactions() {
+    setShowDropTxsConfirm(false);
     setLoading((prev) => ({ ...prev, dropTxs: true }));
     clearMessages();
 
@@ -444,7 +484,6 @@ export default function AnvilStateManager() {
       setLoading((prev) => ({ ...prev, dropTxs: false }));
     }
   }
-
   if (!isOpen) {
     return (
       <Button
@@ -460,6 +499,7 @@ export default function AnvilStateManager() {
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
@@ -960,5 +1000,88 @@ export default function AnvilStateManager() {
         </Tabs>
       </DialogContent>
     </Dialog>
+
+      {/* Delete Snapshot Confirmation */}
+      <AlertDialog open={showDeleteSnapshotConfirm} onOpenChange={setShowDeleteSnapshotConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Snapshot Metadata?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the snapshot metadata. Note: The snapshot may still exist in Anvil.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteSnapshot}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear Snapshots Confirmation */}
+      <AlertDialog open={showClearSnapshotsConfirm} onOpenChange={setShowClearSnapshotsConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Snapshot Metadata?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all snapshot metadata. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearSnapshots}>Clear All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear Impersonations Confirmation */}
+      <AlertDialog open={showClearImpersonationsConfirm} onOpenChange={setShowClearImpersonationsConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Impersonation Tracking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all impersonation tracking. Note: This only clears tracking, accounts remain impersonated in Anvil.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearImpersonations}>Clear All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Anvil Confirmation */}
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset Anvil?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all state and cannot be undone. All balances, nonces, and deployed contracts will be reset.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Reset Anvil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Drop All Transactions Confirmation */}
+      <AlertDialog open={showDropTxsConfirm} onOpenChange={setShowDropTxsConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Drop All Pending Transactions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will drop all pending transactions from the mempool. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDropAllTransactions}>Drop All</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

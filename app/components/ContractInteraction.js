@@ -42,6 +42,17 @@ import {
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Separator } from "@/app/components/ui/separator";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 export default function ContractInteraction({ address, abiData }) {
   const [parsedABI, setParsedABI] = useState({
@@ -60,6 +71,8 @@ export default function ContractInteraction({ address, abiData }) {
   const [showHistory, setShowHistory] = useState({});
   const [ethValues, setEthValues] = useState({});
 
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
+  const [clearHistoryTarget, setClearHistoryTarget] = useState(null);
   const { address: walletAddress, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
@@ -181,7 +194,7 @@ export default function ContractInteraction({ address, abiData }) {
     const functionName = func.name;
 
     if (!isConnected) {
-      alert("Please connect wallet to estimate gas");
+      toast.error("Please connect wallet to estimate gas");
       return;
     }
 
@@ -235,7 +248,7 @@ export default function ContractInteraction({ address, abiData }) {
     const functionName = func.name;
 
     if (!isConnected) {
-      alert("Please connect wallet to simulate");
+      toast.error("Please connect wallet to simulate");
       return;
     }
 
@@ -293,7 +306,7 @@ export default function ContractInteraction({ address, abiData }) {
     const functionName = func.name;
 
     if (!isConnected) {
-      alert("Please connect wallet first");
+      toast.error("Please connect wallet first");
       return;
     }
 
@@ -384,13 +397,21 @@ export default function ContractInteraction({ address, abiData }) {
   }
 
   function handleClearHistory(functionName) {
-    if (confirm(`Clear call history for ${functionName}?`)) {
-      clearCallHistory(address, functionName);
+    setClearHistoryTarget(functionName);
+    setShowClearHistoryConfirm(true);
+  }
+
+  function confirmClearHistory() {
+    if (clearHistoryTarget) {
+      clearCallHistory(address, clearHistoryTarget);
       setCallHistory((prev) => ({
         ...prev,
-        [functionName]: [],
+        [clearHistoryTarget]: [],
       }));
+      toast.success("Call history cleared");
+      setClearHistoryTarget(null);
     }
+    setShowClearHistoryConfirm(false);
   }
 
   function renderInputField(func, input) {
@@ -787,6 +808,7 @@ export default function ContractInteraction({ address, abiData }) {
   }
 
   return (
+    <>
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -899,5 +921,23 @@ export default function ContractInteraction({ address, abiData }) {
         </TabsContent>
       </Tabs>
     </div>
+      {/* Clear History Confirmation AlertDialog */}
+      <AlertDialog open={showClearHistoryConfirm} onOpenChange={setShowClearHistoryConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Call History?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the call history for {clearHistoryTarget}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmClearHistory}>
+              Clear History
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
