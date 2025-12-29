@@ -65,8 +65,21 @@ import { Switch } from "@/app/components/ui/switch";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { Separator } from "@/app/components/ui/separator";
 
-export default function EventStreamManager() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function EventStreamManager({
+  isOpen: controlledIsOpen,
+  onClose: controlledOnClose,
+} = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen =
+    controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen =
+    controlledOnClose !== undefined
+      ? (value) => {
+          if (!value) controlledOnClose();
+        }
+      : setInternalIsOpen;
   const [activeTab, setActiveTab] = useState("subscriptions");
   const [events, setEvents] = useState([]);
   const [stats, setStats] = useState(null);

@@ -76,8 +76,21 @@ import { Switch } from "@/app/components/ui/switch";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
 
-export default function ForgeTestRunner() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function ForgeTestRunner({
+  isOpen: controlledIsOpen,
+  onClose: controlledOnClose,
+} = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen =
+    controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen =
+    controlledOnClose !== undefined
+      ? (value) => {
+          if (!value) controlledOnClose();
+        }
+      : setInternalIsOpen;
   const [activeTab, setActiveTab] = useState("run");
   const [running, setRunning] = useState(false);
   const [currentResults, setCurrentResults] = useState(null);

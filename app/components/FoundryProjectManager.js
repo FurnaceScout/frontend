@@ -42,8 +42,21 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
 
-export default function FoundryProjectManager() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function FoundryProjectManager({
+  isOpen: controlledIsOpen,
+  onClose: controlledOnClose,
+} = {}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise use internal state
+  const isOpen =
+    controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen =
+    controlledOnClose !== undefined
+      ? (value) => {
+          if (!value) controlledOnClose();
+        }
+      : setInternalIsOpen;
   const [scanning, setScanning] = useState(false);
   const [project, setProject] = useState(null);
   const [error, setError] = useState(null);
