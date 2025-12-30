@@ -21,6 +21,11 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import {
+  fetchBlocksBatched,
+  fetchReceiptsBatched,
+  getLatestBlockNumber,
+} from "@/lib/block-utils";
+import {
   exportTransfersToCSV,
   paginateTransfers,
   sortTransfers,
@@ -30,7 +35,7 @@ import {
   formatTokenAmount,
   parseTokenTransfers,
 } from "@/lib/tokens";
-import { publicClient, shortenAddress } from "@/lib/viem";
+import { shortenAddress } from "@/lib/viem";
 
 export default function TokenDetailPage({ params }) {
   const { address } = use(params);
@@ -70,45 +75,58 @@ export default function TokenDetailPage({ params }) {
         setTokenInfo(info);
 
         // Get token transfers from recent blocks
-        // For demo, we scan last 5000 blocks
+        // For demo, we scan last 100 blocks (reduced for performance)
         // In production, you'd want to use indexed events or a subgraph
-        const latestBlock = await publicClient.getBlockNumber();
-        const _fromBlock = latestBlock - 5000n;
+        const latestBlock = await getLatestBlockNumber();
+        const fromBlock = latestBlock - 100n > 0n ? latestBlock - 100n : 0n;
+
+        // Fetch all blocks in parallel batches
+        const blocks = await fetchBlocksBatched(fromBlock, latestBlock, {
+          includeTransactions: true,
+          batchSize: 10,
+        });
+
+        // Collect all transaction hashes and create lookup map
+        const txHashToBlock = new Map();
+        for (const block of blocks) {
+          if (!block || !block.transactions) continue;
+          for (const tx of block.transactions) {
+            const hash = typeof tx === "string" ? tx : tx.hash;
+            txHashToBlock.set(hash.toLowerCase(), block);
+          }
+        }
+
+        // Fetch all receipts in parallel batches
+        const allHashes = Array.from(txHashToBlock.keys());
+        const receipts = await fetchReceiptsBatched(allHashes, {
+          batchSize: 20,
+        });
 
         const allTransfers = [];
         const uniqueSenders = new Set();
         const uniqueReceivers = new Set();
         let totalVolume = 0n;
 
-        // Fetch blocks in batches
-        const block = await publicClient.getBlock({
-          blockNumber: latestBlock,
-          includeTransactions: true,
-        });
+        // Process receipts and extract token transfers
+        for (const receipt of receipts) {
+          if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
 
-        // Process transactions
-        for (const tx of block.transactions.slice(0, 10)) {
-          // Get receipt for logs
-          const receipt = await publicClient.getTransactionReceipt({
-            hash: tx,
-          });
+          const block = txHashToBlock.get(
+            receipt.transactionHash.toLowerCase(),
+          );
+          if (!block) continue;
 
-          // Parse token transfers from logs
+          // Parse token transfers from logs for this token
           try {
             const txTransfers = parseTokenTransfers(
               receipt.logs,
               address.toLowerCase(),
             );
             if (txTransfers.length > 0) {
-              // Get block for timestamp
-              const txBlock = await publicClient.getBlock({
-                blockNumber: receipt.blockNumber,
-              });
-
               txTransfers.forEach((t) => {
                 const txHash = receipt.transactionHash;
                 const blockNumber = Number(receipt.blockNumber);
-                const timestamp = Number(txBlock.timestamp);
+                const timestamp = Number(block.timestamp);
 
                 allTransfers.push({
                   ...t,
@@ -418,141 +436,141 @@ export default function TokenDetailPage({ params }) {
       </Card>
 
       {/* Transfer List */}
-      {filteredTransfers.length === 0
-        ? <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <div className="text-6xl mb-4">📭</div>
-                <h3 className="text-xl font-semibold mb-2">
-                  No transfers found
-                </h3>
-                <p className="text-muted-foreground">
-                  No transfers match your current filters
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        : <>
-            <Card>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {paginatedData.items.map((transfer, index) => (
-                    <div
-                      key={`${transfer.txHash}-${index}`}
-                      className="p-4 hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        {/* Left: Transfer Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">{transfer.type}</Badge>
-                            {transfer.timestamp && (
-                              <span className="text-sm text-muted-foreground">
-                                {new Date(
-                                  Number(transfer.timestamp) * 1000,
-                                ).toLocaleString()}
+      {filteredTransfers.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <div className="text-6xl mb-4">📭</div>
+              <h3 className="text-xl font-semibold mb-2">No transfers found</h3>
+              <p className="text-muted-foreground">
+                No transfers match your current filters
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardContent className="p-0">
+              <div className="divide-y">
+                {paginatedData.items.map((transfer, index) => (
+                  <div
+                    key={`${transfer.txHash}-${index}`}
+                    className="p-4 hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Left: Transfer Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline">{transfer.type}</Badge>
+                          {transfer.timestamp && (
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(
+                                Number(transfer.timestamp) * 1000,
+                              ).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Addresses */}
+                        <div className="flex items-center gap-2 text-sm mb-2">
+                          <Link
+                            href={`/address/${transfer.from}`}
+                            className="font-mono hover:text-primary transition-colors"
+                          >
+                            <LabelBadge
+                              address={transfer.from}
+                              fallback={shortenAddress(transfer.from, 6)}
+                            />
+                          </Link>
+                          <span className="text-muted-foreground">→</span>
+                          <Link
+                            href={`/address/${transfer.to}`}
+                            className="font-mono hover:text-primary transition-colors"
+                          >
+                            <LabelBadge
+                              address={transfer.to}
+                              fallback={shortenAddress(transfer.to, 6)}
+                            />
+                          </Link>
+                        </div>
+
+                        {/* Transaction & Block */}
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <Link
+                            href={`/tx/${transfer.txHash}`}
+                            className="hover:text-primary font-mono"
+                          >
+                            TX: {shortenAddress(transfer.txHash, 4)}
+                          </Link>
+                          <span>Block #{transfer.blockNumber}</span>
+                        </div>
+                      </div>
+
+                      {/* Right: Amount */}
+                      <div className="text-right">
+                        {transfer.type.startsWith("ERC20") && transfer.value ? (
+                          <div className="font-bold">
+                            {formatTokenAmount(
+                              BigInt(transfer.value),
+                              tokenInfo?.metadata?.decimals || 18,
+                            )}
+                            {tokenInfo?.metadata?.symbol && (
+                              <span className="text-sm text-muted-foreground ml-1">
+                                {tokenInfo.metadata.symbol}
                               </span>
                             )}
                           </div>
-
-                          {/* Addresses */}
-                          <div className="flex items-center gap-2 text-sm mb-2">
-                            <Link
-                              href={`/address/${transfer.from}`}
-                              className="font-mono hover:text-primary transition-colors"
-                            >
-                              <LabelBadge
-                                address={transfer.from}
-                                fallback={shortenAddress(transfer.from, 6)}
-                              />
-                            </Link>
-                            <span className="text-muted-foreground">→</span>
-                            <Link
-                              href={`/address/${transfer.to}`}
-                              className="font-mono hover:text-primary transition-colors"
-                            >
-                              <LabelBadge
-                                address={transfer.to}
-                                fallback={shortenAddress(transfer.to, 6)}
-                              />
-                            </Link>
+                        ) : transfer.type.startsWith("ERC721") &&
+                          transfer.tokenId ? (
+                          <div className="font-mono text-sm">
+                            NFT #{transfer.tokenId}
                           </div>
-
-                          {/* Transaction & Block */}
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <Link
-                              href={`/tx/${transfer.txHash}`}
-                              className="hover:text-primary font-mono"
-                            >
-                              TX: {shortenAddress(transfer.txHash, 4)}
-                            </Link>
-                            <span>Block #{transfer.blockNumber}</span>
+                        ) : transfer.type === "ERC1155" ? (
+                          <div className="font-mono text-sm">
+                            ID #{transfer.tokenId}
+                            <br />× {transfer.value}
                           </div>
-                        </div>
-
-                        {/* Right: Amount */}
-                        <div className="text-right">
-                          {transfer.type.startsWith("ERC20") && transfer.value
-                            ? <div className="font-bold">
-                                {formatTokenAmount(
-                                  BigInt(transfer.value),
-                                  tokenInfo?.metadata?.decimals || 18,
-                                )}
-                                {tokenInfo?.metadata?.symbol && (
-                                  <span className="text-sm text-muted-foreground ml-1">
-                                    {tokenInfo.metadata.symbol}
-                                  </span>
-                                )}
-                              </div>
-                            : transfer.type.startsWith("ERC721") &&
-                                transfer.tokenId
-                              ? <div className="font-mono text-sm">
-                                  NFT #{transfer.tokenId}
-                                </div>
-                              : transfer.type === "ERC1155"
-                                ? <div className="font-mono text-sm">
-                                    ID #{transfer.tokenId}
-                                    <br />× {transfer.value}
-                                  </div>
-                                : null}
-                        </div>
+                        ) : null}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pagination */}
-            {paginatedData.totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                  {Math.min(currentPage * pageSize, filteredTransfers.length)}{" "}
-                  of {filteredTransfers.length} transfers
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={!paginatedData.hasPrev}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {currentPage} of {paginatedData.totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                    disabled={!paginatedData.hasNext}
-                  >
-                    Next
-                  </Button>
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </>}
+            </CardContent>
+          </Card>
+
+          {/* Pagination */}
+          {paginatedData.totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                {Math.min(currentPage * pageSize, filteredTransfers.length)} of{" "}
+                {filteredTransfers.length} transfers
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={!paginatedData.hasPrev}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {paginatedData.totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={!paginatedData.hasNext}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

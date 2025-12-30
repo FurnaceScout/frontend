@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchBlocksBatched, getLatestBlockNumber } from "@/lib/block-utils";
 import { publicClient } from "@/lib/viem";
 
 /**
@@ -77,17 +78,21 @@ export function useLatestBlocks(count = 10) {
 
     const fetchBlocks = async () => {
       try {
-        const blockPromises = [];
-        for (let i = 0; i < count && blockNumber - BigInt(i) >= 0n; i++) {
-          blockPromises.push(
-            publicClient.getBlock({
-              blockNumber: blockNumber - BigInt(i),
-              includeTransactions: true,
-            }),
-          );
-        }
+        const fromBlock = blockNumber - BigInt(count - 1);
+        const actualFromBlock = fromBlock < 0n ? 0n : fromBlock;
 
-        const fetchedBlocks = await Promise.all(blockPromises);
+        const fetchedBlocks = await fetchBlocksBatched(
+          actualFromBlock,
+          blockNumber,
+          {
+            includeTransactions: true,
+            batchSize: 10,
+          },
+        );
+
+        // Sort by block number descending (newest first)
+        fetchedBlocks.sort((a, b) => Number(b.number) - Number(a.number));
+
         setBlocks(fetchedBlocks);
         setLoading(false);
       } catch (error) {
@@ -120,20 +125,22 @@ export function useLatestTransactions(count = 10, maxBlocksToScan = 100) {
 
     const fetchTransactions = async () => {
       try {
+        const fromBlock = blockNumber - BigInt(maxBlocksToScan - 1);
+        const actualFromBlock = fromBlock < 0n ? 0n : fromBlock;
+
+        // Fetch all blocks in parallel batches
+        const blocks = await fetchBlocksBatched(actualFromBlock, blockNumber, {
+          includeTransactions: true,
+          batchSize: 10,
+        });
+
+        // Sort by block number descending (newest first)
+        blocks.sort((a, b) => Number(b.number) - Number(a.number));
+
+        // Extract transactions from blocks
         const recentTxs = [];
-
-        // Scan recent blocks for transactions
-        for (
-          let i = 0;
-          i < maxBlocksToScan && blockNumber - BigInt(i) >= 0n;
-          i++
-        ) {
+        for (const block of blocks) {
           if (recentTxs.length >= count) break;
-
-          const block = await publicClient.getBlock({
-            blockNumber: blockNumber - BigInt(i),
-            includeTransactions: true,
-          });
 
           if (block.transactions && Array.isArray(block.transactions)) {
             const txsWithBlock = block.transactions.map((tx) => ({

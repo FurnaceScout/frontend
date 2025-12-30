@@ -12,11 +12,16 @@ import {
 } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import {
+  fetchBlocksBatched,
+  fetchReceiptsBatched,
+  getLatestBlockNumber,
+} from "@/lib/block-utils";
+import {
   detectTokenType,
   formatTokenAmount,
   parseTokenTransfers,
 } from "@/lib/tokens";
-import { publicClient, shortenAddress } from "@/lib/viem";
+import { shortenAddress } from "@/lib/viem";
 import LabelBadge from "./LabelBadge";
 
 export default function RecentTokenTransfers() {
@@ -27,7 +32,7 @@ export default function RecentTokenTransfers() {
   useEffect(() => {
     async function loadRecentTransfers() {
       try {
-        const latestBlock = await publicClient.getBlockNumber();
+        const latestBlock = await getLatestBlockNumber();
 
         // Safety check: ensure we don't go below block 0
         const blockRange = 50n;
@@ -41,43 +46,67 @@ export default function RecentTokenTransfers() {
           return;
         }
 
+        // Fetch all blocks in parallel batches
+        const blocks = await fetchBlocksBatched(fromBlock, latestBlock, {
+          includeTransactions: true,
+          batchSize: 10,
+        });
+
+        // Sort blocks by number descending (newest first)
+        blocks.sort((a, b) => Number(b.number) - Number(a.number));
+
+        // Collect all transaction hashes and create lookup map
+        const txHashToBlock = new Map();
+        for (const block of blocks) {
+          if (!block || !block.transactions) continue;
+          for (const tx of block.transactions) {
+            const hash = typeof tx === "string" ? tx : tx.hash;
+            txHashToBlock.set(hash.toLowerCase(), block);
+          }
+        }
+
+        // Fetch all receipts in parallel batches
+        const allHashes = Array.from(txHashToBlock.keys());
+        const receipts = await fetchReceiptsBatched(allHashes, {
+          batchSize: 20,
+        });
+
+        // Process receipts and extract token transfers
         const allTransfers = [];
         const metadataMap = {};
 
-        for (let i = latestBlock; i > fromBlock; i--) {
-          const block = await publicClient.getBlock({
-            blockNumber: i,
-            includeTransactions: true,
-          });
+        for (const receipt of receipts) {
+          if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
 
-          if (!block || !block.transactions) continue;
+          const block = txHashToBlock.get(
+            receipt.transactionHash.toLowerCase(),
+          );
+          if (!block) continue;
 
-          for (const tx of block.transactions) {
-            const receipt = await publicClient
-              .getTransactionReceipt({ hash: tx.hash })
-              .catch(() => null);
+          const txTransfers = parseTokenTransfers(receipt.logs);
 
-            if (!receipt || !receipt.logs || receipt.logs.length === 0)
-              continue;
+          for (const transfer of txTransfers) {
+            allTransfers.push({
+              ...transfer,
+              txHash: receipt.transactionHash,
+              blockNumber: block.number.toString(),
+              timestamp: block.timestamp,
+            });
 
-            const txTransfers = parseTokenTransfers(receipt.logs);
-
-            for (const transfer of txTransfers) {
-              allTransfers.push({
-                ...transfer,
-                txHash: tx.hash,
-                blockNumber: block.number.toString(),
-                timestamp: block.timestamp,
-              });
-
-              if (!metadataMap[transfer.token.toLowerCase()]) {
-                metadataMap[transfer.token.toLowerCase()] = null;
-              }
+            if (!metadataMap[transfer.token.toLowerCase()]) {
+              metadataMap[transfer.token.toLowerCase()] = null;
             }
           }
 
           if (allTransfers.length >= 20) break;
         }
+
+        // Sort by block number descending and take first 20
+        allTransfers.sort((a, b) => {
+          const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
+          if (blockDiff !== 0) return blockDiff;
+          return Number(b.timestamp) - Number(a.timestamp);
+        });
 
         setTransfers(allTransfers.slice(0, 20));
 
@@ -232,19 +261,20 @@ export default function RecentTokenTransfers() {
 
                   {/* Right: Amount/Value */}
                   <div className="text-right text-sm">
-                    {transfer.type.startsWith("ERC20") && transfer.value
-                      ? <div className="font-semibold">
-                          {formatTokenAmount(BigInt(transfer.value), decimals)}
-                        </div>
-                      : transfer.type.startsWith("ERC721") && transfer.tokenId
-                        ? <div className="font-mono text-xs">
-                            #{transfer.tokenId}
-                          </div>
-                        : transfer.type === "ERC1155"
-                          ? <div className="font-mono text-xs">
-                              #{transfer.tokenId}×{transfer.value}
-                            </div>
-                          : null}
+                    {transfer.type.startsWith("ERC20") && transfer.value ? (
+                      <div className="font-semibold">
+                        {formatTokenAmount(BigInt(transfer.value), decimals)}
+                      </div>
+                    ) : transfer.type.startsWith("ERC721") &&
+                      transfer.tokenId ? (
+                      <div className="font-mono text-xs">
+                        #{transfer.tokenId}
+                      </div>
+                    ) : transfer.type === "ERC1155" ? (
+                      <div className="font-mono text-xs">
+                        #{transfer.tokenId}×{transfer.value}
+                      </div>
+                    ) : null}
                     {transfer.timestamp && (
                       <div className="text-xs text-muted-foreground mt-1">
                         {new Date(
