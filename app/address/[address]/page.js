@@ -17,128 +17,35 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { getABI, getSourceCode, saveSourceCode } from "@/lib/abi-store";
-import {
-  fetchBlocksBatched,
-  fetchReceiptsBatched,
-  getLatestBlockNumber,
-} from "@/lib/block-utils";
-import { formatEther, publicClient, shortenAddress } from "@/lib/viem";
+import { useAddressPageData } from "@/app/hooks/useBlockchainQueries";
+import { formatEther, shortenAddress } from "@/lib/viem";
 
 export default function AddressPage({ params }) {
   const { address } = use(params);
-  const [balance, setBalance] = useState(null);
-  const [code, setCode] = useState(null);
-  const [transactions, setTransactions] = useState([]);
   const [abiData, setAbiData] = useState(null);
   const [sourceData, setSourceData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [txLoading, setTxLoading] = useState(true);
   const [uploadingSource, setUploadingSource] = useState(false);
 
-  const isContract = code && code !== "0x";
+  // Use React Query hooks for address data
+  const {
+    balance,
+    code,
+    isContract,
+    transactions,
+    isLoading: loading,
+    txLoading,
+  } = useAddressPageData(address);
 
+  // Load ABI and source code when we know it's a contract
   useEffect(() => {
-    async function fetchAddressData() {
-      try {
-        const [balanceData, codeData] = await Promise.all([
-          publicClient.getBalance({ address }),
-          publicClient.getCode({ address }),
-        ]);
+    if (code && code !== "0x") {
+      const abi = getABI(address);
+      setAbiData(abi);
 
-        setBalance(balanceData);
-        setCode(codeData);
-
-        // Check if ABI exists
-        if (codeData && codeData !== "0x") {
-          const abi = getABI(address);
-          setAbiData(abi);
-
-          // Check if source code exists
-          const source = getSourceCode(address);
-          setSourceData(source);
-        }
-
-        setLoading(false);
-
-        // Fetch recent transactions
-        fetchTransactions();
-      } catch (error) {
-        console.error("Error fetching address data:", error);
-        setLoading(false);
-      }
+      const source = getSourceCode(address);
+      setSourceData(source);
     }
-
-    async function fetchTransactions() {
-      try {
-        // Get recent blocks and filter transactions
-        const blockNumber = await getLatestBlockNumber();
-        const fromBlock = blockNumber - 99n > 0n ? blockNumber - 99n : 0n;
-
-        // Fetch all blocks in parallel batches
-        const blocks = await fetchBlocksBatched(fromBlock, blockNumber, {
-          includeTransactions: true,
-          batchSize: 10,
-        });
-
-        // Sort blocks by number descending (newest first)
-        blocks.sort((a, b) => Number(b.number) - Number(a.number));
-
-        // Filter transactions involving this address
-        const addressLower = address.toLowerCase();
-        const filteredTxs = [];
-        const txToBlock = new Map();
-
-        for (const block of blocks) {
-          if (!Array.isArray(block.transactions)) continue;
-
-          for (const tx of block.transactions) {
-            if (
-              tx.from?.toLowerCase() === addressLower ||
-              tx.to?.toLowerCase() === addressLower
-            ) {
-              filteredTxs.push(tx);
-              txToBlock.set(tx.hash.toLowerCase(), block);
-            }
-          }
-
-          // Stop early if we have enough
-          if (filteredTxs.length >= 20) break;
-        }
-
-        // Fetch receipts for filtered transactions in parallel
-        const hashes = filteredTxs.slice(0, 20).map((tx) => tx.hash);
-        const receipts = await fetchReceiptsBatched(hashes, { batchSize: 20 });
-
-        // Create receipt lookup map
-        const receiptMap = new Map();
-        for (const receipt of receipts) {
-          if (receipt && receipt.transactionHash) {
-            receiptMap.set(receipt.transactionHash.toLowerCase(), receipt);
-          }
-        }
-
-        // Combine transactions with receipts
-        const recentTxs = filteredTxs.slice(0, 20).map((tx) => {
-          const block = txToBlock.get(tx.hash.toLowerCase());
-          const receipt = receiptMap.get(tx.hash.toLowerCase());
-          return {
-            ...tx,
-            blockNumber: block?.number,
-            timestamp: block?.timestamp,
-            logs: receipt?.logs || [],
-          };
-        });
-
-        setTransactions(recentTxs);
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-      } finally {
-        setTxLoading(false);
-      }
-    }
-
-    fetchAddressData();
-  }, [address]);
+  }, [address, code]);
 
   const handleSourceUpload = async (e) => {
     const file = e.target.files?.[0];

@@ -7,6 +7,10 @@ A modern, feature-rich block explorer built specifically for Foundry's Anvil, ma
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
 ![Unofficial](https://img.shields.io/badge/Status-Unofficial-orange?style=flat-square)
 
+## Screenshot
+
+![FurnaceScout Dashboard](screenshots/dashboard.png)
+
 ## ⚠️ Disclaimer
 
 **FurnaceScout is an unofficial, community-developed tool.** It is not affiliated with, maintained by, endorsed by, or supported by the Foundry team or Paradigm. This is an independent project created to enhance the local development experience with Foundry and Anvil.

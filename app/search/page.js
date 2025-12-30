@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -59,6 +59,11 @@ export default function AdvancedSearchPage() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [errors, setErrors] = useState([]);
 
+  const loadHistory = useCallback(() => {
+    const history = getSearchHistory();
+    setSearchHistory(history);
+  }, []);
+
   useEffect(() => {
     loadHistory();
 
@@ -68,11 +73,6 @@ export default function AdvancedSearchPage() {
     return () =>
       window.removeEventListener("searchHistoryUpdated", handleUpdate);
   }, [loadHistory]);
-
-  function loadHistory() {
-    const history = getSearchHistory();
-    setSearchHistory(history);
-  }
 
   async function handleSearch(e) {
     e.preventDefault();
@@ -218,7 +218,10 @@ export default function AdvancedSearchPage() {
                       placeholder="e.g., 0xa9059cbb"
                       className="font-mono"
                     />
-                    <Select value={methodId} onValueChange={setMethodId}>
+                    <Select
+                      value={methodId || undefined}
+                      onValueChange={setMethodId}
+                    >
                       <SelectTrigger className="text-xs">
                         <SelectValue placeholder="Select common method..." />
                       </SelectTrigger>

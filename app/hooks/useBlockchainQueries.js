@@ -6,7 +6,7 @@
  */
 
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   fetchBlocksBatched,
   fetchReceiptsBatched,
@@ -25,6 +25,14 @@ import {
   getGasTrends,
   getGasStatistics,
 } from "@/lib/gas-profiling";
+import { decodeLogs } from "@/lib/contract-decoder";
+import { parseTokenTransfers, detectTokenType } from "@/lib/tokens";
+import {
+  getTokenTransferStats,
+  filterTransfers,
+  searchTransfers,
+  sortTransfers,
+} from "@/lib/token-transfers";
 import { publicClient } from "@/lib/viem";
 
 // ============================================================================
@@ -92,6 +100,37 @@ export const blockchainKeys = {
     ...blockchainKeys.gas(),
     "statistics",
     blockRange,
+  ],
+  // Event queries
+  events: () => [...blockchainKeys.all, "events"],
+  eventLogs: (fromBlock, toBlock, filters) => [
+    ...blockchainKeys.events(),
+    "logs",
+    fromBlock,
+    toBlock,
+    filters,
+  ],
+  // Token transfer queries
+  tokens: () => [...blockchainKeys.all, "tokens"],
+  tokenTransfers: (blockCount) => [
+    ...blockchainKeys.tokens(),
+    "transfers",
+    blockCount,
+  ],
+  tokenMetadata: (addresses) => [
+    ...blockchainKeys.tokens(),
+    "metadata",
+    addresses,
+  ],
+  // Address queries
+  address: () => [...blockchainKeys.all, "address"],
+  addressData: (address) => [...blockchainKeys.address(), address, "data"],
+  addressCode: (address) => [...blockchainKeys.address(), address, "code"],
+  addressTransactions: (address, blockCount) => [
+    ...blockchainKeys.address(),
+    address,
+    "transactions",
+    blockCount,
   ],
 };
 
@@ -793,5 +832,483 @@ export function useGasAnalytics(
     isLoading: consumersLoading || trendsLoading || statsLoading,
     error: consumersError || trendsError || statsError,
     refetch: refetchAll,
+  };
+}
+
+// ============================================================================
+// Event Logs Hooks
+// ============================================================================
+
+/**
+ * Hook to fetch and decode event logs from a block range
+ */
+export function useEventLogs(fromBlock, toBlock, filters = {}, options = {}) {
+  const { address, eventName } = filters;
+
+  return useQuery({
+    queryKey: blockchainKeys.eventLogs(
+      fromBlock?.toString(),
+      toBlock?.toString(),
+      { address, eventName },
+    ),
+    queryFn: async () => {
+      if (
+        fromBlock === null ||
+        fromBlock === undefined ||
+        toBlock === null ||
+        toBlock === undefined
+      ) {
+        return [];
+      }
+
+      // Fetch all blocks in parallel batches
+      const blocks = await fetchBlocksBatched(fromBlock, toBlock, {
+        includeTransactions: true,
+        batchSize: 10,
+      });
+
+      // Collect all transaction hashes from blocks that have transactions
+      const txHashToBlock = new Map();
+      for (const block of blocks) {
+        if (
+          Array.isArray(block.transactions) &&
+          block.transactions.length > 0
+        ) {
+          for (const tx of block.transactions) {
+            const hash = typeof tx === "string" ? tx : tx.hash;
+            txHashToBlock.set(hash.toLowerCase(), block);
+          }
+        }
+      }
+
+      // Fetch all receipts in parallel batches
+      const allHashes = Array.from(txHashToBlock.keys());
+      const receipts = await fetchReceiptsBatched(allHashes, { batchSize: 20 });
+
+      // Process receipts and extract events
+      const allEvents = [];
+      for (const receipt of receipts) {
+        if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
+
+        const block = txHashToBlock.get(receipt.transactionHash.toLowerCase());
+        if (!block) continue;
+
+        // Filter by address if specified
+        let filteredLogs = receipt.logs;
+        if (address) {
+          filteredLogs = filteredLogs.filter(
+            (log) => log.address.toLowerCase() === address.toLowerCase(),
+          );
+        }
+
+        if (filteredLogs.length === 0) continue;
+
+        // Decode logs
+        const decodedLogs = decodeLogs(filteredLogs);
+
+        // Filter by event name if specified
+        let finalLogs = decodedLogs;
+        if (eventName) {
+          finalLogs = decodedLogs.filter((log) =>
+            log.decoded?.eventName
+              ?.toLowerCase()
+              .includes(eventName.toLowerCase()),
+          );
+        }
+
+        allEvents.push(
+          ...finalLogs.map((log) => ({
+            ...log,
+            transactionHash: receipt.transactionHash,
+            blockNumber: block.number,
+            timestamp: block.timestamp,
+          })),
+        );
+
+        // Limit to 100 events
+        if (allEvents.length >= 100) break;
+      }
+
+      // Sort events by block number descending (newest first)
+      allEvents.sort((a, b) => {
+        const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
+        if (blockDiff !== 0) return blockDiff;
+        return (b.logIndex || 0) - (a.logIndex || 0);
+      });
+
+      return allEvents.slice(0, 100);
+    },
+    enabled:
+      fromBlock !== null &&
+      fromBlock !== undefined &&
+      toBlock !== null &&
+      toBlock !== undefined,
+    staleTime: BLOCK_STALE_TIME,
+    ...options,
+  });
+}
+
+/**
+ * Hook to fetch recent event logs with filters
+ */
+export function useRecentEventLogs(
+  blockCount = 100,
+  filters = {},
+  options = {},
+) {
+  const { data: latestBlockNumber } = useLatestBlockNumber();
+
+  const fromBlock =
+    latestBlockNumber !== undefined
+      ? latestBlockNumber - BigInt(blockCount)
+      : null;
+  const toBlock = latestBlockNumber;
+
+  const {
+    data: events,
+    isLoading,
+    error,
+    refetch,
+  } = useEventLogs(
+    fromBlock !== null && fromBlock < 0n ? 0n : fromBlock,
+    toBlock,
+    filters,
+    {
+      enabled: latestBlockNumber !== undefined,
+      ...options,
+    },
+  );
+
+  return {
+    data: events || [],
+    isLoading,
+    error,
+    refetch,
+    blockNumber: latestBlockNumber,
+  };
+}
+
+// ============================================================================
+// Token Transfer Hooks
+// ============================================================================
+
+/**
+ * Hook to fetch recent token transfers
+ */
+export function useTokenTransfers(blockCount = 500, options = {}) {
+  const { data: latestBlockNumber } = useLatestBlockNumber();
+
+  return useQuery({
+    queryKey: blockchainKeys.tokenTransfers(blockCount),
+    queryFn: async () => {
+      if (latestBlockNumber === undefined)
+        return { transfers: [], metadata: {} };
+
+      const fromBlock = latestBlockNumber - BigInt(blockCount);
+      const actualFromBlock = fromBlock < 0n ? 0n : fromBlock;
+
+      // Fetch all blocks in parallel batches
+      const blocks = await fetchBlocksBatched(
+        actualFromBlock,
+        latestBlockNumber,
+        {
+          includeTransactions: true,
+          batchSize: 10,
+        },
+      );
+
+      // Sort blocks by number descending (newest first)
+      blocks.sort((a, b) => Number(b.number) - Number(a.number));
+
+      // Collect all transaction hashes and create lookup map
+      const txHashToBlock = new Map();
+      for (const block of blocks) {
+        if (!block || !block.transactions) continue;
+        for (const tx of block.transactions) {
+          const hash = typeof tx === "string" ? tx : tx.hash;
+          txHashToBlock.set(hash.toLowerCase(), block);
+        }
+      }
+
+      // Fetch all receipts in parallel batches
+      const allHashes = Array.from(txHashToBlock.keys());
+      const receipts = await fetchReceiptsBatched(allHashes, {
+        batchSize: 20,
+      });
+
+      // Process receipts and extract token transfers
+      const allTransfers = [];
+      const metadataMap = {};
+
+      for (const receipt of receipts) {
+        if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
+
+        const block = txHashToBlock.get(receipt.transactionHash.toLowerCase());
+        if (!block) continue;
+
+        const txTransfers = parseTokenTransfers(receipt.logs);
+
+        for (const transfer of txTransfers) {
+          allTransfers.push({
+            ...transfer,
+            txHash: receipt.transactionHash,
+            blockNumber: block.number.toString(),
+            timestamp: block.timestamp,
+          });
+
+          // Queue token metadata fetch
+          if (!metadataMap[transfer.token.toLowerCase()]) {
+            metadataMap[transfer.token.toLowerCase()] = null;
+          }
+        }
+
+        // Limit to reasonable number
+        if (allTransfers.length >= 500) break;
+      }
+
+      // Sort transfers by block number descending
+      allTransfers.sort((a, b) => {
+        const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
+        if (blockDiff !== 0) return blockDiff;
+        return Number(b.timestamp) - Number(a.timestamp);
+      });
+
+      return {
+        transfers: allTransfers.slice(0, 500),
+        tokenAddresses: Object.keys(metadataMap),
+      };
+    },
+    enabled: latestBlockNumber !== undefined,
+    staleTime: STATS_STALE_TIME,
+    ...options,
+  });
+}
+
+/**
+ * Hook to fetch token metadata for multiple addresses
+ */
+export function useTokenMetadata(tokenAddresses, options = {}) {
+  return useQuery({
+    queryKey: blockchainKeys.tokenMetadata(tokenAddresses?.sort() || []),
+    queryFn: async () => {
+      if (!tokenAddresses || tokenAddresses.length === 0) return {};
+
+      const metadata = {};
+      await Promise.all(
+        tokenAddresses.map(async (tokenAddress) => {
+          try {
+            const info = await detectTokenType(tokenAddress);
+            if (info.isToken) {
+              metadata[tokenAddress.toLowerCase()] = {
+                type: info.type,
+                ...info.metadata,
+              };
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching metadata for ${tokenAddress}:`,
+              error,
+            );
+          }
+        }),
+      );
+
+      return metadata;
+    },
+    enabled: tokenAddresses && tokenAddresses.length > 0,
+    staleTime: BLOCK_STALE_TIME, // Token metadata is relatively stable
+    ...options,
+  });
+}
+
+/**
+ * Combined hook for token transfers with metadata and stats
+ */
+export function useTokenTransfersWithMetadata(blockCount = 500, options = {}) {
+  const {
+    data: transferData,
+    isLoading: transfersLoading,
+    error: transfersError,
+    refetch,
+  } = useTokenTransfers(blockCount, options);
+
+  const { data: tokenMetadata, isLoading: metadataLoading } = useTokenMetadata(
+    transferData?.tokenAddresses,
+    {
+      enabled: transferData?.tokenAddresses?.length > 0,
+    },
+  );
+
+  // Calculate stats when transfers are loaded
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    async function calculateStats() {
+      if (transferData?.transfers?.length > 0) {
+        const transferStats = await getTokenTransferStats(
+          transferData.transfers,
+        );
+        setStats(transferStats);
+      }
+    }
+    calculateStats();
+  }, [transferData?.transfers]);
+
+  return {
+    transfers: transferData?.transfers || [],
+    tokenMetadata: tokenMetadata || {},
+    stats,
+    isLoading: transfersLoading || metadataLoading,
+    error: transfersError,
+    refetch,
+  };
+}
+
+// ============================================================================
+// Address Data Hooks
+// ============================================================================
+
+/**
+ * Hook to get address balance and code
+ */
+export function useAddressData(address, options = {}) {
+  return useQuery({
+    queryKey: blockchainKeys.addressData(address?.toLowerCase()),
+    queryFn: async () => {
+      const [balance, code] = await Promise.all([
+        publicClient.getBalance({ address }),
+        publicClient.getCode({ address }),
+      ]);
+
+      return {
+        balance,
+        code,
+        isContract: code && code !== "0x",
+      };
+    },
+    enabled: !!address,
+    staleTime: BALANCE_STALE_TIME,
+    ...options,
+  });
+}
+
+/**
+ * Hook to get address transactions
+ */
+export function useAddressTransactions(
+  address,
+  blockCount = 100,
+  options = {},
+) {
+  const { data: latestBlockNumber } = useLatestBlockNumber();
+
+  return useQuery({
+    queryKey: blockchainKeys.addressTransactions(
+      address?.toLowerCase(),
+      blockCount,
+    ),
+    queryFn: async () => {
+      if (!latestBlockNumber || !address) return [];
+
+      const fromBlock = latestBlockNumber - BigInt(blockCount - 1);
+      const actualFromBlock = fromBlock < 0n ? 0n : fromBlock;
+
+      // Fetch all blocks in parallel batches
+      const blocks = await fetchBlocksBatched(
+        actualFromBlock,
+        latestBlockNumber,
+        {
+          includeTransactions: true,
+          batchSize: 10,
+        },
+      );
+
+      // Sort blocks by number descending (newest first)
+      blocks.sort((a, b) => Number(b.number) - Number(a.number));
+
+      // Filter transactions involving this address
+      const addressLower = address.toLowerCase();
+      const filteredTxs = [];
+      const txToBlock = new Map();
+
+      for (const block of blocks) {
+        if (!Array.isArray(block.transactions)) continue;
+
+        for (const tx of block.transactions) {
+          if (
+            tx.from?.toLowerCase() === addressLower ||
+            tx.to?.toLowerCase() === addressLower
+          ) {
+            filteredTxs.push(tx);
+            txToBlock.set(tx.hash.toLowerCase(), block);
+          }
+        }
+
+        // Stop early if we have enough
+        if (filteredTxs.length >= 20) break;
+      }
+
+      // Fetch receipts for filtered transactions in parallel
+      const hashes = filteredTxs.slice(0, 20).map((tx) => tx.hash);
+      const receipts = await fetchReceiptsBatched(hashes, { batchSize: 20 });
+
+      // Create receipt lookup map
+      const receiptMap = new Map();
+      for (const receipt of receipts) {
+        if (receipt && receipt.transactionHash) {
+          receiptMap.set(receipt.transactionHash.toLowerCase(), receipt);
+        }
+      }
+
+      // Combine transactions with receipts
+      const recentTxs = filteredTxs.slice(0, 20).map((tx) => {
+        const block = txToBlock.get(tx.hash.toLowerCase());
+        const receipt = receiptMap.get(tx.hash.toLowerCase());
+        return {
+          ...tx,
+          blockNumber: block?.number,
+          timestamp: block?.timestamp,
+          logs: receipt?.logs || [],
+        };
+      });
+
+      return recentTxs;
+    },
+    enabled: !!address && latestBlockNumber !== undefined,
+    staleTime: LATEST_BLOCK_STALE_TIME,
+    ...options,
+  });
+}
+
+/**
+ * Combined hook for address page data
+ */
+export function useAddressPageData(address, options = {}) {
+  const {
+    data: addressData,
+    isLoading: addressLoading,
+    error: addressError,
+  } = useAddressData(address, options);
+
+  const {
+    data: transactions,
+    isLoading: txLoading,
+    error: txError,
+    refetch: refetchTransactions,
+  } = useAddressTransactions(address, 100, options);
+
+  const { data: balance } = useBalance(address, {
+    refetchInterval: 5000, // Refresh balance every 5 seconds
+  });
+
+  return {
+    balance: balance ?? addressData?.balance,
+    code: addressData?.code,
+    isContract: addressData?.isContract,
+    transactions: transactions || [],
+    isLoading: addressLoading,
+    txLoading,
+    error: addressError || txError,
+    refetchTransactions,
   };
 }

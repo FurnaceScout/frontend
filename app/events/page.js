@@ -20,17 +20,10 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { getAllABIs } from "@/lib/abi-store";
-import {
-  fetchBlocksBatched,
-  fetchReceiptsBatched,
-  getLatestBlockNumber,
-} from "@/lib/block-utils";
-import { decodeLogs } from "@/lib/contract-decoder";
+import { useRecentEventLogs } from "@/app/hooks/useBlockchainQueries";
 import { shortenAddress } from "@/lib/viem";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     address: "",
     fromBlock: "",
@@ -38,113 +31,34 @@ export default function EventsPage() {
     eventName: "",
   });
   const [availableContracts, setAvailableContracts] = useState([]);
+  const [searchTriggered, setSearchTriggered] = useState(0);
 
+  // Load available contracts from ABI store
   useEffect(() => {
-    // Load available contracts from ABI store
     const abis = getAllABIs();
     const contracts = Object.entries(abis).map(([addr, data]) => ({
       address: addr,
       name: data.name,
     }));
     setAvailableContracts(contracts);
-
-    // Fetch events on load
-    fetchEvents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchEvents = async () => {
-    setLoading(true);
-    try {
-      const blockNumber = await getLatestBlockNumber();
-      const fromBlock = filters.fromBlock
-        ? BigInt(filters.fromBlock)
-        : blockNumber - 100n;
-      const toBlock = filters.toBlock ? BigInt(filters.toBlock) : blockNumber;
-
-      // Fetch all blocks in parallel batches
-      const blocks = await fetchBlocksBatched(fromBlock, toBlock, {
-        includeTransactions: true,
-        batchSize: 10,
-      });
-
-      // Collect all transaction hashes from blocks that have transactions
-      const txHashToBlock = new Map();
-      for (const block of blocks) {
-        if (
-          Array.isArray(block.transactions) &&
-          block.transactions.length > 0
-        ) {
-          for (const tx of block.transactions) {
-            const hash = typeof tx === "string" ? tx : tx.hash;
-            txHashToBlock.set(hash.toLowerCase(), block);
-          }
-        }
-      }
-
-      // Fetch all receipts in parallel batches
-      const allHashes = Array.from(txHashToBlock.keys());
-      const receipts = await fetchReceiptsBatched(allHashes, { batchSize: 20 });
-
-      // Process receipts and extract events
-      const allEvents = [];
-      for (const receipt of receipts) {
-        if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
-
-        const block = txHashToBlock.get(receipt.transactionHash.toLowerCase());
-        if (!block) continue;
-
-        // Filter by address if specified
-        let filteredLogs = receipt.logs;
-        if (filters.address) {
-          filteredLogs = filteredLogs.filter(
-            (log) =>
-              log.address.toLowerCase() === filters.address.toLowerCase(),
-          );
-        }
-
-        if (filteredLogs.length === 0) continue;
-
-        // Decode logs
-        const decodedLogs = decodeLogs(filteredLogs);
-
-        // Filter by event name if specified
-        let finalLogs = decodedLogs;
-        if (filters.eventName) {
-          finalLogs = decodedLogs.filter((log) =>
-            log.decoded?.eventName
-              ?.toLowerCase()
-              .includes(filters.eventName.toLowerCase()),
-          );
-        }
-
-        allEvents.push(
-          ...finalLogs.map((log) => ({
-            ...log,
-            transactionHash: receipt.transactionHash,
-            blockNumber: block.number,
-            timestamp: block.timestamp,
-          })),
-        );
-
-        // Limit to 100 events
-        if (allEvents.length >= 100) break;
-      }
-
-      // Sort events by block number descending (newest first)
-      allEvents.sort((a, b) => {
-        const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
-        if (blockDiff !== 0) return blockDiff;
-        return (b.logIndex || 0) - (a.logIndex || 0);
-      });
-
-      setEvents(allEvents.slice(0, 100));
-    } catch (error) {
-      console.error("Error fetching events:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query hook for fetching events
+  const {
+    data: events = [],
+    isLoading: loading,
+    refetch,
+  } = useRecentEventLogs(
+    100,
+    {
+      address: filters.address,
+      eventName: filters.eventName,
+    },
+    {
+      // Refetch when search is triggered
+      refetchOnMount: true,
+    },
+  );
 
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
@@ -152,7 +66,8 @@ export default function EventsPage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchEvents();
+    setSearchTriggered((prev) => prev + 1);
+    refetch();
   };
 
   const handleReset = () => {
@@ -162,7 +77,7 @@ export default function EventsPage() {
       toBlock: "",
       eventName: "",
     });
-    setTimeout(() => fetchEvents(), 0);
+    setTimeout(() => refetch(), 0);
   };
 
   const exportToCSV = () => {

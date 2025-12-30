@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -11,138 +10,21 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import {
-  fetchBlocksBatched,
-  fetchReceiptsBatched,
-  getLatestBlockNumber,
-} from "@/lib/block-utils";
-import {
-  detectTokenType,
-  formatTokenAmount,
-  parseTokenTransfers,
-} from "@/lib/tokens";
+import { useTokenTransfersWithMetadata } from "@/app/hooks/useBlockchainQueries";
+import { formatTokenAmount } from "@/lib/tokens";
 import { shortenAddress } from "@/lib/viem";
 import LabelBadge from "./LabelBadge";
 
 export default function RecentTokenTransfers() {
-  const [transfers, setTransfers] = useState([]);
-  const [tokenMetadata, setTokenMetadata] = useState({});
-  const [loading, setLoading] = useState(true);
+  // Use React Query hook for token transfers with metadata
+  const {
+    transfers: allTransfers,
+    tokenMetadata,
+    isLoading: loading,
+  } = useTokenTransfersWithMetadata(50);
 
-  useEffect(() => {
-    async function loadRecentTransfers() {
-      try {
-        const latestBlock = await getLatestBlockNumber();
-
-        // Safety check: ensure we don't go below block 0
-        const blockRange = 50n;
-        const fromBlock =
-          latestBlock > blockRange ? latestBlock - blockRange : 0n;
-
-        // If there are no blocks, return early
-        if (latestBlock < 0n) {
-          setTransfers([]);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch all blocks in parallel batches
-        const blocks = await fetchBlocksBatched(fromBlock, latestBlock, {
-          includeTransactions: true,
-          batchSize: 10,
-        });
-
-        // Sort blocks by number descending (newest first)
-        blocks.sort((a, b) => Number(b.number) - Number(a.number));
-
-        // Collect all transaction hashes and create lookup map
-        const txHashToBlock = new Map();
-        for (const block of blocks) {
-          if (!block || !block.transactions) continue;
-          for (const tx of block.transactions) {
-            const hash = typeof tx === "string" ? tx : tx.hash;
-            txHashToBlock.set(hash.toLowerCase(), block);
-          }
-        }
-
-        // Fetch all receipts in parallel batches
-        const allHashes = Array.from(txHashToBlock.keys());
-        const receipts = await fetchReceiptsBatched(allHashes, {
-          batchSize: 20,
-        });
-
-        // Process receipts and extract token transfers
-        const allTransfers = [];
-        const metadataMap = {};
-
-        for (const receipt of receipts) {
-          if (!receipt || !receipt.logs || receipt.logs.length === 0) continue;
-
-          const block = txHashToBlock.get(
-            receipt.transactionHash.toLowerCase(),
-          );
-          if (!block) continue;
-
-          const txTransfers = parseTokenTransfers(receipt.logs);
-
-          for (const transfer of txTransfers) {
-            allTransfers.push({
-              ...transfer,
-              txHash: receipt.transactionHash,
-              blockNumber: block.number.toString(),
-              timestamp: block.timestamp,
-            });
-
-            if (!metadataMap[transfer.token.toLowerCase()]) {
-              metadataMap[transfer.token.toLowerCase()] = null;
-            }
-          }
-
-          if (allTransfers.length >= 20) break;
-        }
-
-        // Sort by block number descending and take first 20
-        allTransfers.sort((a, b) => {
-          const blockDiff = Number(b.blockNumber) - Number(a.blockNumber);
-          if (blockDiff !== 0) return blockDiff;
-          return Number(b.timestamp) - Number(a.timestamp);
-        });
-
-        setTransfers(allTransfers.slice(0, 20));
-
-        // Fetch metadata for unique tokens
-        const uniqueTokens = Object.keys(metadataMap);
-        const metadata = {};
-
-        await Promise.all(
-          uniqueTokens.map(async (tokenAddress) => {
-            try {
-              const info = await detectTokenType(tokenAddress);
-              if (info.isToken) {
-                metadata[tokenAddress] = {
-                  type: info.type,
-                  ...info.metadata,
-                };
-              }
-            } catch (error) {
-              console.error(
-                `Error fetching metadata for ${tokenAddress}:`,
-                error,
-              );
-            }
-          }),
-        );
-
-        setTokenMetadata(metadata);
-      } catch (error) {
-        console.error("Error loading recent token transfers:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadRecentTransfers();
-  }, []);
+  // Take only first 20 transfers for this component
+  const transfers = allTransfers.slice(0, 20);
 
   const getTokenBadgeVariant = (type) => {
     if (type.startsWith("ERC20")) return "default";

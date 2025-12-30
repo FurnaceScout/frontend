@@ -40,6 +40,17 @@ export {
   useGasTrends,
   useGasStatistics,
   useGasAnalytics,
+  // Event logs hooks
+  useEventLogs,
+  useRecentEventLogs,
+  // Token transfer hooks
+  useTokenTransfers,
+  useTokenMetadata,
+  useTokenTransfersWithMetadata,
+  // Address data hooks
+  useAddressData,
+  useAddressTransactions,
+  useAddressPageData,
 } from "./useBlockchainQueries";
 
 // Legacy hooks (still functional, but consider migrating to React Query versions)
