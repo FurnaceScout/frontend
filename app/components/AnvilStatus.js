@@ -11,7 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
-import { useChainInfo, useWatchBalances } from "@/app/hooks/useBlockchain";
+import {
+  useChainInfo,
+  useBalances,
+  useLatestBlockNumber,
+} from "@/app/hooks/useBlockchainQueries";
 import { formatEther, shortenAddress } from "@/lib/viem";
 
 // Anvil's default test accounts
@@ -71,10 +75,11 @@ const ANVIL_ACCOUNTS = [
 export default function AnvilStatus({ expanded = false, onToggle }) {
   const [copiedItem, setCopiedItem] = useState(null);
 
-  // Use real-time hooks instead of polling
-  const { chainInfo, loading: chainLoading } = useChainInfo();
+  // Use React Query hooks for caching and deduplication
+  const { data: blockNumber } = useLatestBlockNumber({ refetchInterval: 2000 });
+  const { data: chainInfo, isLoading: chainLoading } = useChainInfo();
   const addresses = ANVIL_ACCOUNTS.map((acc) => acc.address);
-  const { balances, loading: balancesLoading } = useWatchBalances(addresses);
+  const { data: balances, isLoading: balancesLoading } = useBalances(addresses);
 
   const loading = chainLoading || balancesLoading;
 
@@ -118,7 +123,7 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
     );
   }
 
-  if (!chainInfo) {
+  if (!chainInfo && !loading) {
     return (
       <Card>
         <CardHeader>
@@ -130,6 +135,10 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
       </Card>
     );
   }
+
+  // Use blockNumber from the dedicated hook for more frequent updates
+  const displayBlockNumber =
+    blockNumber?.toString() || chainInfo?.blockNumber || "...";
 
   return (
     <Card>
@@ -148,7 +157,8 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
             <div className="text-left">
               <CardTitle className="text-base">Anvil Connected</CardTitle>
               <CardDescription>
-                Chain ID: {chainInfo.chainId} | Block: {chainInfo.blockNumber}
+                Chain ID: {chainInfo?.chainId || "31337"} | Block:{" "}
+                {displayBlockNumber}
               </CardDescription>
             </div>
           </div>
@@ -164,7 +174,7 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
             <div>
               <div className="text-xs text-muted-foreground mb-1">Chain ID</div>
               <div className="font-mono text-sm font-semibold">
-                {chainInfo.chainId}
+                {chainInfo?.chainId || "31337"}
               </div>
             </div>
             <div>
@@ -172,7 +182,7 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
                 Current Block
               </div>
               <div className="font-mono text-sm font-semibold">
-                {chainInfo.blockNumber}
+                {displayBlockNumber}
               </div>
             </div>
             <div>
@@ -180,7 +190,10 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
                 Gas Price
               </div>
               <div className="font-mono text-sm font-semibold">
-                {(Number(chainInfo.gasPrice) / 1e9).toFixed(2)} Gwei
+                {chainInfo?.gasPrice
+                  ? (Number(chainInfo.gasPrice) / 1e9).toFixed(2)
+                  : "..."}{" "}
+                Gwei
               </div>
             </div>
           </div>
@@ -213,7 +226,7 @@ export default function AnvilStatus({ expanded = false, onToggle }) {
                       </div>
                     </div>
                     <div className="font-semibold text-sm">
-                      {balances[account.address.toLowerCase()]
+                      {balances?.[account.address.toLowerCase()]
                         ? `${formatEther(balances[account.address.toLowerCase()], 2)} ETH`
                         : "Loading..."}
                     </div>

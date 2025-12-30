@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePublicClient } from "wagmi";
+import { useState } from "react";
 import NetworkStatsWidget from "@/app/components/NetworkStatsWidget";
 import RecentTokenTransfers from "@/app/components/RecentTokenTransfers";
 import { Badge } from "@/app/components/ui/badge";
@@ -16,43 +15,36 @@ import {
 import {
   useLatestBlocks,
   useLatestTransactions,
-} from "@/app/hooks/useBlockchain";
+  useChainInfo,
+  useGasPrice,
+} from "@/app/hooks/useBlockchainQueries";
 import { formatEther, shortenAddress } from "@/lib/viem";
 
 export default function Home() {
-  const { blocks, loading: blocksLoading } = useLatestBlocks(5);
-  const { transactions, loading: txLoading } = useLatestTransactions(5, 50);
+  // Use React Query hooks for caching and deduplication
+  const {
+    data: blocks = [],
+    isLoading: blocksLoading,
+    blockNumber,
+  } = useLatestBlocks(5);
+  const { data: transactions = [], isLoading: txLoading } =
+    useLatestTransactions(5, 50);
   const [searchQuery, _setSearchQuery] = useState("");
-  const [networkStats, setNetworkStats] = useState(null);
-  const publicClient = usePublicClient();
+
+  // Network stats from React Query hooks - automatically cached and refreshed
+  const { data: chainInfo } = useChainInfo();
+  const { data: gasPrice } = useGasPrice({ refetchInterval: 12000 });
 
   const loading = blocksLoading || txLoading;
 
-  useEffect(() => {
-    const fetchNetworkStats = async () => {
-      if (!publicClient) return;
-
-      try {
-        const [blockNumber, gasPrice, chainId] = await Promise.all([
-          publicClient.getBlockNumber(),
-          publicClient.getGasPrice(),
-          publicClient.getChainId(),
-        ]);
-
-        setNetworkStats({
-          blockNumber,
-          gasPrice,
-          chainId,
-        });
-      } catch (error) {
-        console.error("Failed to fetch network stats:", error);
+  // Build networkStats from React Query data
+  const networkStats = chainInfo
+    ? {
+        blockNumber: blockNumber || BigInt(chainInfo.blockNumber || 0),
+        gasPrice: gasPrice || BigInt(chainInfo.gasPrice || 0),
+        chainId: Number(chainInfo.chainId || 31337),
       }
-    };
-
-    fetchNetworkStats();
-    const interval = setInterval(fetchNetworkStats, 12000);
-    return () => clearInterval(interval);
-  }, [publicClient]);
+    : null;
 
   const _handleSearch = (e) => {
     e.preventDefault();
@@ -309,68 +301,68 @@ export default function Home() {
               </h3>
             </div>
             <div className="space-y-3">
-              {transactions.length === 0
-                ? <Card className="p-12 text-center">
-                    <CardContent className="pt-6">
-                      <div className="text-4xl mb-4">⏳</div>
-                      <p className="text-muted-foreground">
-                        No transactions yet
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Transactions will appear here as they occur
-                      </p>
-                    </CardContent>
-                  </Card>
-                : transactions.map((tx) => (
-                    <Link key={tx.hash} href={`/tx/${tx.hash}`}>
-                      <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6 min-h-40">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-sm font-semibold">
-                              {shortenAddress(tx.hash)}
+              {transactions.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <CardContent className="pt-6">
+                    <div className="text-4xl mb-4">⏳</div>
+                    <p className="text-muted-foreground">No transactions yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Transactions will appear here as they occur
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                transactions.map((tx) => (
+                  <Link key={tx.hash} href={`/tx/${tx.hash}`}>
+                    <Card className="hover:border-red-500 dark:hover:border-red-500 hover:shadow-lg transition-all m-6 min-h-40">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-sm font-semibold">
+                            {shortenAddress(tx.hash)}
+                          </span>
+                          <Badge variant="outline">
+                            Block #{tx.blockNumber?.toString()}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-2">
+                          <div>
+                            <div className="text-muted-foreground mb-1">
+                              From
+                            </div>
+                            <div className="font-mono">
+                              {shortenAddress(tx.from)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground mb-1">To</div>
+                            <div className="font-mono">
+                              {tx.to ? (
+                                shortenAddress(tx.to)
+                              ) : (
+                                <Badge variant="secondary">
+                                  Contract Deploy
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {tx.value && tx.value > 0n ? (
+                          <div className="text-sm pt-2 border-t">
+                            <span className="text-muted-foreground">
+                              Value:
                             </span>
-                            <Badge variant="outline">
-                              Block #{tx.blockNumber?.toString()}
-                            </Badge>
+                            <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
+                              {formatEther(tx.value)} ETH
+                            </span>
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="grid grid-cols-2 gap-4 text-sm mb-2">
-                            <div>
-                              <div className="text-muted-foreground mb-1">
-                                From
-                              </div>
-                              <div className="font-mono">
-                                {shortenAddress(tx.from)}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-muted-foreground mb-1">
-                                To
-                              </div>
-                              <div className="font-mono">
-                                {tx.to
-                                  ? shortenAddress(tx.to)
-                                  : <Badge variant="secondary">
-                                      Contract Deploy
-                                    </Badge>}
-                              </div>
-                            </div>
-                          </div>
-                          {tx.value && tx.value > 0n
-                            ? <div className="text-sm pt-2 border-t">
-                                <span className="text-muted-foreground">
-                                  Value:
-                                </span>
-                                <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
-                                  {formatEther(tx.value)} ETH
-                                </span>
-                              </div>
-                            : null}
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))}
+                        ) : null}
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </div>

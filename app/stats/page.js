@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import {
   Card,
@@ -17,58 +17,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
-import {
-  getActiveAddresses,
-  getBlockStatsOverTime,
-  getNetworkHealth,
-  getTransactionVolume,
-} from "@/lib/stats";
+import { useNetworkStats } from "@/app/hooks/useBlockchainQueries";
 import { formatEther } from "@/lib/viem";
 
 export default function StatsPage() {
-  const [health, setHealth] = useState(null);
-  const [blockStats, setBlockStats] = useState([]);
-  const [volume, setVolume] = useState(null);
-  const [addresses, setAddresses] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [blockRange, setBlockRange] = useState("100");
+  const blockCount = parseInt(blockRange, 10);
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+  // Use React Query hook for all stats with caching and deduplication
+  const { health, blockStats, volume, addresses, isLoading, refetch } =
+    useNetworkStats(blockCount, 20);
 
-  async function loadStats() {
-    try {
-      setLoading(true);
-
-      const blockCount = parseInt(blockRange, 10);
-      const [healthData, statsData, volumeData, addressData] =
-        await Promise.all([
-          getNetworkHealth(),
-          getBlockStatsOverTime(blockCount, 20),
-          getTransactionVolume(blockCount),
-          getActiveAddresses(blockCount),
-        ]);
-
-      setHealth(healthData);
-      setBlockStats(statsData);
-      setVolume(volumeData);
-      setAddresses(addressData);
-    } catch (error) {
-      console.error("Error loading stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [refreshing, setRefreshing] = useState(false);
 
   async function handleRefresh() {
     setRefreshing(true);
-    await loadStats();
+    await refetch();
     setRefreshing(false);
   }
 
-  if (loading && !health) {
+  if (isLoading && !health) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
